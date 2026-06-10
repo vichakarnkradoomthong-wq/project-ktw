@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบจัดโครงการลงยุทธศาสตร์ — กระดุมทองวิทยา</title>
+<link rel="icon" type="image/png" href="https://nonthaphathr.github.io/uploadimg/logoschool.png">
+
+<!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyDtqQC6LzY5wvU1xxa6zQd7lJl9ba6qQAc",
+    authDomain: "project-ktw.firebaseapp.com",
+    projectId: "project-ktw",
+    storageBucket: "project-ktw.firebasestorage.app",
+    messagingSenderId: "391461059835",
+    appId: "1:391461059835:web:1859c978b9678f8eda045e"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  window.__db = db;
+  window.__fsModules = { collection, doc, setDoc, getDocs, deleteDoc };
+  document.dispatchEvent(new Event('dbReady'));
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Kanit:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --primary: #6c3fc5;
+  --primary-light: #8b5cf6;
+  --primary-dark: #4c1d95;
+  --accent: #a78bfa;
+  --surface: #ffffff;
+  --surface2: #f8f5ff;
+  --surface3: #ede9fe;
+  --border: #ddd6fe;
+  --text: #1e1b4b;
+  --text3: #6b7280;
+  --success: #059669;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --shadow: 0 2px 16px rgba(108,63,197,0.10);
+  --shadow-lg: 0 8px 32px rgba(108,63,197,0.18);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-height:100vh}
+
+/* NAVBAR */
+.navbar{
+  background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 60%,var(--primary-light) 100%);
+  color:#fff;padding:0 20px;height:62px;
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:100;
+  box-shadow:0 4px 20px rgba(76,29,149,0.28);
+}
+.navbar-brand{font-family:'Kanit',sans-serif;font-weight:600;font-size:1rem;
+  display:flex;align-items:center;gap:10px}
+.navbar-logo{width:38px;height:38px;border-radius:10px;overflow:hidden;
+  background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.navbar-logo img{width:100%;height:100%;object-fit:contain}
+.navbar-brand-text{display:flex;flex-direction:column}
+.navbar-brand-text .sub{font-size:0.68rem;opacity:0.72;font-weight:400}
+.navbar-brand-text .main{font-size:0.95rem;font-weight:700}
+.navbar-actions{display:flex;align-items:center;gap:8px}
+.nav-btn{
+  background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.28);
+  color:#fff;padding:6px 14px;border-radius:8px;cursor:pointer;
+  font-family:'Sarabun',sans-serif;font-size:0.82rem;font-weight:600;
+  transition:background 0.2s;display:flex;align-items:center;gap:6px
+}
+.nav-btn:hover{background:rgba(255,255,255,0.28)}
+
+/* HERO */
+.hero{
+  background:linear-gradient(160deg,var(--primary-dark) 0%,#5b21b6 50%,var(--primary-light) 100%);
+  color:#fff;padding:44px 24px 52px;text-align:center;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-inner{position:relative;z-index:1}
+.hero-school-logo{
+  width:70px;height:70px;border-radius:16px;overflow:hidden;
+  background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);
+  border:2px solid rgba(255,255,255,0.3);
+  display:flex;align-items:center;justify-content:center;
+  margin:0 auto 16px;
+}
+.hero-school-logo img{width:100%;height:100%;object-fit:contain;padding:4px}
+.hero-subtitle{font-size:0.82rem;opacity:0.75;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px}
+.hero-title{font-family:'Kanit',sans-serif;font-size:1.85rem;font-weight:800;line-height:1.25;margin-bottom:8px}
+.hero-desc{font-size:0.9rem;opacity:0.75;margin-bottom:2px}
+.hero-credit{font-size:0.75rem;opacity:0.5;margin-top:4px}
+
+/* CONTAINER */
+.container{max-width:1100px;margin:0 auto;padding:32px 18px 64px}
+
+/* ═══ LANDING CARDS (redesigned) ═══ */
+.landing-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:36px}
+@media(max-width:640px){.landing-grid{grid-template-columns:1fr}}
+
+.landing-card{
+  background:var(--surface);
+  border:2px solid transparent;
+  border-radius:var(--radius);
+  padding:0;
+  cursor:pointer;
+  transition:all 0.25s;
+  position:relative;
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.landing-card:hover{
+  transform:translateY(-4px);
+  box-shadow:var(--shadow-lg);
+  border-color:var(--primary-light);
+}
+
+/* colored top strip per card */
+.card-top-strip{
+  height:6px;
+  background:linear-gradient(90deg,var(--primary-dark),var(--primary-light));
+  transition:height 0.2s;
+}
+.landing-card:hover .card-top-strip{height:8px}
+
+.card-body{padding:26px 26px 24px}
+
+.card-icon-wrap{
+  width:58px;height:58px;
+  border-radius:16px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;
+  margin-bottom:14px;
+  position:relative;
+}
+.card-icon-wrap.purple{
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+  box-shadow:0 6px 20px rgba(108,63,197,0.35);
+}
+.card-icon-wrap.violet{
+  background:linear-gradient(135deg,#5b21b6,var(--primary-light));
+  box-shadow:0 6px 20px rgba(139,92,246,0.35);
+}
+
+.card-chip{
+  display:inline-flex;align-items:center;gap:5px;
+  background:var(--surface3);color:var(--primary);
+  font-size:0.68rem;font-weight:700;letter-spacing:0.08em;
+  padding:3px 9px;border-radius:20px;text-transform:uppercase;
+  margin-bottom:10px;
+}
+.card-title{
+  font-family:'Kanit',sans-serif;font-size:1.1rem;font-weight:700;
+  color:var(--text);margin-bottom:8px;line-height:1.35;
+}
+.card-desc{font-size:0.85rem;color:var(--text3);line-height:1.65}
+
+.card-footer-strip{
+  margin-top:18px;padding-top:14px;
+  border-top:1.5px dashed var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.card-cta{
+  font-size:0.8rem;font-weight:700;color:var(--primary);
+  display:flex;align-items:center;gap:5px;
+  transition:gap 0.2s;
+}
+.landing-card:hover .card-cta{gap:9px}
+.card-features{display:flex;gap:6px;flex-wrap:wrap}
+.card-feat-tag{
+  font-size:0.68rem;font-weight:600;
+  background:var(--surface3);color:var(--primary-dark);
+  padding:2px 7px;border-radius:4px;
+}
+
+/* STATS PREVIEW */
+.stats-preview{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius);padding:20px 24px;
+  box-shadow:var(--shadow);margin-bottom:8px;
+}
+.stats-preview-title{
+  font-size:0.78rem;font-weight:700;color:var(--text3);
+  text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px;
+}
+.stats-preview-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:12px;
+}
+@media(max-width:480px){.stats-preview-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-pill{
+  background:var(--surface2);border:1.5px solid var(--border);
+  border-radius:10px;padding:12px 10px;text-align:center;
+}
+.stat-pill-num{
+  font-family:'Kanit',sans-serif;font-size:1.6rem;font-weight:700;
+  color:var(--primary);line-height:1;margin-bottom:4px;
+}
+.stat-pill-label{font-size:0.72rem;color:var(--text3)}
+
+/* SECTION */
+.section{display:none}
+.section.active{display:block}
+.section-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:22px;flex-wrap:wrap;gap:10px;
+}
+.section-title{
+  font-family:'Kanit',sans-serif;font-size:1.2rem;font-weight:700;
+  color:var(--primary-dark);display:flex;align-items:center;gap:9px;
+}
+.back-btn{
+  background:var(--surface3);border:1.5px solid var(--border);
+  color:var(--primary);padding:7px 16px;border-radius:8px;cursor:pointer;
+  font-family:'Sarabun',sans-serif;font-size:0.83rem;font-weight:600;
+  transition:background 0.18s;display:flex;align-items:center;gap:6px;
+}
+.back-btn:hover{background:var(--border)}
+
+/* TEACHER GRID */
+.teacher-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
+.teacher-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:18px 14px;cursor:pointer;
+  transition:all 0.2s;text-align:center;box-shadow:var(--shadow);
+}
+.teacher-card:hover{
+  border-color:var(--primary);background:var(--surface2);
+  transform:translateY(-2px);box-shadow:var(--shadow-lg);
+}
+.teacher-avatar{
+  width:50px;height:50px;
+  background:linear-gradient(135deg,var(--primary),var(--accent));
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  color:#fff;font-family:'Kanit',sans-serif;font-size:1rem;font-weight:700;
+  margin:0 auto 10px;
+}
+.teacher-name{font-size:0.9rem;font-weight:600;color:var(--text)}
+.teacher-count{font-size:0.75rem;color:var(--text3);margin-top:4px}
+.teacher-progress{
+  height:4px;background:var(--surface3);border-radius:2px;
+  margin-top:8px;overflow:hidden;
+}
+.teacher-progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));
+  border-radius:2px;transition:width 0.5s;
+}
+
+/* PROJECT LIST */
+.project-list{display:flex;flex-direction:column;gap:12px}
+.project-row{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px 18px;
+  box-shadow:var(--shadow);transition:border-color 0.2s;
+}
+.project-row:hover{border-color:var(--primary-light)}
+.project-row-header{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  gap:10px;cursor:pointer;
+}
+.project-name{font-size:0.92rem;font-weight:600;color:var(--text);flex:1;line-height:1.5}
+.project-badges{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.badge{font-size:0.68rem;font-weight:700;padding:3px 9px;border-radius:20px}
+.badge-done{background:#d1fae5;color:#065f46}
+.badge-pending{background:#fef3c7;color:#92400e}
+.project-btn{
+  background:var(--surface3);border:1px solid var(--border);
+  color:var(--primary);padding:5px 10px;border-radius:6px;cursor:pointer;
+  font-family:'Sarabun',sans-serif;font-size:0.77rem;font-weight:600;
+  transition:background 0.18s;display:inline-flex;align-items:center;gap:4px;
+  white-space:nowrap;
+}
+.project-btn:hover{background:var(--border)}
+.project-btn.primary-btn{background:var(--primary);color:#fff;border-color:var(--primary)}
+.project-btn.primary-btn:hover{background:var(--primary-dark)}
+
+/* DETAIL */
+.project-detail{margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);display:none}
+.project-detail.open{display:block}
+.detail-section{
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:var(--radius-sm);padding:14px;margin-bottom:12px;
+}
+.detail-label{
+  font-size:0.76rem;font-weight:700;color:var(--primary);
+  text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;
+}
+.problem-textarea{
+  width:100%;min-height:88px;border:1.5px solid var(--border);
+  border-radius:8px;padding:10px 12px;font-family:'Sarabun',sans-serif;
+  font-size:0.87rem;color:var(--text);background:#fff;resize:vertical;
+  transition:border-color 0.2s;line-height:1.7;
+}
+.problem-textarea:focus{outline:none;border-color:var(--primary)}
+.prompt-box{
+  background:#1e1b4b;color:#c4b5fd;border-radius:10px;padding:14px;
+  font-family:'Courier New',monospace;font-size:0.78rem;line-height:1.7;
+  white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;
+  margin-top:10px;display:none;
+}
+.prompt-box.visible{display:block}
+.ai-links{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ai-link-btn{
+  display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+  border-radius:8px;font-family:'Sarabun',sans-serif;font-size:0.8rem;font-weight:600;
+  text-decoration:none;transition:opacity 0.2s,transform 0.15s;border:none;cursor:pointer;
+}
+.ai-link-btn:hover{opacity:0.85;transform:translateY(-1px)}
+.btn-gemini{background:#4285f4;color:#fff}
+.btn-chatgpt{background:#10a37f;color:#fff}
+.btn-claude{background:#c77738;color:#fff}
+
+/* FORM */
+.form-group{margin-bottom:13px}
+.form-label{display:block;font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin-bottom:5px}
+.form-select{
+  width:100%;padding:9px 32px 9px 12px;border:1.5px solid var(--border);
+  border-radius:8px;font-family:'Sarabun',sans-serif;font-size:0.87rem;
+  color:var(--text);background:#fff;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%236c3fc5' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  cursor:pointer;transition:border-color 0.2s;
+}
+.form-select:focus{outline:none;border-color:var(--primary)}
+.goal-box{
+  background:#fff;border:1.5px solid var(--border);border-radius:8px;
+  padding:10px 12px;font-size:0.84rem;color:var(--text);
+  min-height:40px;line-height:1.6;
+}
+.save-btn{
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff;border:none;padding:11px 26px;border-radius:10px;
+  font-family:'Sarabun',sans-serif;font-size:0.93rem;font-weight:700;
+  cursor:pointer;transition:opacity 0.2s,transform 0.15s;
+  display:inline-flex;align-items:center;gap:7px;
+  box-shadow:0 4px 14px rgba(108,63,197,0.32);
+}
+.save-btn:hover{opacity:0.9;transform:translateY(-1px)}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:14px;margin-bottom:24px}
+.stat-card{
+  background:var(--surface);border:1.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:16px;text-align:center;box-shadow:var(--shadow);
+}
+.stat-num{font-family:'Kanit',sans-serif;font-size:2rem;font-weight:700;color:var(--primary)}
+.stat-label{font-size:0.78rem;color:var(--text3);margin-top:3px}
+.bar-section{margin-bottom:22px}
+.bar-title{font-size:0.83rem;font-weight:700;color:var(--primary-dark);margin-bottom:10px}
+.bar-item{margin-bottom:9px}
+.bar-meta{display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text3);margin-bottom:4px}
+.bar-track{height:8px;background:var(--surface3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:4px;transition:width 0.6s}
+
+/* MODAL */
+.modal-overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(30,27,75,0.5);z-index:1000;
+  align-items:center;justify-content:center;padding:16px;
+}
+.modal-overlay.open{display:flex}
+.modal{
+  background:#fff;border-radius:var(--radius);max-width:600px;width:100%;
+  max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg);
+  padding:26px;position:relative;
+}
+.modal-title{
+  font-family:'Kanit',sans-serif;font-size:1.05rem;font-weight:700;
+  color:var(--primary-dark);margin-bottom:18px;display:flex;align-items:center;gap:8px;
+}
+.modal-close{
+  position:absolute;top:14px;right:14px;background:var(--surface3);
+  border:none;color:var(--text3);width:28px;height:28px;border-radius:50%;
+  cursor:pointer;font-size:0.9rem;display:flex;align-items:center;justify-content:center;
+}
+.modal-close:hover{background:var(--border);color:var(--text)}
+.divider{height:1px;background:var(--border);margin:18px 0}
+.announce-banner{
+  background:linear-gradient(135deg,#fef3c7,#fde68a);
+  border:1.5px solid #fbbf24;border-radius:var(--radius-sm);
+  padding:12px 16px;margin-bottom:18px;font-size:0.86rem;color:#92400e;
+  line-height:1.6;display:none;
+}
+.announce-banner.show{display:block}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <div class="navbar-logo">
+      <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" alt="Logo" onerror="this.style.display='none';this.parentElement.innerHTML='🎓'">
+    </div>
+    <div class="navbar-brand-text">
+      <span class="sub">โรงเรียนกระดุมทองวิทยา · อบจ.ศรีสะเกษ</span>
+      <span class="main">ระบบจัดโครงการลงยุทธศาสตร์</span>
+    </div>
+  </div>
+  <div class="navbar-actions">
+    <button class="nav-btn" onclick="showStats()">📊 สถิติ</button>
+    <button class="nav-btn" onclick="openSettingsModal()">⚙️ ตั้งค่า</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-school-logo">
+      <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" alt="Logo KTW"
+           onerror="this.style.display='none';this.parentElement.innerHTML='🏫'">
+    </div>
+    <div class="hero-subtitle">โรงเรียนกระดุมทองวิทยา · สังกัด อบจ.ศรีสะเกษ</div>
+    <h1 class="hero-title">ระบบจัดโครงการลงยุทธศาสตร์<br>กลยุทธ์ และเป้าประสงค์</h1>
+    <div class="hero-desc">Prompt Generator + บันทึกข้อมูล สำหรับการจำแนกโครงการ</div>
+    <div class="hero-credit">พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง</div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="announce-banner" id="announceBanner"></div>
+
+  <!-- LANDING -->
+  <div id="landingSection">
+    <div class="landing-grid">
+
+      <!-- Card 1 -->
+      <div class="landing-card" onclick="showSection('aiSection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#4c1d95,#8b5cf6)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap purple">🤖</div>
+          <div class="card-chip">ส่วนที่ 1 · AI Assistant</div>
+          <div class="card-title">ให้ AI ช่วยวิเคราะห์<br>จากชื่อโครงการ</div>
+          <div class="card-desc">เลือกครู → เลือกโครงการ → กรอกปัญหา/ความต้องการ/นโยบาย แล้วรับ Prompt ที่พร้อมส่งให้ AI วิเคราะห์ทันที</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">✨ Auto Prompt</span>
+              <span class="card-feat-tag">📋 Copy</span>
+              <span class="card-feat-tag">🔗 AI Links</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="landing-card" onclick="showSection('manualSection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#5b21b6,#c4b5fd)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap violet">📋</div>
+          <div class="card-chip">ส่วนที่ 2 · Manual Input</div>
+          <div class="card-title">ระบุยุทธศาสตร์<br>กลยุทธ์ และเป้าประสงค์</div>
+          <div class="card-desc">เลือกครู → เลือกโครงการ → กำหนดยุทธศาสตร์ กลยุทธ์ เป้าประสงค์ด้วยตนเอง แล้วบันทึกลงฐานข้อมูล Firestore</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">💾 Firestore</span>
+              <span class="card-feat-tag">✏️ Edit</span>
+              <span class="card-feat-tag">📤 Export</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Stats Preview -->
+    <div class="stats-preview">
+      <div class="stats-preview-title">📊 สรุปภาพรวม</div>
+      <div class="stats-preview-grid" id="landingStats"></div>
+    </div>
+  </div>
+
+  <!-- SECTION 1: AI -->
+  <div id="aiSection" class="section">
+    <div class="section-header">
+      <div class="section-title">🤖 ให้ AI ช่วยวิเคราะห์โครงการ</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+    <div id="aiBulkBar" style="margin-bottom:18px;background:linear-gradient(135deg,#ede9fe,#f8f5ff);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:0.88rem;font-weight:700;color:var(--primary-dark)">⚡ วิเคราะห์ทุกโครงการพร้อมกัน</div>
+        <div style="font-size:0.78rem;color:var(--text3);margin-top:2px">รวม Prompt ของทุกโครงการที่กรอกปัญหาแล้ว เพื่อให้ AI วิเคราะห์ครั้งเดียว</div>
+      </div>
+      <button class="save-btn" style="padding:9px 20px;font-size:0.85rem" onclick="copyAllPrompt()">📋 คัดลอก Prompt รวมทุกโครงการ</button>
+    </div>
+    <div id="aiTeacherGrid" class="teacher-grid"></div>
+    <div id="aiProjectPanel" style="display:none;margin-top:22px">
+      <div class="section-header">
+        <div class="section-title" id="aiTeacherTitle">📚 โครงการของ —</div>
+        <button class="back-btn" onclick="backToTeacher('ai')">← เลือกครูใหม่</button>
+      </div>
+      <div class="project-list" id="aiProjectList"></div>
+    </div>
+  </div>
+
+  <!-- SECTION 2: MANUAL -->
+  <div id="manualSection" class="section">
+    <div class="section-header">
+      <div class="section-title">📋 ระบุยุทธศาสตร์และบันทึกข้อมูล</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+    <div id="manualTeacherGrid" class="teacher-grid"></div>
+    <div id="manualProjectPanel" style="display:none;margin-top:22px">
+      <div class="section-header">
+        <div class="section-title" id="manualTeacherTitle">📚 โครงการของ —</div>
+        <button class="back-btn" onclick="backToTeacher('manual')">← เลือกครูใหม่</button>
+      </div>
+      <div class="project-list" id="manualProjectList"></div>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div id="statsSection" class="section">
+    <div class="section-header">
+      <div class="section-title">📊 สถิติสำคัญ</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
+    <div class="modal-title">⚙️ การตั้งค่า</div>
+
+    <div class="form-group">
+      <div class="detail-label">1. นำเข้าชื่อโครงการและผู้รับผิดชอบ (CSV / Excel)</div>
+      <input type="file" id="importFile" accept=".csv,.xlsx,.xls"
+        style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
+      <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
+        รูปแบบ: คอลัมน์ A = ชื่อโครงการ, คอลัมน์ B = ชื่อครูผู้รับผิดชอบ<br>
+        (ระบบจะข้ามแถวหัวตาราง และแถวที่ข้อมูลไม่สมบูรณ์โดยอัตโนมัติ)
+      </div>
+      <button class="project-btn primary-btn" style="margin-top:9px" onclick="importProjects()">📥 นำเข้าข้อมูล</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="form-group">
+      <div class="detail-label">2. ส่งออกข้อมูลยุทธศาสตร์เป็น .xlsx</div>
+      <button class="project-btn primary-btn" onclick="exportExcel()">📤 ส่งออก Excel</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="form-group">
+      <div class="detail-label">3. จัดการลิงก์ AI (เพิ่ม/แก้ไข)</div>
+      <div id="aiLinksEditor"></div>
+      <button class="project-btn" style="margin-top:7px" onclick="addAiLink()">+ เพิ่มลิงก์</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="form-group">
+      <div class="detail-label">4. ประกาศแสดงเมื่อเปิดเว็บ</div>
+      <textarea id="announceText" class="problem-textarea" placeholder="พิมพ์ข้อความประกาศที่นี่..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="project-btn primary-btn" onclick="saveAnnounce()">💾 บันทึกประกาศ</button>
+        <button class="project-btn" onclick="clearAnnounce()">🗑 ล้างประกาศ</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="project-btn" style="color:var(--danger);border-color:#fca5a5"
+        onclick="resetToDefault()">🔄 รีเซ็ตรายการโครงการ</button>
+      <button class="project-btn" style="color:#fff;background:var(--danger);border-color:var(--danger);font-weight:700"
+        onclick="clearAllData()">🗑️ ล้างข้อมูลทั้งหมด (Firestore)</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STRATEGIES DATA
+// ═══════════════════════════════════════════════
+const STRATEGIES = [
+  { id:1, name:"การพัฒนาระบบบริหารคุณภาพ มาตรฐานการศึกษา และการวางแผนสถานศึกษา",
+    goal:"สถานศึกษามีระบบบริหารจัดการคุณภาพและมาตรฐานการศึกษาที่มีประสิทธิภาพ โปร่งใส และสามารถรายงานผลการดำเนินงานได้อย่างเป็นระบบ",
+    tactics:["1.1 พัฒนาระบบบริหารจัดการคุณภาพและมาตรฐานการศึกษาของสถานศึกษา","1.2 ยกระดับระบบงานทะเบียน วัดผล และรายงานการประเมินตนเอง (SAR)","1.3 เสริมสร้างระบบนิเทศการศึกษาและการควบคุมภายในสถานศึกษา"]},
+  { id:2, name:"การพัฒนาหลักสูตรและการยกระดับผลสัมฤทธิ์ทางการเรียนของผู้เรียน",
+    goal:"ผู้เรียนมีผลสัมฤทธิ์ทางการเรียนสูงขึ้น มีสมรรถนะสำคัญตามหลักสูตร และมีทักษะการคิดวิเคราะห์ การสื่อสาร และการแก้ปัญหาได้อย่างมีประสิทธิผล",
+    tactics:["2.1 ทบทวนและปรับปรุงหลักสูตรสถานศึกษาให้เน้นสมรรถนะและเชื่อมโยงวิถีชีวิตจริง","2.2 ยกระดับผลสัมฤทธิ์กลุ่มสาระหลักและผลการทดสอบระดับชาติ (O-NET)"]},
+  { id:3, name:"การพัฒนาการจัดการเรียนรู้เชิงรุกและการพัฒนาศักยภาพครูและบุคลากร",
+    goal:"ครูและบุคลากรมีสมรรถนะการจัดการเรียนรู้เชิงรุกและการพัฒนาวิชาชีพอย่างต่อเนื่อง สามารถจัดการเรียนการสอนได้อย่างมีคุณภาพ",
+    tactics:["3.1 ส่งเสริมการจัดการเรียนรู้แบบ Active Learning ในทุกกลุ่มสาระการเรียนรู้","3.2 พัฒนาสมรรถนะครูและบุคลากรด้วยกิจกรรมชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC)"]},
+  { id:4, name:"การจัดหาสื่อ วัสดุ อุปกรณ์ ครุภัณฑ์ และการพัฒนาระบบเทคโนโลยีสารสนเทศ",
+    goal:"สถานศึกษามีสื่อ วัสดุ อุปกรณ์ ครุภัณฑ์ และระบบเทคโนโลยีสารสนเทศที่ทันสมัย เพียงพอ และพร้อมสนับสนุนการจัดการเรียนรู้ในยุคดิจิทัล",
+    tactics:["4.1 จัดหาสื่อ วัสดุ อุปกรณ์ ครุภัณฑ์ และระบบเทคโนโลยีสารสนเทศที่ทันสมัยและเพียงพอ"]},
+  { id:5, name:"การพัฒนาทักษะชีวิต คุณธรรม จริยธรรม ระเบียบวินัย กิจกรรมพัฒนาผู้เรียน และทักษะกีฬา-ดนตรี",
+    goal:"ผู้เรียนมีคุณธรรม จริยธรรม ระเบียบวินัย ทักษะชีวิต และได้รับการพัฒนาความสามารถพิเศษด้านกีฬา ดนตรี และศิลปะอย่างเต็มศักยภาพ",
+    tactics:["5.1 ปลูกฝังคุณธรรม จริยธรรม ระเบียบวินัย และคุณลักษณะอันพึงประสงค์ของผู้เรียน","5.2 แก้ไขปัญหาพฤติกรรมวัยรุ่น","5.3 เปิดโอกาสให้ผู้เรียนค้นพบและพัฒนาความสามารถพิเศษด้านกีฬา ดนตรี และศิลปะ"]},
+  { id:6, name:"การพัฒนาทักษะอาชีพ เศรษฐกิจพอเพียง การแนะแนวการศึกษา และการเตรียมความพร้อมสู่อนาคต",
+    goal:"ผู้เรียนมีทักษะอาชีพ น้อมนำหลักปรัชญาเศรษฐกิจพอเพียง และสามารถวางแผนการศึกษาต่อและการประกอบอาชีพได้ตามความถนัดและความสนใจของตนเอง",
+    tactics:["6.1 บูรณาการหลักปรัชญาเศรษฐกิจพอเพียงและทักษะอาชีพตามแนวคิด School Concept","6.2 ส่งเสริมการแนะแนวการศึกษาต่อและการวางแผนชีวิตตามความถนัดของผู้เรียน"]},
+  { id:7, name:"การพัฒนาสภาพแวดล้อม อาคารสถานที่ การมีส่วนร่วมของชุมชน และการสนับสนุนสวัสดิการผู้เรียน",
+    goal:"สถานศึกษามีสภาพแวดล้อมและอาคารสถานที่ที่ปลอดภัย เอื้อต่อการเรียนรู้ ชุมชนและภาคีเครือข่ายมีส่วนร่วมในการพัฒนา และผู้เรียนได้รับการสนับสนุนสวัสดิการอย่างทั่วถึง",
+    tactics:["7.1 ซ่อมบำรุงและพัฒนาอาคารสถานที่ สิ่งปลูกสร้าง และสภาพแวดล้อมให้ปลอดภัยและเอื้อต่อการเรียนรู้","7.2 ส่งเสริมการมีส่วนร่วมของชุมชน ภาคีเครือข่าย และสนับสนุนสวัสดิการผู้เรียน"]}
+];
+
+// ═══════════════════════════════════════════════
+// DEFAULT PROJECTS (from template Excel)
+// ═══════════════════════════════════════════════
+const DEFAULT_PROJECTS_RAW = [
+  ["โครงการปรับปรุง ทบทวน จัดทำมาตรฐานการศึกษา ค่าเป้าหมายของสถานศึกษา และรายงานการประเมินตนเองของสถานศึกษา (SAR)","ครูสุพัฒตา"],
+  ["โครงการพัฒนาระบบงานทะเบียน วัดผลและประเมินการศึกษา ให้มีประสิทธิภาพตามระเบียบกระทรวงศึกษาธิการ","ครูยุพา"],
+  ["โครงการอบรมเชิงปฏิบัติการเพื่อปรับปรุง ทบทวนหลักสูตรสถานศึกษา","ครูสุพัฒตา"],
+  ["โครงการปฐมนิเทศนักเรียนใหม่","ครูยุพา"],
+  ["โครงการพิธีมอบประกาศนียบัตรสำหรับผู้เรียนที่สำเร็จการศึกษาตามหลักสูตรสถานศึกษา","ครูนนทพัทธ์"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน การทัศนศึกษาแหล่งเรียนรู้นอกสถานศึกษา","ครูอาจหาญ"],
+  ["โครงการจัดการเรียนรู้และพัฒนาทักษะกระบวนการคิดคำนวณ กลุ่มสาระการเรียนรู้คณิตศาสตร์","ครูสุพัฒตา"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียนลูกเสือ-เนตรนารี","ครูไกรสร"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน นักศึกษาวิชาทหาร","ครูเดชา"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน กีฬาภายในสถานศึกษา","ครูอาจหาญ"],
+  ["โครงการขับเคลื่อนนวัตกรรมการศึกษา ศึกษาดูงาน อบรมเชิงปฏิบัติการพัฒนาศักยภาพครู","ครูสุพัฒตา"],
+  ["โครงการขับเคลื่อนนวัตกรรมการศึกษา จัดหาสื่อ วัสดุ อุปกรณ์ ครุภัณฑ์ ปรับปรุงพื้นที่การเรียนรู้","ครูสุพัฒตา"],
+  ["โครงการจัดการเรียนรู้ กลุ่มสาระการเรียนรู้การงานอาชีพ ระดับมัธยมศึกษา","ครูณิชารีย์"],
+  ["โครงการจัดการเรียนรู้ กลุ่มสาระการเรียนรู้สังคมศึกษาศาสนาและวัฒนธรรม","ครูวิทยา"],
+  ["โครงการจัดการเรียนรู้ กลุ่มสาระฯสุขศึกษาและพลศึกษา","ครูอาจหาญ"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน ทักษะอาชีพ ระดับชั้นมัธยมศึกษาตอนปลาย","ครูสุพัฒตา"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน การบริหารตามหลักปรัชญาของเศรษฐกิจพอเพียง ศาสตร์พระราชาสู่หนองกระดันคันแทนาโมเดล","ครูสุพัฒตา"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน ด้านการแนะแนว การศึกษาต่อและเลือกอาชีพ","ครูยุพา"],
+  ["โครงการ Merry Christmas and Happy New Year","ครูวิไลจิตร"],
+  ["โครงการวันวิทยาศาสตร์บูรณาการรักษ์ภาษาไทย","ครูนนทพัทธ์"],
+  ["โครงการส่งเสริมความเป็นเลิศทางด้านวิชาการ","ครูสุพัฒตา"],
+  ["โครงการส่งเสริมการแข่งขันกีฬาภายนอก","ครูอาจหาญ"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน คิด เขียน อ่าน ผ่านวรรณกรรม","ครูนนทพัทธ์"],
+  ["โครงการเปิดบ้านการเรียนรู้ ก.ท.ว.","ครูยุพา"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียน ส่งเสริมทักษะเตรียมความพร้อมด้านกีฬา","ครูอาจหาญ"],
+  ["โครงการจัดการเรียนรู้ กลุ่มสาระการเรียนรู้ภาษาไทย สนุกสนานผ่านภาษา","ครูนนทพัทธ์"],
+  ["โครงการปรับพฤติกรรมอันไม่พึงประสงค์ของผู้เรียน","ครูเดชา"],
+  ["โครงการส่งเสริมประชาธิปไตยในโรงเรียน สภานักเรียน","ครูกานต์มณี"],
+  ["โครงการวันไหว้ครู","ครูกานต์มณี"],
+  ["โครงการกิจกรรมพัฒนาผู้เรียนฝึกอบรมรู้เท่าทันปัญหาวัยรุ่น","ครูเดชา"],
+  ["โครงการไปราชการ","ครูวิทยา"],
+  ["โครงการจัดซื้อวัสดุอุปกรณ์เพื่อพัฒนาสื่อ นวัตกรรมเทคโนโลยี","ครูนนทพัทธ์"],
+  ["โครงการพัฒนาระบบเทคโนโลยีสารสนเทศและการสื่อสารระบบอินเตอร์เน็ต","ครูณิชารีย์"],
+  ["โครงการอินเทอร์เน็ตโรงเรียน","ครูณิชารีย์"],
+  ["โครงการจัดซื้อหนังสือเรียน","ครูนนทพัทธ์"],
+  ["โครงการพัฒนาแหล่งเรียนรู้และนวัตกรรมเพื่อเสริมสร้างประสบการณ์เรียนรู้ในศตวรรษที่ 21","วิชาการ"],
+  ["โครงการจัดซื้อวัสดุ อุปกรณ์ และครุภัณฑ์ทางวิทยาศาสตร์","ครูกานต์มณี"],
+  ["โครงการซื้อเครื่องคอมพิวเตอร์พร้อมอุปกรณ์","ครูณิชารีย์"],
+  ["โครงการสนับสนุนค่าเครื่องแบบนักเรียน","ครูณิชารีย์"],
+  ["โครงการสนับสนุนค่าอุปกรณ์การเรียน","ครูณิชารีย์"],
+  ["โครงการสนับสนุนค่าปัจจัยพื้นฐานสำหรับนักเรียนยากจน","ครูณิชารีย์"],
+  ["โครงการจัดหา ปรับปรุง ซ่อมแซมและบำรุงรักษาวัสดุ ครุภัณฑ์ สำนักงาน อาคารสถานที่กรณีที่มีความจำเป็นเร่งด่วน","ครูไกรสร"],
+  ["โครงการจัดซื้อวัสดุและอุปกรณ์ ครุภัณฑ์สำนักงานเพื่อสนับสนุนการบริหารงานอย่างมีคุณภาพ","ครูรัตนา"],
+  ["โครงการส่งเสริมทุนการศึกษานักเรียน","ครูยุพา"],
+  ["โครงการจ่ายค่าไฟฟ้า","ครูณิชารีย์"],
+  ["โครงการบำรุงรักษาดูแลรถยนต์และยานพาหนะ","ครูไกรสร"],
+  ["โครงการจัดซื้อน้ำมันเชื้อเพลิงและน้ำมันหล่อลื่น","ครูไกรสร"],
+  ["โครงการจ้างเหมาบริการ รถ รับ-ส่งนักเรียน","ครูไกรสร"],
+  ["โครงการจัดหาวัสดุ อุปกรณ์ และครุภัณฑ์ เพื่อพัฒนาสภาพแวดล้อมและแหล่งเรียนรู้ให้เอื้อต่อการจัดการเรียนรู้","ครูอาจหาญ"],
+  ["โครงการส่งเสริมสุขภาพในโรงเรียนเบื้องต้น","ครูวิไลจิตร"],
+  ["โครงการจัดซื้อโต๊ะเก้าอี้ เพื่อใช้ประกอบการจัดการเรียนการสอน","ครูรัตนา"],
+  ["โครงการพัฒนาห้องประชุมเพื่อบริการผู้เรียน","ครูวิไลจิตร"],
+  ["โครงการสนามสอบธรรมศึกษา","ครูวิทยา"],
+  ["โครงการคัดกรองและเยี่ยมบ้านนักเรียน","ครูเดชา"],
+  ["โครงการประชุมผู้ปกครองนักเรียน","ครูเดชา"],
+  ["โครงการวันสำคัญของชาติ และสถาบันพระมหากษัตริย์","ครูกานต์มณี"],
+  ["โครงการจ้างเหมาบริการตำแหน่งผู้ช่วยครูโรงเรียนกระดุมทองวิทยา","ครูสุพัฒตา"],
+  ["โครงการอบรมเชิงปฏิบัติการเพื่อพัฒนาครูและบุคลากรทางการศึกษาด้านเทคโนโลยีและนวัตกรรมการศึกษา","วิชาการ"],
+  ["โครงการห้องเรียนอัจฉริยะเพื่อการเรียนรู้ยุค AI","วิชาการ"],
+  ["โครงการปรับปรุงระบบเครือข่ายอินเตอร์เน็ตความเร็วสูงเพื่อพัฒนาและสนับสนุนการจัดการเรียนการสอนด้วย AI","วิชาการ"],
+  ["โครงการพัฒนาผลสัมฤทธิ์ทางการเรียนระดับชาติ O-NET","ครูยุพา"],
+  ["โครงการจัดซื้อเครื่องดนตรีสากล เพื่อพัฒนาทักษะทางด้านดนตรีสากล","ครูไกรสร"],
+  ["โครงการออกแนะแนว โรงเรียนเขตพื้นที่บริการ","ครูยุพา"],
+  ["โครงการจัดซื้อวัสดุอุปกรณ์และพัฒนาห้องปฏิบัติการภาษาไทย","ครูนนทพัทธ์"],
+  ["โครงการจัดการเรียนรู้ กลุ่มสาระฯภาษาต่างประเทศ","ครูวิไลจิตร"],
+  ["โครงการส่งเสริมคุณธรรมจริยธรรม","ครูเดชา"],
+  ["โครงการจัดการเรียนรู้ กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี","ครูเดชา"],
+  ["โครงการจัดทำและทบทวนแผนพัฒนาการศึกษา","ครูรัตนา"],
+  ["โครงการจ่ายค่าโทรคมนาคม","ครูณิชารีย์"],
+  ["โครงการนิเทศการศึกษา","ครูสุพัฒตา"],
+  ["โครงการส่งเสริมชุมชนแห่งการเรียนรู้ทางวิชาชีพ (PLC)","ครูสุพัฒตา"],
+  ["โครงการประเมินความพึงพอใจของผู้มีส่วนเกี่ยวข้องและการสะท้อนผลการจัดการศึกษาของสถานศึกษา","ครูสุพัฒตา"],
+  ["โครงการพัฒนางานควบคุมภายในสถานศึกษา","ครูรัตนา"],
+  ["โครงการจัดหาครุภัณฑ์และสื่อประชาสัมพันธ์เพื่อพัฒนาบริบทและการสื่อสารองค์กรของสถานศึกษา","ครูนนทพัทธ์"],
+  ["โครงการพัฒนาศักยภาพครูและบุคลากร","ครูวิทยา"]
+];
+
+function buildProjectsFromRaw(raw) {
+  const map = {};
+  raw.forEach(([proj, teacher]) => {
+    const p = String(proj||'').trim();
+    let t = String(teacher||'').trim();
+    if (!p || !t || p==='โครงการ/กิจกรรมใหม่' || p==='0' || t==='0' || p==='ชื่อโครงการ') return;
+    // normalize teacher name — add ครู prefix if missing
+    // keep as-is since some are "วิชาการ" which is a group
+    if (!map[t]) map[t] = [];
+    if (!map[t].includes(p)) map[t].push(p);
+  });
+  return Object.entries(map).map(([teacher, projects]) => ({ teacher, projects }));
+}
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let projects = JSON.parse(localStorage.getItem('ktw_projects2') || 'null') || buildProjectsFromRaw(DEFAULT_PROJECTS_RAW);
+let savedData = {};
+let aiLinks = JSON.parse(localStorage.getItem('ktw_ai_links') || 'null') || [
+  { name:"Gemini", url:"https://gemini.google.com", icon:"✨", color:"btn-gemini" },
+  { name:"ChatGPT", url:"https://chat.openai.com", icon:"💬", color:"btn-chatgpt" },
+  { name:"Claude", url:"https://claude.ai", icon:"🧠", color:"btn-claude" }
+];
+let db, fsModules;
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+document.addEventListener('dbReady', () => {
+  db = window.__db;
+  fsModules = window.__fsModules;
+  loadAllSavedData();
+});
+
+const ann = localStorage.getItem('ktw_announce');
+if (ann) { document.getElementById('announceBanner').textContent = ann; document.getElementById('announceBanner').classList.add('show'); }
+
+renderLandingStats();
+
+// ═══════════════════════════════════════════════
+// FIRESTORE
+// ═══════════════════════════════════════════════
+async function loadAllSavedData() {
+  if (!db) return;
+  try {
+    const snap = await fsModules.getDocs(fsModules.collection(db, 'assignments'));
+    snap.forEach(d => { savedData[d.id] = d.data(); });
+    renderLandingStats();
+  } catch(e) { console.warn('Firestore:', e); }
+}
+
+async function saveAssignment(key, data) {
+  if (!db) return;
+  await fsModules.setDoc(fsModules.doc(db, 'assignments', key), data, { merge: true });
+  savedData[key] = data;
+}
+
+function projectKey(teacher, project) {
+  // djb2 hash — ASCII-only key so it works as both Firestore id and DOM id (CSS-safe)
+  const str = teacher + '||' + project;
+  let h1 = 5381, h2 = 52711;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    h1 = ((h1 << 5) + h1) ^ c; h1 = h1 >>> 0;
+    h2 = ((h2 << 5) + h2) ^ c; h2 = h2 >>> 0;
+  }
+  // two hashes combined → 64-bit-ish, collision-free, pure ASCII
+  return 'p' + h1.toString(36) + h2.toString(36);
+}
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function showSection(id) {
+  document.getElementById('landingSection').style.display = 'none';
+  ['aiSection','manualSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id==='aiSection') renderTeacherGrid('ai');
+  if (id==='manualSection') renderTeacherGrid('manual');
+  if (id==='statsSection') renderStats();
+}
+
+function goBack() {
+  ['aiSection','manualSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  document.getElementById('aiProjectPanel').style.display = 'none';
+  document.getElementById('manualProjectPanel').style.display = 'none';
+  document.getElementById('landingSection').style.display = 'block';
+}
+
+function showStats() { showSection('statsSection'); }
+function backToTeacher(mode) {
+  document.getElementById(mode+'ProjectPanel').style.display = 'none';
+  document.getElementById(mode+'TeacherGrid').style.display = 'grid';
+}
+
+// ═══════════════════════════════════════════════
+// TEACHER GRID
+// ═══════════════════════════════════════════════
+function renderTeacherGrid(mode) {
+  const grid = document.getElementById(mode+'TeacherGrid');
+  grid.innerHTML = '';
+  grid.style.display = 'grid';
+  projects.forEach(t => {
+    const done = t.projects.filter(p => savedData[projectKey(t.teacher,p)]?.strategyId).length;
+    const pct = t.projects.length > 0 ? Math.round(done/t.projects.length*100) : 0;
+    const initials = t.teacher.replace(/ครู|อาจารย์/g,'').charAt(0) || t.teacher.charAt(0);
+    const card = document.createElement('div');
+    card.className = 'teacher-card';
+    card.innerHTML = `
+      <div class="teacher-avatar">${initials}</div>
+      <div class="teacher-name">${t.teacher}</div>
+      <div class="teacher-count">${done}/${t.projects.length} โครงการ</div>
+      <div class="teacher-progress"><div class="teacher-progress-fill" style="width:${pct}%"></div></div>
+    `;
+    card.onclick = () => openTeacherProjects(mode, t);
+    grid.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════
+// PROJECT LIST
+// ═══════════════════════════════════════════════
+function openTeacherProjects(mode, td) {
+  document.getElementById(mode+'TeacherGrid').style.display = 'none';
+  const panel = document.getElementById(mode+'ProjectPanel');
+  panel.style.display = 'block';
+  document.getElementById(mode+'TeacherTitle').innerHTML =
+    `📚 โครงการของ <span style="color:var(--primary)">${td.teacher}</span>`;
+  const list = document.getElementById(mode+'ProjectList');
+  list.innerHTML = '';
+
+  td.projects.forEach(project => {
+    const key = projectKey(td.teacher, project);
+    const saved = savedData[key];
+    const badge = saved?.strategyId
+      ? `<span class="badge badge-done">✓ บันทึกแล้ว</span>`
+      : `<span class="badge badge-pending">รอดำเนินการ</span>`;
+
+    const row = document.createElement('div');
+    row.className = 'project-row';
+    row.id = 'row_'+key;
+
+    if (mode==='ai') {
+      row.innerHTML = `
+        <div class="project-row-header" onclick="toggleDetail('${key}')">
+          <div class="project-name">${project}</div>
+          <div class="project-badges">
+            ${badge}
+            <button class="project-btn" onclick="event.stopPropagation();toggleDetail('${key}')">✏️ กรอก</button>
+          </div>
+        </div>
+        <div class="project-detail" id="detail_${key}">
+          <div class="detail-section">
+            <div class="detail-label">ปัญหา / ความต้องการ / นโยบาย</div>
+            <textarea class="problem-textarea" id="prob_${key}"
+              placeholder="พิมพ์หรือวางข้อความปัญหา/ความต้องการ/นโยบายของโครงการนี้...">${saved?.problem||''}</textarea>
+            <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+              <button class="project-btn primary-btn ai-gen-btn" data-key="${key}">✨ Generate Prompt</button>
+              <button class="project-btn" onclick="copyPrompt('${key}')">📋 คัดลอก Prompt</button>
+            </div>
+            <pre class="prompt-box" id="prompt_${key}"></pre>
+            <div class="ai-links" id="ailinks_${key}"></div>
+          </div>
+        </div>`;
+    } else {
+      const s = saved;
+      row.innerHTML = `
+        <div class="project-row-header" onclick="toggleDetail('${key}')">
+          <div class="project-name">${project}</div>
+          <div class="project-badges">
+            ${badge}
+            <button class="project-btn" onclick="event.stopPropagation();toggleDetail('${key}')">📝 ระบุ/แก้ไข</button>
+          </div>
+        </div>
+        <div class="project-detail" id="detail_${key}">
+          <div class="detail-section">
+            <div class="detail-label">กำหนดยุทธศาสตร์ กลยุทธ์ และเป้าประสงค์</div>
+            <div class="form-group">
+              <label class="form-label">ยุทธศาสตร์ที่</label>
+              <select class="form-select" id="strat_${key}" onchange="updateTactics('${key}')">
+                <option value="">— เลือกยุทธศาสตร์ —</option>
+                ${STRATEGIES.map(st=>`<option value="${st.id}"${s?.strategyId==st.id?' selected':''}>${st.id}. ${st.name}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">กลยุทธ์ที่</label>
+              <select class="form-select" id="tactic_${key}">
+                <option value="">— เลือกกลยุทธ์ —</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">เป้าประสงค์</label>
+              <div class="goal-box" id="goal_${key}">
+                ${s?.goal || '<span style="color:var(--text3)">จะแสดงหลังเลือกยุทธศาสตร์</span>'}
+              </div>
+            </div>
+            <button class="save-btn manual-save-btn" data-key="${key}">
+              💾 บันทึกข้อมูล
+            </button>
+          </div>
+        </div>`;
+    }
+    list.appendChild(row);
+    if (mode==='ai') {
+      // bind generate prompt button with closure
+      const genBtn = row.querySelector('.ai-gen-btn');
+      if (genBtn) {
+        const _t = td.teacher, _p = project, _k = key;
+        genBtn.addEventListener('click', () => generatePrompt(_t, _p, _k));
+      }
+    }
+    if (mode==='manual') {
+      // bind save button with closure — avoids broken inline onclick with Thai/special chars
+      const saveBtn = row.querySelector('.manual-save-btn');
+      if (saveBtn) {
+        const _t = td.teacher, _p = project, _k = key;
+        saveBtn.addEventListener('click', () => saveManual(_t, _p, _k));
+      }
+      if (saved?.strategyId) updateTactics(key, saved.tacticText);
+    }
+  });
+}
+
+function toggleDetail(key) {
+  const d = document.getElementById('detail_'+key);
+  d.classList.toggle('open');
+  const al = document.getElementById('ailinks_'+key);
+  if (al && d.classList.contains('open')) {
+    al.innerHTML = aiLinks.map(l=>`<a href="${l.url}" target="_blank" class="ai-link-btn ${l.color}">${l.icon} ${l.name}</a>`).join('');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// TACTICS DROPDOWN
+// ═══════════════════════════════════════════════
+function updateTactics(key, preselect=null) {
+  const stratId = parseInt(document.getElementById('strat_'+key).value);
+  const strat = STRATEGIES.find(s=>s.id===stratId);
+  const tacticSel = document.getElementById('tactic_'+key);
+  const goalBox = document.getElementById('goal_'+key);
+  if (!strat) {
+    tacticSel.innerHTML = '<option value="">— เลือกกลยุทธ์ —</option>';
+    goalBox.innerHTML = '<span style="color:var(--text3)">จะแสดงหลังเลือกยุทธศาสตร์</span>';
+    return;
+  }
+  tacticSel.innerHTML = '<option value="">— เลือกกลยุทธ์ —</option>' +
+    strat.tactics.map(t=>`<option value="${ea(t)}"${preselect===t?' selected':''}>${t}</option>`).join('');
+  goalBox.innerHTML = `<strong>เป้าประสงค์ที่ ${strat.id}:</strong> ${strat.goal}`;
+}
+
+// ═══════════════════════════════════════════════
+// PROMPT GENERATOR
+// ═══════════════════════════════════════════════
+function generatePrompt(teacher, project, key) {
+  const problem = (document.getElementById('prob_'+key)?.value||'').trim();
+  const stratText = STRATEGIES.map(st=>`
+── ยุทธศาสตร์ที่ ${st.id} ──
+ชื่อ : ${st.name}
+เป้าประสงค์ที่ ${st.id} : ${st.goal}
+${st.tactics.map(t=>`  กลยุทธ์ที่ ${t}`).join('\n')}`).join('\n');
+
+  const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการวางแผนและพัฒนาสถานศึกษา
+
+งานของคุณ:
+วิเคราะห์และจับคู่โครงการที่ให้มา กับยุทธศาสตร์ กลยุทธ์ และเป้าประสงค์
+ที่เหมาะสมที่สุดเพียง 1 รายการต่อระดับ โดยเลือกจากรายการที่กำหนดให้
+เท่านั้น ห้ามสร้างใหม่หรือดัดแปลงข้อความ
+
+โครงการที่ต้องการจำแนก:
+${project}
+โดย ${teacher}
+ซึ่งหลักการของโครงการนี้มุ่ง
+${problem||'(ยังไม่ได้ระบุปัญหา/ความต้องการ/นโยบาย)'}
+
+═══════════════════════════════════════════════
+ข้อมูลยุทธศาสตร์ กลยุทธ์ และเป้าประสงค์
+โรงเรียนกระดุมทองวิทยา สังกัด อบจ.ศรีสะเกษ
+═══════════════════════════════════════════════
+${stratText}
+
+═══════════════════════════════════════════════
+รูปแบบผลลัพธ์ที่ต้องการ (ใช้ภาษาไทยทางการ ห้ามย่อหรือดัดแปลงข้อความ):
+
+ชื่อโครงการ     : ${project}
+ยุทธศาสตร์ที่   : [หมายเลข] [ชื่อยุทธศาสตร์เต็ม]
+กลยุทธ์ที่      : [หมายเลข] [ชื่อกลยุทธ์เต็ม]
+เป้าประสงค์ที่  : [หมายเลข] [ข้อความเป้าประสงค์เต็ม]
+เหตุผล          : [อธิบาย 2–3 ประโยค ว่าเหตุใดโครงการนี้จึงสอดคล้องกับยุทธศาสตร์ กลยุทธ์ และเป้าประสงค์ดังกล่าว]`;
+
+  document.getElementById('prompt_'+key).textContent = prompt;
+  document.getElementById('prompt_'+key).classList.add('visible');
+  window['__prompt_'+key] = prompt;
+  if (db && problem) { const ex = savedData[key]||{}; saveAssignment(key,{...ex,teacher,project,problem}); }
+}
+
+function buildStrategyBlock() {
+  return STRATEGIES.map(st=>`
+── ยุทธศาสตร์ที่ ${st.id} ──
+ชื่อ : ${st.name}
+เป้าประสงค์ที่ ${st.id} : ${st.goal}
+${st.tactics.map(t=>`  กลยุทธ์ที่ ${t}`).join('\n')}`).join('\n');
+}
+
+function copyAllPrompt() {
+  // gather all projects that have a problem text saved (from any teacher)
+  const items = [];
+  projects.forEach(t => {
+    t.projects.forEach(p => {
+      const key = projectKey(t.teacher, p);
+      const saved = savedData[key];
+      const problem = (saved?.problem || '').trim();
+      if (problem) items.push({ teacher: t.teacher, project: p, problem });
+    });
+  });
+
+  if (items.length === 0) {
+    Swal.fire({ icon:'info', title:'ยังไม่มีข้อมูล',
+      text:'กรุณากรอก "ปัญหา/ความต้องการ/นโยบาย" ของโครงการอย่างน้อย 1 โครงการก่อน (ระบบจะรวมเฉพาะโครงการที่กรอกข้อมูลแล้ว)',
+      confirmButtonColor:'#6c3fc5' });
+    return;
+  }
+
+  const projectsBlock = items.map((it, i) => `
+โครงการที่ ${i+1}
+ชื่อโครงการ : ${it.project}
+ผู้รับผิดชอบ : ${it.teacher}
+หลักการ/ปัญหา/ความต้องการ/นโยบาย : ${it.problem}`).join('\n──────────────────────────────────────\n');
+
+  const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการวางแผนและพัฒนาสถานศึกษา
+
+งานของคุณ:
+วิเคราะห์และจับคู่โครงการที่ให้มา "ทุกโครงการ" กับยุทธศาสตร์ กลยุทธ์ และเป้าประสงค์
+ที่เหมาะสมที่สุดเพียง 1 รายการต่อระดับ ต่อ 1 โครงการ โดยเลือกจากรายการที่กำหนดให้
+เท่านั้น ห้ามสร้างใหม่หรือดัดแปลงข้อความ
+
+จำนวนโครงการที่ต้องการจำแนก : ${items.length} โครงการ
+══════════════════════════════════════════════
+รายการโครงการ
+══════════════════════════════════════════════
+${projectsBlock}
+
+══════════════════════════════════════════════
+ข้อมูลยุทธศาสตร์ กลยุทธ์ และเป้าประสงค์
+โรงเรียนกระดุมทองวิทยา สังกัด อบจ.ศรีสะเกษ
+══════════════════════════════════════════════
+${buildStrategyBlock()}
+
+══════════════════════════════════════════════
+รูปแบบผลลัพธ์ที่ต้องการ (ใช้ภาษาไทยทางการ ห้ามย่อหรือดัดแปลงข้อความ
+และให้แสดงผลลัพธ์ทุกโครงการเรียงตามลำดับ):
+
+โครงการที่ [ลำดับ]
+ชื่อโครงการ     : [ชื่อโครงการ]
+ยุทธศาสตร์ที่   : [หมายเลข] [ชื่อยุทธศาสตร์เต็ม]
+กลยุทธ์ที่      : [หมายเลข] [ชื่อกลยุทธ์เต็ม]
+เป้าประสงค์ที่  : [หมายเลข] [ข้อความเป้าประสงค์เต็ม]
+เหตุผล          : [อธิบาย 2–3 ประโยค ว่าเหตุใดโครงการนี้จึงสอดคล้องกับยุทธศาสตร์ กลยุทธ์ และเป้าประสงค์ดังกล่าว]`;
+
+  navigator.clipboard.writeText(prompt).then(()=>{
+    Swal.fire({
+      icon:'success', title:'คัดลอกแล้ว!',
+      html:`รวม <b>${items.length}</b> โครงการเป็น Prompt เดียว<br><span style="font-size:0.82rem;color:#6b7280">นำไปวางใน AI เพื่อวิเคราะห์พร้อมกันทั้งหมด</span>`,
+      confirmButtonColor:'#6c3fc5'
+    });
+  }).catch(()=>{
+    // fallback — show in a modal for manual copy
+    Swal.fire({
+      title:'คัดลอก Prompt รวม',
+      input:'textarea',
+      inputValue: prompt,
+      inputAttributes:{ style:'height:300px;font-size:0.78rem;font-family:monospace' },
+      confirmButtonText:'ปิด', confirmButtonColor:'#6c3fc5'
+    });
+  });
+}
+
+function copyPrompt(key) {
+  const p = window['__prompt_'+key] || document.getElementById('prompt_'+key)?.textContent;
+  if (!p) { Swal.fire({icon:'warning',title:'กรุณา Generate Prompt ก่อน',timer:1800,showConfirmButton:false}); return; }
+  navigator.clipboard.writeText(p).then(()=>{
+    Swal.fire({icon:'success',title:'คัดลอก Prompt แล้ว!',timer:1500,showConfirmButton:false,toast:true,position:'top-end'});
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SAVE MANUAL
+// ═══════════════════════════════════════════════
+async function saveManual(teacher, project, key) {
+  const stratId = parseInt(document.getElementById('strat_'+key).value);
+  const tacticText = document.getElementById('tactic_'+key).value;
+  if (!stratId) { Swal.fire({icon:'warning',title:'กรุณาเลือกยุทธศาสตร์',confirmButtonColor:'#6c3fc5'}); return; }
+  if (!tacticText) { Swal.fire({icon:'warning',title:'กรุณาเลือกกลยุทธ์',confirmButtonColor:'#6c3fc5'}); return; }
+  const strat = STRATEGIES.find(s=>s.id===stratId);
+  const payload = { teacher, project, strategyId:stratId, strategyName:strat.name, tacticText, goal:strat.goal, savedAt:new Date().toISOString() };
+  try {
+    await saveAssignment(key, payload);
+    const row = document.getElementById('row_'+key);
+    if (row) {
+      const ob = row.querySelector('.project-badges .badge');
+      if (ob) ob.outerHTML = `<span class="badge badge-done">✓ บันทึกแล้ว</span>`;
+    }
+    Swal.fire({
+      icon:'success', title:'บันทึกสำเร็จ!', confirmButtonColor:'#6c3fc5',
+      html:`<div style="font-size:0.88rem;text-align:left;line-height:2">
+        <b>ยุทธศาสตร์ที่ ${stratId}:</b> ${strat.name}<br>
+        <b>กลยุทธ์:</b> ${tacticText}<br>
+        <b>เป้าประสงค์:</b> ${strat.goal}</div>`
+    });
+    renderLandingStats();
+  } catch(e) { Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message}); }
+}
+
+// ═══════════════════════════════════════════════
+// STATS
+// ═══════════════════════════════════════════════
+function renderLandingStats() {
+  const total = projects.reduce((a,t)=>a+t.projects.length,0);
+  const done = Object.values(savedData).filter(d=>d?.strategyId).length;
+  document.getElementById('landingStats').innerHTML = `
+    <div class="stat-pill"><div class="stat-pill-num">${total}</div><div class="stat-pill-label">โครงการทั้งหมด</div></div>
+    <div class="stat-pill"><div class="stat-pill-num" style="color:var(--success)">${done}</div><div class="stat-pill-label">บันทึกแล้ว</div></div>
+    <div class="stat-pill"><div class="stat-pill-num" style="color:var(--warning)">${total-done}</div><div class="stat-pill-label">รอดำเนินการ</div></div>
+    <div class="stat-pill"><div class="stat-pill-num" style="color:var(--info,#2563eb)">${projects.length}</div><div class="stat-pill-label">ผู้รับผิดชอบ</div></div>`;
+}
+
+function renderStats() {
+  const total = projects.reduce((a,t)=>a+t.projects.length,0);
+  const done = Object.values(savedData).filter(d=>d?.strategyId).length;
+  const pct = total>0?Math.round(done/total*100):0;
+
+  // count by strategy
+  const sc = {}; STRATEGIES.forEach(s=>sc[s.id]=0);
+  Object.values(savedData).forEach(d=>{ if(d?.strategyId) sc[d.strategyId]=(sc[d.strategyId]||0)+1; });
+
+  // count by tactic (all tactics across all strategies)
+  const allTactics = {};
+  STRATEGIES.forEach(s=>s.tactics.forEach(t=>{ allTactics[t]=0; }));
+  Object.values(savedData).forEach(d=>{ if(d?.tacticText && allTactics[d.tacticText]!==undefined) allTactics[d.tacticText]++; });
+
+  // count by goal (one per strategy)
+  const gc = {}; STRATEGIES.forEach(s=>gc[s.id]=0);
+  Object.values(savedData).forEach(d=>{ if(d?.strategyId) gc[d.strategyId]=(gc[d.strategyId]||0)+1; });
+
+  // count by teacher
+  const tc = {};
+  projects.forEach(t=>{ tc[t.teacher]={ done:t.projects.filter(p=>savedData[projectKey(t.teacher,p)]?.strategyId).length, total:t.projects.length }; });
+
+  const doneCount = done; // alias for template
+
+  document.getElementById('statsContent').innerHTML = `
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">โครงการทั้งหมด</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--success)">${doneCount}</div><div class="stat-label">บันทึกแล้ว</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--warning)">${total-doneCount}</div><div class="stat-label">รอดำเนินการ</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--primary)">${pct}%</div><div class="stat-label">ความคืบหน้า</div></div>
+    </div>
+
+    <div class="bar-section">
+      <div class="bar-title">📊 การกระจายตามยุทธศาสตร์</div>
+      ${STRATEGIES.map(s=>`
+        <div class="bar-item">
+          <div class="bar-meta">
+            <span title="${s.name}">ยุทธศาสตร์ที่ ${s.id} <span style="font-size:0.72rem;color:var(--primary);opacity:0.8">${s.name.substring(0,28)}…</span></span>
+            <span><b>${sc[s.id]||0}</b> โครงการ</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${doneCount>0?Math.round((sc[s.id]||0)/doneCount*100):0}%"></div></div>
+        </div>`).join('')}
+    </div>
+
+    <div class="bar-section">
+      <div class="bar-title">🎯 การกระจายตามกลยุทธ์</div>
+      ${STRATEGIES.map(s=>s.tactics.map(t=>`
+        <div class="bar-item">
+          <div class="bar-meta">
+            <span style="max-width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${t}">กลยุทธ์ ${t.substring(0,35)}${t.length>35?'…':''}</span>
+            <span><b>${allTactics[t]||0}</b> โครงการ</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${doneCount>0?Math.round((allTactics[t]||0)/doneCount*100):0}%;background:linear-gradient(90deg,#5b21b6,#c4b5fd)"></div></div>
+        </div>`).join('')).join('')}
+    </div>
+
+    <div class="bar-section">
+      <div class="bar-title">🏆 การกระจายตามเป้าประสงค์</div>
+      ${STRATEGIES.map(s=>`
+        <div class="bar-item">
+          <div class="bar-meta">
+            <span style="max-width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+              title="${s.goal}">เป้าประสงค์ที่ ${s.id} — ${s.goal.substring(0,30)}…</span>
+            <span><b>${gc[s.id]||0}</b> โครงการ</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" style="width:${doneCount>0?Math.round((gc[s.id]||0)/doneCount*100):0}%;background:linear-gradient(90deg,#059669,#34d399)"></div></div>
+        </div>`).join('')}
+    </div>
+
+    <div class="bar-section">
+      <div class="bar-title">👨‍🏫 ความคืบหน้ารายผู้รับผิดชอบ</div>
+      ${Object.entries(tc).map(([t,c])=>`
+        <div class="bar-item">
+          <div class="bar-meta"><span>${t}</span><span>${c.done}/${c.total}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${c.total>0?Math.round(c.done/c.total*100):0}%"></div></div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════
+function openSettingsModal() {
+  renderAiLinksEditor();
+  document.getElementById('announceText').value = localStorage.getItem('ktw_announce')||'';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function renderAiLinksEditor() {
+  document.getElementById('aiLinksEditor').innerHTML = aiLinks.map((l,i)=>`
+    <div style="display:flex;gap:7px;margin-bottom:7px;align-items:center">
+      <input type="text" value="${ea(l.name)}" placeholder="ชื่อ"
+        style="flex:1;padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-family:'Sarabun',sans-serif;font-size:0.83rem"
+        oninput="aiLinks[${i}].name=this.value;saveAiLinks()">
+      <input type="text" value="${ea(l.url)}" placeholder="URL"
+        style="flex:2;padding:7px 9px;border:1.5px solid var(--border);border-radius:7px;font-family:'Sarabun',sans-serif;font-size:0.83rem"
+        oninput="aiLinks[${i}].url=this.value;saveAiLinks()">
+      <input type="text" value="${ea(l.icon)}" placeholder="🔗"
+        style="width:44px;padding:7px 6px;border:1.5px solid var(--border);border-radius:7px;font-family:'Sarabun',sans-serif;font-size:0.83rem;text-align:center"
+        oninput="aiLinks[${i}].icon=this.value;saveAiLinks()">
+      <button class="project-btn" style="color:var(--danger)" onclick="removeAiLink(${i})">✕</button>
+    </div>`).join('');
+}
+function addAiLink() { aiLinks.push({name:"AI ใหม่",url:"https://",icon:"🔗",color:"btn-gemini"}); saveAiLinks(); renderAiLinksEditor(); }
+function removeAiLink(i) { aiLinks.splice(i,1); saveAiLinks(); renderAiLinksEditor(); }
+function saveAiLinks() { localStorage.setItem('ktw_ai_links',JSON.stringify(aiLinks)); }
+
+function saveAnnounce() {
+  const t = document.getElementById('announceText').value.trim();
+  localStorage.setItem('ktw_announce',t);
+  const b = document.getElementById('announceBanner');
+  if (t) { b.textContent=t; b.classList.add('show'); } else { b.classList.remove('show'); }
+  closeModal('settingsModal');
+  Swal.fire({icon:'success',title:'บันทึกประกาศแล้ว',timer:1500,showConfirmButton:false,toast:true,position:'top-end'});
+}
+function clearAnnounce() {
+  localStorage.removeItem('ktw_announce');
+  document.getElementById('announceBanner').classList.remove('show');
+  document.getElementById('announceText').value='';
+}
+
+// ─── IMPORT (แก้ไขการ parse) ───
+function importProjects() {
+  const file = document.getElementById('importFile').files[0];
+  if (!file) { Swal.fire({icon:'warning',title:'กรุณาเลือกไฟล์',confirmButtonColor:'#6c3fc5'}); return; }
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      let rows = [];
+      if (file.name.toLowerCase().endsWith('.csv')) {
+        rows = e.target.result.split('\n').map(r => r.split(',').map(c=>c.trim().replace(/^"|"$/g,'')));
+      } else {
+        const wb = XLSX.read(e.target.result, {type:'binary'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      }
+
+      // Build map — FIXED: skip header, skip invalid rows, skip rows where both cells are "0" or empty
+      const map = {};
+      const SKIP_NAMES = new Set(['โครงการ/กิจกรรมใหม่','ชื่อโครงการ','0','โครงการ','กิจกรรม']);
+      const SKIP_TEACHERS = new Set(['ผู้รับผิดชอบ','0','']);
+
+      rows.forEach(r => {
+        if (!r || r.length < 2) return;
+        const proj = String(r[0]||'').trim();
+        const teacher = String(r[1]||'').trim();
+
+        // skip header/invalid rows
+        if (SKIP_NAMES.has(proj) || SKIP_TEACHERS.has(teacher)) return;
+        if (!proj || !teacher) return;
+        // skip rows that start with digits (like "1. โครงการ..." numbering — keep them but strip number)
+        const cleanProj = proj.replace(/^\d+\.\s*/,'').trim();
+        if (!cleanProj) return;
+
+        if (!map[teacher]) map[teacher] = [];
+        if (!map[teacher].includes(cleanProj)) map[teacher].push(cleanProj);
+      });
+
+      const count = Object.keys(map).length;
+      if (count === 0) {
+        Swal.fire({icon:'error',title:'ไม่พบข้อมูล',text:'กรุณาตรวจสอบรูปแบบไฟล์: คอลัมน์ A = ชื่อโครงการ, คอลัมน์ B = ชื่อครู'}); return;
+      }
+      projects = Object.entries(map).map(([teacher,ps])=>({teacher,projects:ps}));
+      localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+      closeModal('settingsModal');
+      renderLandingStats();
+      Swal.fire({icon:'success',title:`นำเข้าสำเร็จ!`,html:`พบ <b>${count}</b> ผู้รับผิดชอบ <b>${projects.reduce((a,t)=>a+t.projects.length,0)}</b> โครงการ`,confirmButtonColor:'#6c3fc5'});
+    } catch(err) {
+      Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:err.message});
+    }
+  };
+  if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file,'UTF-8');
+  else reader.readAsBinaryString(file);
+}
+
+// ─── EXPORT ───
+function exportExcel() {
+  const rows = [['ชื่อโครงการ','ผู้รับผิดชอบ','ยุทธศาสตร์ที่','ชื่อยุทธศาสตร์','กลยุทธ์','เป้าประสงค์','วันที่บันทึก']];
+  projects.forEach(t => {
+    t.projects.forEach(p => {
+      const d = savedData[projectKey(t.teacher,p)];
+      rows.push([p, t.teacher, d?.strategyId||'', d?.strategyName||'', d?.tacticText||'', d?.goal||'',
+        d?.savedAt ? new Date(d.savedAt).toLocaleDateString('th-TH') : '']);
+    });
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [40,15,8,40,45,60,12].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, ws, 'โครงการ');
+  XLSX.writeFile(wb, 'KTW_Projects_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+async function clearAllData() {
+  const result = await Swal.fire({
+    icon: 'warning',
+    title: '⚠️ ล้างข้อมูลทั้งหมด?',
+    html: `<div style="font-size:0.9rem;line-height:1.8;text-align:left">
+      การดำเนินการนี้จะ:<br>
+      • <b>ลบข้อมูลการบันทึกทั้งหมด</b>ออกจาก Firestore<br>
+      • รีเซ็ต badge สถานะทุกโครงการ<br>
+      <span style="color:var(--danger);font-weight:700">ไม่สามารถยกเลิกได้!</span>
+    </div>`,
+    showCancelButton: true,
+    confirmButtonColor: '#dc2626',
+    cancelButtonColor: '#6c3fc5',
+    confirmButtonText: '🗑️ ยืนยัน ล้างทั้งหมด',
+    cancelButtonText: 'ยกเลิก'
+  });
+  if (!result.isConfirmed) return;
+
+  try {
+    // delete all from Firestore
+    if (db) {
+      const snap = await fsModules.getDocs(fsModules.collection(db, 'assignments'));
+      const deletes = [];
+      snap.forEach(d => {
+        const { deleteDoc, doc } = fsModules;
+        if (deleteDoc && doc) deletes.push(deleteDoc(doc(db, 'assignments', d.id)));
+      });
+      // fallback: use setDoc with empty override per doc
+      if (deletes.length === 0) {
+        snap.forEach(d => {
+          deletes.push(fsModules.setDoc(fsModules.doc(db, 'assignments', d.id), { _deleted: true }));
+        });
+      }
+      await Promise.all(deletes);
+    }
+    // clear local state
+    savedData = {};
+    closeModal('settingsModal');
+    renderLandingStats();
+    Swal.fire({ icon:'success', title:'ล้างข้อมูลเรียบร้อย!',
+      text:'ข้อมูลการบันทึกทั้งหมดถูกลบออกแล้ว',
+      confirmButtonColor:'#6c3fc5' });
+  } catch(e) {
+    Swal.fire({ icon:'error', title:'เกิดข้อผิดพลาด', text: e.message });
+  }
+}
+
+function resetToDefault() {
+  Swal.fire({
+    icon:'warning', title:'รีเซ็ตข้อมูล?',
+    text:'จะเปลี่ยนรายการโครงการกลับเป็นค่าเริ่มต้น (ข้อมูลที่บันทึกไว้ใน Firestore จะยังคงอยู่)',
+    showCancelButton:true, confirmButtonColor:'#dc2626', cancelButtonColor:'#6c3fc5',
+    confirmButtonText:'ยืนยันรีเซ็ต', cancelButtonText:'ยกเลิก'
+  }).then(r => {
+    if (r.isConfirmed) {
+      projects = buildProjectsFromRaw(DEFAULT_PROJECTS_RAW);
+      localStorage.removeItem('ktw_projects2');
+      closeModal('settingsModal');
+      renderLandingStats();
+      Swal.fire({icon:'success',title:'รีเซ็ตเรียบร้อย',timer:1500,showConfirmButton:false});
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════
+function ej(s) { return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n'); }
+function ea(s) { return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+</script>
+</body>
+</html>
