@@ -498,20 +498,20 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       </div>
 
       <!-- Card 4 -->
-      <div class="landing-card" onclick="showSection('qaFormSection')">
+      <div class="landing-card" onclick="openTeacherFormPreview()">
         <div class="card-top-strip" style="background:linear-gradient(90deg,#0f766e,#5eead4)"></div>
         <div class="card-body">
           <div class="card-icon-wrap teal">📝</div>
-          <div class="card-chip">ส่วนที่ 4 · QA Form</div>
+          <div class="card-chip">ส่วนที่ 4 · ฟอร์มครู</div>
           <div class="card-title">ฟอร์มระบุโครงการ<br>รองรับงานประกันคุณภาพ</div>
-          <div class="card-desc">จับคู่ค่าเป้าหมาย (KPI งานประกัน) + ผู้รับผิดชอบ เข้ากับชื่อโครงการที่รองรับ พร้อมแนบลิงก์ฟอร์มให้คัดลอก แล้วบันทึกเพื่อใช้เป็นค่าเริ่มต้นในส่วนที่ 3</div>
+          <div class="card-desc">เปิดฟอร์มสำหรับครู เลือกชื่อตนเอง แล้วเลือกโครงการที่รองรับค่าเป้าหมาย (KPI งานประกัน) ที่รับผิดชอบ · ตั้งค่าค่าเป้าหมายและคัดลอกลิงก์ได้ในเมนูตั้งค่า</div>
           <div class="card-footer-strip">
             <div class="card-features">
               <span class="card-feat-tag">🎯 ค่าเป้าหมาย</span>
-              <span class="card-feat-tag">🔗 ลิงก์ฟอร์ม</span>
+              <span class="card-feat-tag">📋 เลือกโครงการ</span>
               <span class="card-feat-tag">💾 บันทึก</span>
             </div>
-            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+            <div class="card-cta">เปิดฟอร์ม <span>→</span></div>
           </div>
         </div>
       </div>
@@ -564,51 +564,6 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
   </div>
 
-  <!-- SECTION 4: QA FORM (ADMIN) -->
-  <div id="qaFormSection" class="section">
-    <div class="section-header">
-      <div class="section-title">📝 ตั้งค่าฟอร์มงานประกันคุณภาพ</div>
-      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
-    </div>
-
-    <div style="background:linear-gradient(135deg,#ecfdf5,#f0fdfa);border:1.5px solid #99f6e4;border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:16px">
-      <div style="font-size:0.86rem;font-weight:700;color:#0f766e">วิธีใช้</div>
-      <div style="font-size:0.8rem;color:var(--text3);margin-top:4px;line-height:1.65">
-        1) นำเข้า/พิมพ์ <b>ค่าเป้าหมาย (KPI งานประกัน)</b> และ <b>ผู้รับผิดชอบ</b> แล้วกด <b>บันทึก</b><br>
-        2) คัดลอก <b>ลิงก์ฟอร์มสำหรับครู</b> ด้านล่าง ส่งเข้ากลุ่มไลน์ ให้ครูแต่ละคนเปิดลิงก์ เลือกชื่อตนเอง แล้วเลือกโครงการที่รองรับค่าเป้าหมายของตน<br>
-        3) ข้อมูลที่ครูกรอกจะแสดงเป็นค่าเริ่มต้นใน modal ของส่วนที่ 3 โดยอัตโนมัติ
-      </div>
-    </div>
-
-    <!-- Share link -->
-    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow)">
-      <div class="detail-label" style="color:#0f766e">🔗 ลิงก์ฟอร์มสำหรับครู (ส่งเข้ากลุ่มไลน์)</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <input type="text" id="qaShareLink" readonly
-          style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:0.84rem;background:var(--surface2);color:var(--primary-dark)">
-        <button class="save-btn" style="padding:9px 18px;font-size:0.85rem;background:linear-gradient(135deg,#0f766e,#14b8a6);box-shadow:0 4px 14px rgba(20,184,166,0.3)" onclick="copyShareLink()">📋 คัดลอกลิงก์</button>
-        <button class="project-btn" onclick="openTeacherFormPreview()">👁 ดูตัวอย่างฟอร์ม</button>
-      </div>
-      <div style="font-size:0.72rem;color:var(--text3);margin-top:6px">* ครูต้องเปิดลิงก์นี้บนอุปกรณ์ที่เชื่อมต่ออินเทอร์เน็ต และเลือกชื่อของตนเองเพื่อกรอกข้อมูล</div>
-    </div>
-
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-      <div style="flex:1;min-width:230px">
-        <input type="file" id="qaTargetFile" accept=".csv,.xlsx,.xls"
-          style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.82rem;">
-        <div style="font-size:0.72rem;color:var(--text3);margin-top:4px">คอลัมน์ A = ค่าเป้าหมาย (KPI งานประกัน), คอลัมน์ B = ผู้รับผิดชอบ</div>
-      </div>
-      <button class="project-btn primary-btn" onclick="importQaTargets()">📥 นำเข้าค่าเป้าหมาย</button>
-    </div>
-
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
-      <button class="project-btn" onclick="addQaFormRow()">+ เพิ่มแถว</button>
-      <button class="save-btn" style="padding:9px 22px;font-size:0.88rem" onclick="saveQaForms()">💾 บันทึกค่าเป้าหมาย</button>
-    </div>
-
-    <div class="project-list" id="qaFormList"></div>
-  </div>
-
   <!-- SECTION 3: KPI -->
   <div id="kpiSection" class="section">
     <div class="section-header">
@@ -632,6 +587,52 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
     </div>
     <div id="statsContent"></div>
+  </div>
+</div>
+
+<!-- QA ADMIN MODAL (จัดการฟอร์มงานประกัน) -->
+<div class="modal-overlay" id="qaAdminModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('qaAdminModal')">✕</button>
+    <div class="modal-title">📝 ตั้งค่าฟอร์มงานประกันคุณภาพ</div>
+
+    <div style="background:linear-gradient(135deg,#ecfdf5,#f0fdfa);border:1.5px solid #99f6e4;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px">
+      <div style="font-size:0.84rem;font-weight:700;color:#0f766e">วิธีใช้</div>
+      <div style="font-size:0.79rem;color:var(--text3);margin-top:4px;line-height:1.65">
+        1) นำเข้า/พิมพ์ <b>ค่าเป้าหมาย (KPI งานประกัน)</b> และ <b>ผู้รับผิดชอบ</b> แล้วกด <b>บันทึก</b><br>
+        2) คัดลอก <b>ลิงก์ฟอร์มสำหรับครู</b> ส่งเข้ากลุ่มไลน์ ให้ครูเปิดลิงก์ เลือกชื่อตนเอง แล้วเลือกโครงการที่รองรับค่าเป้าหมายของตน<br>
+        3) ข้อมูลที่ครูกรอกจะแสดงเป็นค่าเริ่มต้นใน modal ของส่วนที่ 3 โดยอัตโนมัติ
+      </div>
+    </div>
+
+    <!-- Share link -->
+    <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px">
+      <div class="detail-label" style="color:#0f766e">🔗 ลิงก์ฟอร์มสำหรับครู (ส่งเข้ากลุ่มไลน์)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="qaShareLink" readonly
+          style="flex:1;min-width:200px;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:0.84rem;background:#fff;color:var(--primary-dark)">
+        <button class="save-btn" style="padding:9px 18px;font-size:0.85rem;background:linear-gradient(135deg,#0f766e,#14b8a6);box-shadow:0 4px 14px rgba(20,184,166,0.3)" onclick="copyShareLink()">📋 คัดลอกลิงก์</button>
+        <button class="project-btn" onclick="openTeacherFormPreview()">👁 ดูตัวอย่าง</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-top:6px">* ครูต้องเปิดลิงก์นี้บนอุปกรณ์ที่เชื่อมต่ออินเทอร์เน็ต และเลือกชื่อของตนเองเพื่อกรอกข้อมูล</div>
+    </div>
+
+    <div class="detail-label">นำเข้าค่าเป้าหมาย + ผู้รับผิดชอบ</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <div style="flex:1;min-width:200px">
+        <input type="file" id="qaTargetFile" accept=".csv,.xlsx,.xls"
+          style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.82rem;">
+        <div style="font-size:0.72rem;color:var(--text3);margin-top:4px">คอลัมน์ A = ค่าเป้าหมาย (KPI งานประกัน), คอลัมน์ B = ผู้รับผิดชอบ</div>
+      </div>
+      <button class="project-btn primary-btn" onclick="importQaTargets()">📥 นำเข้า</button>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="project-btn" onclick="addQaFormRow()">+ เพิ่มแถว</button>
+      <button class="save-btn" style="padding:9px 22px;font-size:0.88rem" onclick="saveQaForms()">💾 บันทึกค่าเป้าหมาย</button>
+    </div>
+
+    <div class="project-list" id="qaFormList"></div>
   </div>
 </div>
 
@@ -678,6 +679,12 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
   <div class="modal">
     <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
     <div class="modal-title">⚙️ การตั้งค่า</div>
+
+    <div class="form-group">
+      <div class="detail-label">ฟอร์มงานประกันคุณภาพ</div>
+      <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#0f766e,#14b8a6);box-shadow:0 4px 14px rgba(20,184,166,0.3)" onclick="openQaAdminModal()">📝 ตั้งค่าฟอร์ม / คัดลอกลิงก์สำหรับครู</button>
+    </div>
+    <div class="divider"></div>
 
     <div class="form-group">
       <div class="detail-label">1. นำเข้าชื่อโครงการและผู้รับผิดชอบ (CSV / Excel)</div>
@@ -1041,20 +1048,25 @@ function clearProjectPanels() {
 
 function showSection(id) {
   document.getElementById('landingSection').style.display = 'none';
-  ['aiSection','manualSection','kpiSection','qaFormSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById(id).classList.add('active');
   if (id==='aiSection') renderTeacherGrid('ai');
   if (id==='manualSection') renderTeacherGrid('manual');
   if (id==='kpiSection') renderTeacherGrid('kpi');
-  if (id==='qaFormSection') renderQaForm();
   if (id==='statsSection') renderStats();
 }
 
 function goBack() {
-  ['aiSection','manualSection','kpiSection','qaFormSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById('landingSection').style.display = 'block';
+}
+
+function openQaAdminModal() {
+  closeModal('settingsModal');
+  renderQaForm();
+  document.getElementById('qaAdminModal').classList.add('open');
 }
 
 function showStats() { showSection('statsSection'); }
@@ -1702,6 +1714,7 @@ function uniqueTeachersWithTargets() {
 
 function enterTeacherFormMode() {
   window.__formMode = true;
+  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
   const nav = document.querySelector('.navbar'); if (nav) nav.style.display = 'none';
   const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = 'none';
   const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = 'none';
