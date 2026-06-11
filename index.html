@@ -766,8 +766,8 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
 
     <div class="form-group">
-      <label class="form-label">2. กลุ่มเป้าหมาย</label>
-      <textarea id="kpiTarget" class="problem-textarea" style="min-height:56px" placeholder="เช่น นักเรียนระดับมัธยมศึกษาตอนต้น, ครูและบุคลากร, ผู้ปกครอง ฯลฯ"></textarea>
+      <label class="form-label">2. กลุ่มเป้าหมาย <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(แยกตามจำนวนตัวชี้วัดเพิ่มเติมในข้อ 4 — ระบุกลุ่มเป้าหมายของ KPI แต่ละตัวให้เจาะจง)</span></label>
+      <div id="kpiTargetList"></div>
     </div>
 
     <div class="form-group">
@@ -778,8 +778,8 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
 
     <div class="form-group">
-      <label class="form-label">4. จำนวน KPI ที่ต้องการ</label>
-      <select id="kpiCount" class="form-select">
+      <label class="form-label">4. จำนวน KPI ที่ต้องการ <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(ตัวชี้วัดเพิ่มเติม)</span></label>
+      <select id="kpiCount" class="form-select" onchange="renderKpiTargets()">
         <option value="1">1 ตัวชี้วัด</option>
         <option value="2">2 ตัวชี้วัด</option>
         <option value="3" selected>3 ตัวชี้วัด</option>
@@ -1397,10 +1397,14 @@ function openKpiModal(teacher, project, key) {
   document.getElementById('kpiModalProject').textContent = project;
   document.getElementById('kpiModalTeacher').textContent = teacher;
   document.getElementById('kpiProblem').value = saved.problem || '';
-  document.getElementById('kpiTarget').value = saved.targetGroup || '';
   const defQA = localStorage.getItem('ktw_qa_indicators') || '';
   document.getElementById('kpiQA').value = saved.qaIndicators || defQA;
   document.getElementById('kpiCount').value = saved.kpiCount || '3';
+  // per-KPI target groups (fallback to legacy single targetGroup)
+  let savedTargets = Array.isArray(saved.targetGroups) ? saved.targetGroups.slice() : [];
+  if (!savedTargets.length && saved.targetGroup) savedTargets = [saved.targetGroup];
+  window.__kpiTargets = savedTargets;
+  renderKpiTargets();
   document.getElementById('kpiResult').value = saved.kpiResult || '';
   const box = document.getElementById('kpiPromptBox');
   box.textContent = '';
@@ -1408,23 +1412,56 @@ function openKpiModal(teacher, project, key) {
   document.getElementById('kpiModal').classList.add('open');
 }
 
+function collectKpiTargets() {
+  const inputs = document.querySelectorAll('#kpiTargetList .kpi-target');
+  const arr = [];
+  inputs.forEach(el => arr.push((el.value||'').trim()));
+  return arr;
+}
+
+function renderKpiTargets() {
+  const count = parseInt(document.getElementById('kpiCount').value || '3', 10);
+  // preserve any values already typed
+  const current = collectKpiTargets();
+  const stored = window.__kpiTargets || [];
+  const wrap = document.getElementById('kpiTargetList');
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    const val = current[i] || stored[i] || '';
+    html += `
+      <div style="margin-bottom:8px">
+        <div style="font-size:0.74rem;font-weight:700;color:var(--primary);margin-bottom:3px">กลุ่มเป้าหมายของ KPI เพิ่มเติมที่ ${i+1}</div>
+        <textarea class="problem-textarea kpi-target" style="min-height:48px" placeholder="เช่น นักเรียนระดับมัธยมศึกษาตอนต้น, ครูและบุคลากร, ผู้ปกครอง ฯลฯ">${ea(val)}</textarea>
+      </div>`;
+  }
+  wrap.innerHTML = html;
+  window.__kpiTargets = current.length ? current : stored;
+}
+
 async function generateKpiPrompt() {
   const ctx = window.__kpiCtx || {};
   const { teacher, project, key } = ctx;
   if (!key) return;
   const problem = (document.getElementById('kpiProblem').value || '').trim();
-  const target  = (document.getElementById('kpiTarget').value || '').trim();
   const qa      = (document.getElementById('kpiQA').value || '').trim();
-  const count   = document.getElementById('kpiCount').value || '3';
+  const count   = parseInt(document.getElementById('kpiCount').value || '3', 10);
+  const targets = collectKpiTargets();
+  window.__kpiTargets = targets;
 
-  if (!target) { Swal.fire({icon:'warning',title:'กรุณากรอกกลุ่มเป้าหมาย',confirmButtonColor:'#6c3fc5'}); return; }
+  if (targets.some(t => !t)) { Swal.fire({icon:'warning',title:'กรุณากรอกกลุ่มเป้าหมายให้ครบทุกตัวชี้วัดเพิ่มเติม',confirmButtonColor:'#6c3fc5'}); return; }
   if (!qa)     { Swal.fire({icon:'warning',title:'กรุณากรอก/นำเข้าตัวชี้วัดงานประกันคุณภาพ',text:'KPI ทุกตัวต้องอ้างอิงตัวชี้วัดงานประกันเสมอ',confirmButtonColor:'#6c3fc5'}); return; }
+
+  const targetsBlock = targets.map((t,i)=>`- KPI เพิ่มเติมที่ ${i+1} : ${t}`).join('\n');
+  const outputBlock = targets.map((t,i)=>`KPI เพิ่มเติมที่ ${i+1} (กลุ่มเป้าหมาย: ${t})
+ตัวชี้วัด : ร้อยละ ... ของ ${t} ...
+เครื่องมือเก็บข้อมูล : ...
+วิธีสรุปข้อมูล / ที่มาของร้อยละ : ...`).join('\n\n');
 
   const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการออกแบบตัวชี้วัดความสำเร็จของโครงการ (KPI) และงานประกันคุณภาพการศึกษาของสถานศึกษา
 
 ภารกิจของคุณ:
 โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" ที่เป็น KPI บังคับอยู่แล้ว ซึ่งต้องคงไว้ในโครงการตามเดิม ห้ามแก้ไข ห้ามดัดแปลง
-ให้คุณ "ออกแบบตัวชี้วัด KPI เพิ่มเติม" อีกจำนวน ${count} ตัวชี้วัด (ไม่นับรวมตัวชี้วัดงานประกัน)
+ให้คุณ "ออกแบบตัวชี้วัด KPI เพิ่มเติม" อีกจำนวน ${count} ตัวชี้วัด (ไม่นับรวมตัวชี้วัดงานประกัน) โดยแต่ละตัวให้ใช้กลุ่มเป้าหมายเฉพาะตามที่ระบุไว้ของ KPI ตัวนั้น
 จากนั้นรวม KPI ทั้งหมด = ตัวชี้วัดงานประกัน (คงเดิม) + KPI เพิ่มเติมที่ออกแบบใหม่ เพื่อนำไปใส่ในโครงการ
 
 ═══════════════════════════════════════════════
@@ -1434,8 +1471,9 @@ async function generateKpiPrompt() {
 ผู้รับผิดชอบ  : ${teacher}
 ปัญหา / ความต้องการ / นโยบาย :
 ${problem || '(ยังไม่ได้ระบุ)'}
-กลุ่มเป้าหมาย :
-${target}
+
+กลุ่มเป้าหมายของตัวชี้วัดเพิ่มเติมแต่ละตัว :
+${targetsBlock}
 
 ═══════════════════════════════════════════════
 ตัวชี้วัดงานประกันคุณภาพ (KPI บังคับ — คงไว้ตามเดิม ห้ามแก้ไข)
@@ -1449,11 +1487,14 @@ ${qa}
    แต่ให้คุณช่วยออกแบบเพิ่มสำหรับแต่ละตัวชี้วัดงานประกัน:
    • เครื่องมือ/วิธีเก็บข้อมูล (เช่น แบบสอบถาม แบบประเมิน แบบสังเกตพฤติกรรม แบบทดสอบ บันทึกการเข้าร่วมกิจกรรม แบบบันทึกผลงาน ฯลฯ)
    • วิธีสรุป/คำนวณข้อมูล เพื่อให้ได้มาซึ่งค่าร้อยละ/ผลของตัวชี้วัดนั้น (อธิบายวิธีนับ/สูตรคำนวณ)
-2. ออกแบบ KPI เพิ่มเติม (ส่วนที่ 2) จำนวน ${count} ตัว (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน) ในโครงสร้างประโยคดังนี้:
-   "ร้อยละ [ค่าเป้าหมาย] ของ ${target} [สถานการณ์/พฤติกรรม/ผลลัพธ์ที่ต้องการ พร้อมเกณฑ์ที่เหมาะสมตามบริบทของโครงการ]"
+   *** สำคัญ: เครื่องมือเก็บข้อมูลต้อง "เก็บข้อมูลได้ง่าย ใช้งานได้จริงในบริบทของโรงเรียน และสะท้อนที่มาของค่าร้อยละได้อย่างชัดเจน" ไม่ซับซ้อนเกินความจำเป็น ครูผู้รับผิดชอบสามารถนำไปใช้เก็บข้อมูลและคำนวณค่าร้อยละได้จริง ***
+2. ออกแบบ KPI เพิ่มเติม (ส่วนที่ 2) จำนวน ${count} ตัว (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน)
+   โดย KPI เพิ่มเติมแต่ละตัวต้อง "ใช้กลุ่มเป้าหมายเฉพาะของตัวนั้นตามที่ระบุไว้ข้างต้น" ในโครงสร้างประโยคดังนี้:
+   "ร้อยละ [ค่าเป้าหมาย] ของ [กลุ่มเป้าหมายของ KPI ตัวนั้น] [สถานการณ์/พฤติกรรม/ผลลัพธ์ที่ต้องการ พร้อมเกณฑ์ที่เหมาะสมตามบริบทของโครงการ]"
    • กำหนดค่าร้อยละเป้าหมายให้สมเหตุสมผลและสอดคล้องกับลักษณะของโครงการ
-   • ระบุเกณฑ์ที่ชัดเจน วัดผลได้จริง สอดคล้องกับปัญหา/ความต้องการ/นโยบาย และกลุ่มเป้าหมายข้างต้น
+   • ระบุเกณฑ์ที่ชัดเจน วัดผลได้จริง สอดคล้องกับปัญหา/ความต้องการ/นโยบาย และกลุ่มเป้าหมายของ KPI ตัวนั้น
 3. KPI เพิ่มเติมแต่ละตัว ให้ระบุเครื่องมือ/วิธีเก็บข้อมูล และวิธีสรุป/ที่มาของค่าร้อยละ เช่นเดียวกับข้อ 1
+   โดยยึดหลักเดียวกัน: เครื่องมือต้องเก็บข้อมูลได้ง่าย ทำได้จริง และสะท้อนที่มาของค่าร้อยละได้อย่างชัดเจน
 
 ═══════════════════════════════════════════════
 รูปแบบผลลัพธ์ที่ต้องการ (ภาษาไทยทางการ)
@@ -1469,12 +1510,7 @@ KPI งานประกันที่ 1
 (ทำซ้ำในรูปแบบเดียวกันให้ครบทุกตัวชี้วัดงานประกัน)
 
 ส่วนที่ 2 : ตัวชี้วัดเพิ่มเติม (${count} ตัว)
-KPI เพิ่มเติมที่ 1
-ตัวชี้วัด : ร้อยละ ... ของ.....
-เครื่องมือเก็บข้อมูล : ...
-วิธีสรุปข้อมูล / ที่มาของร้อยละ : ...
-
-(ทำซ้ำในรูปแบบเดียวกันจนครบ ${count} ตัว)`;
+${outputBlock}`;
 
   const box = document.getElementById('kpiPromptBox');
   box.textContent = prompt;
@@ -1484,7 +1520,7 @@ KPI เพิ่มเติมที่ 1
     aiLinks.map(l=>`<a href="${l.url}" target="_blank" class="ai-link-btn ${l.color}">${l.icon} ${l.name}</a>`).join('');
 
   // persist inputs
-  const payload = { ...(savedData[key]||{}), teacher, project, problem, targetGroup:target, qaIndicators:qa, kpiCount:count, kpiGenerated:true, kpiSavedAt:new Date().toISOString() };
+  const payload = { ...(savedData[key]||{}), teacher, project, problem, targetGroups:targets, targetGroup:targets.join(' | '), qaIndicators:qa, kpiCount:String(count), kpiGenerated:true, kpiSavedAt:new Date().toISOString() };
   try { await saveAssignment(key, payload); } catch(e) { savedData[key] = payload; }
 
   // update badge in list (if open) — designed but not yet submitted
@@ -1513,11 +1549,11 @@ async function submitKpiResult() {
   if (!result) { Swal.fire({icon:'warning',title:'กรุณาวางผลลัพธ์ KPI จาก AI ก่อน',confirmButtonColor:'#6c3fc5'}); return; }
 
   const problem = (document.getElementById('kpiProblem').value || '').trim();
-  const target  = (document.getElementById('kpiTarget').value || '').trim();
+  const targets = collectKpiTargets();
   const qa      = (document.getElementById('kpiQA').value || '').trim();
   const count   = document.getElementById('kpiCount').value || '3';
 
-  const payload = { ...(savedData[key]||{}), teacher, project, problem, targetGroup:target, qaIndicators:qa, kpiCount:count,
+  const payload = { ...(savedData[key]||{}), teacher, project, problem, targetGroups:targets, targetGroup:targets.join(' | '), qaIndicators:qa, kpiCount:count,
     kpiResult:result, kpiGenerated:true, kpiSubmitted:true, kpiSubmittedAt:new Date().toISOString() };
   try {
     await saveAssignment(key, payload);
@@ -2060,7 +2096,8 @@ function exportExcel() {
   projects.forEach(t => {
     t.projects.forEach(p => {
       const d = savedData[projectKey(t.teacher,p)];
-      rows.push([p, t.teacher, d?.strategyId||'', d?.strategyName||'', d?.tacticText||'', d?.goal||'',
+      const goalText = d?.strategyId ? ('เป้าประสงค์ที่ ' + d.strategyId + ' : ' + (d?.goal||'')) : (d?.goal||'');
+      rows.push([p, t.teacher, d?.strategyId||'', d?.strategyName||'', d?.tacticText||'', goalText,
         d?.savedAt ? new Date(d.savedAt).toLocaleDateString('th-TH') : '']);
     });
   });
