@@ -772,7 +772,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 
     <div class="form-group">
       <label class="form-label">3. ตัวชี้วัดงานประกันคุณภาพ
-        <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(KPI ทุกตัวต้องสอดคล้องข้อนี้เสมอ · ตั้งค่าเริ่มต้นได้ในเมนูตั้งค่า)</span>
+        <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(เว้นว่างได้ ถ้าโครงการนี้ไม่ต้องรองรับงานประกัน · ตั้งค่าเริ่มต้นได้ในเมนูตั้งค่า)</span>
       </label>
       <textarea id="kpiQA" class="problem-textarea" style="min-height:96px" placeholder="พิมพ์ที่นี่ หรือ นำเข้าไฟล์ตัวชี้วัดงานประกันในหน้าตั้งค่า..."></textarea>
     </div>
@@ -780,6 +780,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     <div class="form-group">
       <label class="form-label">4. จำนวน KPI ที่ต้องการ <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(ตัวชี้วัดเพิ่มเติม)</span></label>
       <select id="kpiCount" class="form-select" onchange="renderKpiTargets()">
+        <option value="0">ไม่เพิ่ม (มีเฉพาะตัวชี้วัดงานประกัน)</option>
         <option value="1">1 ตัวชี้วัด</option>
         <option value="2">2 ตัวชี้วัด</option>
         <option value="3" selected>3 ตัวชี้วัด</option>
@@ -1420,11 +1421,15 @@ function collectKpiTargets() {
 }
 
 function renderKpiTargets() {
-  const count = parseInt(document.getElementById('kpiCount').value || '3', 10);
+  const count = parseInt(document.getElementById('kpiCount').value || '0', 10);
+  const wrap = document.getElementById('kpiTargetList');
+  if (!count) {
+    wrap.innerHTML = `<div style="font-size:0.8rem;color:var(--text3);padding:8px 10px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px">ไม่มีตัวชี้วัดเพิ่มเติม (ใช้เฉพาะตัวชี้วัดงานประกันในข้อ 3)</div>`;
+    return;
+  }
   // preserve any values already typed
   const current = collectKpiTargets();
   const stored = window.__kpiTargets || [];
-  const wrap = document.getElementById('kpiTargetList');
   let html = '';
   for (let i = 0; i < count; i++) {
     const val = current[i] || stored[i] || '';
@@ -1444,72 +1449,107 @@ async function generateKpiPrompt() {
   if (!key) return;
   const problem = (document.getElementById('kpiProblem').value || '').trim();
   const qa      = (document.getElementById('kpiQA').value || '').trim();
-  const count   = parseInt(document.getElementById('kpiCount').value || '3', 10);
-  const targets = collectKpiTargets();
+  const count   = parseInt(document.getElementById('kpiCount').value || '0', 10);
+  const targets = count > 0 ? collectKpiTargets() : [];
   window.__kpiTargets = targets;
 
-  if (targets.some(t => !t)) { Swal.fire({icon:'warning',title:'กรุณากรอกกลุ่มเป้าหมายให้ครบทุกตัวชี้วัดเพิ่มเติม',confirmButtonColor:'#6c3fc5'}); return; }
-  if (!qa)     { Swal.fire({icon:'warning',title:'กรุณากรอก/นำเข้าตัวชี้วัดงานประกันคุณภาพ',text:'KPI ทุกตัวต้องอ้างอิงตัวชี้วัดงานประกันเสมอ',confirmButtonColor:'#6c3fc5'}); return; }
+  const hasQA = !!qa;
+  const hasAdd = count > 0;
 
-  const targetsBlock = targets.map((t,i)=>`- KPI เพิ่มเติมที่ ${i+1} : ${t}`).join('\n');
-  const outputBlock = targets.map((t,i)=>`KPI เพิ่มเติมที่ ${i+1} (กลุ่มเป้าหมาย: ${t})
-ตัวชี้วัด : ร้อยละ ... ของ ${t} ...
-เครื่องมือเก็บข้อมูล : ...
-วิธีสรุปข้อมูล / ที่มาของร้อยละ : ...`).join('\n\n');
+  if (!hasQA && !hasAdd) {
+    Swal.fire({icon:'warning',title:'ยังไม่มีข้อมูลให้ออกแบบ',text:'โครงการต้องมีตัวชี้วัดงานประกัน (ข้อ 3) หรือกำหนดจำนวนตัวชี้วัดเพิ่มเติม (ข้อ 4) อย่างน้อยหนึ่งอย่าง',confirmButtonColor:'#6c3fc5'}); return;
+  }
+  if (hasAdd && targets.some(t => !t)) {
+    Swal.fire({icon:'warning',title:'กรุณากรอกกลุ่มเป้าหมายให้ครบทุกตัวชี้วัดเพิ่มเติม',confirmButtonColor:'#6c3fc5'}); return;
+  }
 
-  const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการออกแบบตัวชี้วัดความสำเร็จของโครงการ (KPI) และงานประกันคุณภาพการศึกษาของสถานศึกษา
-
-ภารกิจของคุณ:
-โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" ที่เป็น KPI บังคับอยู่แล้ว ซึ่งต้องคงไว้ในโครงการตามเดิม ห้ามแก้ไข ห้ามดัดแปลง
+  // ── build mission line ──
+  let mission;
+  if (hasQA && hasAdd) {
+    mission = `โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" ที่เป็น KPI บังคับอยู่แล้ว ซึ่งต้องคงไว้ในโครงการตามเดิม ห้ามแก้ไข ห้ามดัดแปลง
 ให้คุณ "ออกแบบตัวชี้วัด KPI เพิ่มเติม" อีกจำนวน ${count} ตัวชี้วัด (ไม่นับรวมตัวชี้วัดงานประกัน) โดยแต่ละตัวให้ใช้กลุ่มเป้าหมายเฉพาะตามที่ระบุไว้ของ KPI ตัวนั้น
-จากนั้นรวม KPI ทั้งหมด = ตัวชี้วัดงานประกัน (คงเดิม) + KPI เพิ่มเติมที่ออกแบบใหม่ เพื่อนำไปใส่ในโครงการ
+จากนั้นรวม KPI ทั้งหมด = ตัวชี้วัดงานประกัน (คงเดิม) + KPI เพิ่มเติมที่ออกแบบใหม่ เพื่อนำไปใส่ในโครงการ`;
+  } else if (hasQA && !hasAdd) {
+    mission = `โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" จำนวนมากอยู่แล้ว และ "ไม่ต้องการออกแบบตัวชี้วัดเพิ่มเติม"
+ให้คุณคงข้อความตัวชี้วัดงานประกันเดิมไว้ทุกข้อ (ห้ามแก้ไข ห้ามดัดแปลง) แล้วช่วยออกแบบ "เครื่องมือเก็บข้อมูล" และ "วิธีสรุป/ที่มาของค่าร้อยละ" ให้ตัวชี้วัดงานประกันแต่ละข้อ`;
+  } else {
+    mission = `โครงการนี้ "ไม่ต้องรองรับตัวชี้วัดงานประกันคุณภาพ"
+ให้คุณออกแบบตัวชี้วัด KPI จำนวน ${count} ตัวชี้วัด ที่ "สอดคล้องกับปัญหา/ความต้องการ/นโยบาย" ของโครงการ โดยแต่ละตัวใช้กลุ่มเป้าหมายเฉพาะตามที่ระบุไว้ของ KPI ตัวนั้น`;
+  }
 
-═══════════════════════════════════════════════
-ข้อมูลโครงการ
-═══════════════════════════════════════════════
-ชื่อโครงการ   : ${project}
+  // ── data section ──
+  let dataSection = `ชื่อโครงการ   : ${project}
 ผู้รับผิดชอบ  : ${teacher}
 ปัญหา / ความต้องการ / นโยบาย :
-${problem || '(ยังไม่ได้ระบุ)'}
+${problem || '(ยังไม่ได้ระบุ)'}`;
+  if (hasAdd) {
+    dataSection += `
 
 กลุ่มเป้าหมายของตัวชี้วัดเพิ่มเติมแต่ละตัว :
-${targetsBlock}
+${targets.map((t,i)=>`- KPI เพิ่มเติมที่ ${i+1} : ${t}`).join('\n')}`;
+  }
+
+  // ── QA section ──
+  const qaSection = hasQA ? `
 
 ═══════════════════════════════════════════════
 ตัวชี้วัดงานประกันคุณภาพ (KPI บังคับ — คงไว้ตามเดิม ห้ามแก้ไข)
 ═══════════════════════════════════════════════
-${qa}
+${qa}` : '';
 
-═══════════════════════════════════════════════
-ข้อกำหนดการออกแบบ KPI
-═══════════════════════════════════════════════
-1. ตัวชี้วัดงานประกันคุณภาพ (ส่วนที่ 1) ให้คงข้อความตัวชี้วัด "ตามเดิม ทุกข้อ ห้ามแก้ไขถ้อยคำ"
-   แต่ให้คุณช่วยออกแบบเพิ่มสำหรับแต่ละตัวชี้วัดงานประกัน:
+  // ── requirements ──
+  const reqQA = `ตัวชี้วัดงานประกันคุณภาพ ให้คงข้อความตัวชี้วัด "ตามเดิม ทุกข้อ ห้ามแก้ไขถ้อยคำ" แล้วช่วยออกแบบสำหรับแต่ละตัวชี้วัดงานประกัน:
    • เครื่องมือ/วิธีเก็บข้อมูล (เช่น แบบสอบถาม แบบประเมิน แบบสังเกตพฤติกรรม แบบทดสอบ บันทึกการเข้าร่วมกิจกรรม แบบบันทึกผลงาน ฯลฯ)
-   • วิธีสรุป/คำนวณข้อมูล เพื่อให้ได้มาซึ่งค่าร้อยละ/ผลของตัวชี้วัดนั้น (อธิบายวิธีนับ/สูตรคำนวณ)
-   *** สำคัญ: เครื่องมือเก็บข้อมูลต้อง "เก็บข้อมูลได้ง่าย ใช้งานได้จริงในบริบทของโรงเรียน และสะท้อนที่มาของค่าร้อยละได้อย่างชัดเจน" ไม่ซับซ้อนเกินความจำเป็น ครูผู้รับผิดชอบสามารถนำไปใช้เก็บข้อมูลและคำนวณค่าร้อยละได้จริง ***
-2. ออกแบบ KPI เพิ่มเติม (ส่วนที่ 2) จำนวน ${count} ตัว (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน)
+   • วิธีสรุป/คำนวณข้อมูล เพื่อให้ได้มาซึ่งค่าร้อยละ/ผลของตัวชี้วัดนั้น (อธิบายวิธีนับ/สูตรคำนวณ)`;
+  const reqAdd = `ออกแบบ KPI เพิ่มเติม จำนวน ${count} ตัว${hasQA ? ' (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน)' : ' ให้สอดคล้องกับปัญหา/ความต้องการ/นโยบายของโครงการ'}
    โดย KPI เพิ่มเติมแต่ละตัวต้อง "ใช้กลุ่มเป้าหมายเฉพาะของตัวนั้นตามที่ระบุไว้ข้างต้น" ในโครงสร้างประโยคดังนี้:
    "ร้อยละ [ค่าเป้าหมาย] ของ [กลุ่มเป้าหมายของ KPI ตัวนั้น] [สถานการณ์/พฤติกรรม/ผลลัพธ์ที่ต้องการ พร้อมเกณฑ์ที่เหมาะสมตามบริบทของโครงการ]"
    • กำหนดค่าร้อยละเป้าหมายให้สมเหตุสมผลและสอดคล้องกับลักษณะของโครงการ
    • ระบุเกณฑ์ที่ชัดเจน วัดผลได้จริง สอดคล้องกับปัญหา/ความต้องการ/นโยบาย และกลุ่มเป้าหมายของ KPI ตัวนั้น
-3. KPI เพิ่มเติมแต่ละตัว ให้ระบุเครื่องมือ/วิธีเก็บข้อมูล และวิธีสรุป/ที่มาของค่าร้อยละ เช่นเดียวกับข้อ 1
-   โดยยึดหลักเดียวกัน: เครื่องมือต้องเก็บข้อมูลได้ง่าย ทำได้จริง และสะท้อนที่มาของค่าร้อยละได้อย่างชัดเจน
+   • ระบุเครื่องมือ/วิธีเก็บข้อมูล และวิธีสรุป/ที่มาของค่าร้อยละ ของ KPI แต่ละตัว`;
+  const reqItems = [];
+  if (hasQA) reqItems.push(reqQA);
+  if (hasAdd) reqItems.push(reqAdd);
+  const reqBlock = reqItems.map((r,i)=>`${i+1}. ${r}`).join('\n');
 
-═══════════════════════════════════════════════
-รูปแบบผลลัพธ์ที่ต้องการ (ภาษาไทยทางการ)
-═══════════════════════════════════════════════
-ตัวชี้วัดความสำเร็จของโครงการ (KPI) ทั้งหมด
-
-ส่วนที่ 1 : ตัวชี้วัดงานประกันคุณภาพ (คงข้อความเดิม)
+  // ── output format ──
+  const outQA = `ตัวชี้วัดงานประกันคุณภาพ (คงข้อความเดิม)
 KPI งานประกันที่ 1
 ตัวชี้วัด : (คัดลอกข้อความตัวชี้วัดงานประกันข้อที่ 1 มาตามเดิม ห้ามแก้ไข)
 เครื่องมือเก็บข้อมูล : ...
 วิธีสรุปข้อมูล / ที่มาของร้อยละ : ...
 
-(ทำซ้ำในรูปแบบเดียวกันให้ครบทุกตัวชี้วัดงานประกัน)
+(ทำซ้ำในรูปแบบเดียวกันให้ครบทุกตัวชี้วัดงานประกัน)`;
+  const outAdd = `ตัวชี้วัดเพิ่มเติม (${count} ตัว)
+${targets.map((t,i)=>`KPI เพิ่มเติมที่ ${i+1} (กลุ่มเป้าหมาย: ${t})
+ตัวชี้วัด : ร้อยละ ... ของ ${t} ...
+เครื่องมือเก็บข้อมูล : ...
+วิธีสรุปข้อมูล / ที่มาของร้อยละ : ...`).join('\n\n')}`;
+  let outputBlock;
+  if (hasQA && hasAdd) outputBlock = `ตัวชี้วัดความสำเร็จของโครงการ (KPI) ทั้งหมด\n\nส่วนที่ 1 : ${outQA}\n\nส่วนที่ 2 : ${outAdd}`;
+  else if (hasQA) outputBlock = outQA;
+  else outputBlock = outAdd;
 
-ส่วนที่ 2 : ตัวชี้วัดเพิ่มเติม (${count} ตัว)
+  const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการออกแบบตัวชี้วัดความสำเร็จของโครงการ (KPI) และงานประกันคุณภาพการศึกษาของสถานศึกษา
+
+ภารกิจของคุณ:
+${mission}
+
+═══════════════════════════════════════════════
+ข้อมูลโครงการ
+═══════════════════════════════════════════════
+${dataSection}${qaSection}
+
+═══════════════════════════════════════════════
+ข้อกำหนดการออกแบบ KPI
+═══════════════════════════════════════════════
+${reqBlock}
+
+*** สำคัญ: เครื่องมือเก็บข้อมูลต้อง "เก็บข้อมูลได้ง่าย ใช้งานได้จริงในบริบทของโรงเรียน และสะท้อนที่มาของค่าร้อยละได้อย่างชัดเจน" ไม่ซับซ้อนเกินความจำเป็น ครูผู้รับผิดชอบสามารถนำไปใช้เก็บข้อมูลและคำนวณค่าร้อยละได้จริง ***
+
+═══════════════════════════════════════════════
+รูปแบบผลลัพธ์ที่ต้องการ (ภาษาไทยทางการ)
+═══════════════════════════════════════════════
 ${outputBlock}`;
 
   const box = document.getElementById('kpiPromptBox');
@@ -1865,9 +1905,30 @@ async function submitTeacherForm() {
   window.__tfChoices = choices;
   try { if (db) await fsModules.setDoc(fsModules.doc(db,'qaforms','_choices'), { items: patch }, { merge:true }); } catch(e) { console.warn(e); }
 
-  Swal.fire({ icon:'success', title:'บันทึกข้อมูลเรียบร้อย!',
-    html:`ขอบคุณครับ ระบบบันทึกโครงการที่ท่านเลือกแล้ว (${chosen} ค่าเป้าหมาย)`,
-    confirmButtonColor:'#0f766e' });
+  Swal.fire({
+    icon:'success', title:'บันทึกข้อมูลเรียบร้อย!',
+    html:`ระบบบันทึกโครงการที่ท่านเลือกแล้ว (${chosen} ค่าเป้าหมาย)<br>
+      <span style="font-size:0.84rem;color:#6b7280">กำลังพาไปยังตัวช่วยออกแบบ KPI...</span>`,
+    confirmButtonColor:'#0f766e', timer:2000, timerProgressBar:true
+  }).then(() => {
+    // exit teacher form → go to KPI section → open this teacher's project list
+    exitTeacherFormMode();
+    location.hash = '';
+    const teacherData = projects.find(p => p.teacher === teacher);
+    if (!teacherData) return;
+    showSection('kpiSection');
+    // small delay to let DOM render, then navigate into teacher projects
+    setTimeout(() => {
+      openTeacherProjects('kpi', teacherData);
+      // if only one project chosen, auto-open its KPI modal
+      const projKeys = Object.keys(byProject);
+      if (projKeys.length === 1) {
+        const k = projKeys[0];
+        const g = byProject[k];
+        setTimeout(() => openKpiModal(teacher, g.project, k), 250);
+      }
+    }, 150);
+  });
 }
 
 // ═══════════════════════════════════════════════
