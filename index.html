@@ -104,7 +104,8 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 .container{max-width:1100px;margin:0 auto;padding:32px 18px 64px}
 
 /* ═══ LANDING CARDS (redesigned) ═══ */
-.landing-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:36px}
+.landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:36px}
+@media(max-width:980px){.landing-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.landing-grid{grid-template-columns:1fr}}
 
 .landing-card{
@@ -149,6 +150,10 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 .card-icon-wrap.violet{
   background:linear-gradient(135deg,#5b21b6,var(--primary-light));
   box-shadow:0 6px 20px rgba(139,92,246,0.35);
+}
+.card-icon-wrap.indigo{
+  background:linear-gradient(135deg,#4338ca,#6366f1);
+  box-shadow:0 6px 20px rgba(99,102,241,0.35);
 }
 
 .card-chip{
@@ -470,6 +475,25 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
         </div>
       </div>
 
+      <!-- Card 3 -->
+      <div class="landing-card" onclick="showSection('kpiSection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#4338ca,#818cf8)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap indigo">🎯</div>
+          <div class="card-chip">ส่วนที่ 3 · KPI Designer</div>
+          <div class="card-title">ตัวช่วยออกแบบ KPI<br>ตัวชี้วัดความสำเร็จโครงการ</div>
+          <div class="card-desc">เลือกครู → เลือกโครงการ → กรอกปัญหา กลุ่มเป้าหมาย ตัวชี้วัดงานประกัน และจำนวน KPI แล้วรับ Master Prompt ให้ AI ช่วยคิดตัวชี้วัด</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">📈 KPI</span>
+              <span class="card-feat-tag">✅ ประกันคุณภาพ</span>
+              <span class="card-feat-tag">✨ Prompt</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Stats Preview -->
@@ -515,6 +539,22 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
         <button class="back-btn" onclick="backToTeacher('manual')">← เลือกครูใหม่</button>
       </div>
       <div class="project-list" id="manualProjectList"></div>
+    </div>
+  </div>
+
+  <!-- SECTION 3: KPI -->
+  <div id="kpiSection" class="section">
+    <div class="section-header">
+      <div class="section-title">🎯 ตัวช่วยออกแบบ KPI</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+    <div id="kpiTeacherGrid" class="teacher-grid"></div>
+    <div id="kpiProjectPanel" style="display:none;margin-top:22px">
+      <div class="section-header">
+        <div class="section-title" id="kpiTeacherTitle">📚 โครงการของ —</div>
+        <button class="back-btn" onclick="backToTeacher('kpi')">← เลือกครูใหม่</button>
+      </div>
+      <div class="project-list" id="kpiProjectList"></div>
     </div>
   </div>
 
@@ -569,11 +609,100 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
 
     <div class="divider"></div>
+    <div class="form-group">
+      <div class="detail-label">5. ตัวชี้วัดงานประกันคุณภาพ (ค่าเริ่มต้นสำหรับตัวช่วยออกแบบ KPI)</div>
+      <input type="file" id="qaFile" accept=".csv,.xlsx,.xls,.txt"
+        style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
+      <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
+        นำเข้าไฟล์รายการตัวชี้วัดงานประกัน (อ่านคอลัมน์แรก ทีละบรรทัด) หรือพิมพ์/แก้ไขด้านล่างได้โดยตรง<br>
+        ค่านี้จะแสดงเป็นค่าเริ่มต้นในช่อง "ตัวชี้วัดงานประกันคุณภาพ" ของทุกโครงการในตัวช่วย KPI
+      </div>
+      <button class="project-btn primary-btn" style="margin-top:9px" onclick="importQA()">📥 นำเข้าจากไฟล์</button>
+      <textarea id="qaText" class="problem-textarea" style="margin-top:9px;min-height:120px"
+        placeholder="พิมพ์ตัวชี้วัดงานประกันคุณภาพ ทีละบรรทัด เช่น&#10;ผู้เรียนมีผลสัมฤทธิ์ทางวิชาการตามที่สถานศึกษากำหนด&#10;ผู้เรียนมีคุณลักษณะอันพึงประสงค์ตามหลักสูตร&#10;..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="project-btn primary-btn" onclick="saveQA()">💾 บันทึกค่าเริ่มต้น</button>
+        <button class="project-btn" onclick="clearQA()">🗑 ล้าง</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
       <button class="project-btn" style="color:var(--danger);border-color:#fca5a5"
         onclick="resetToDefault()">🔄 รีเซ็ตรายการโครงการ</button>
       <button class="project-btn" style="color:#fff;background:var(--danger);border-color:var(--danger);font-weight:700"
         onclick="clearAllData()">🗑️ ล้างข้อมูลทั้งหมด (Firestore)</button>
+    </div>
+  </div>
+</div>
+
+<!-- KPI MODAL -->
+<div class="modal-overlay" id="kpiModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('kpiModal')">✕</button>
+    <div class="modal-title">🎯 ตัวช่วยออกแบบ KPI</div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px">
+      <div style="font-size:0.74rem;color:var(--text3)">โครงการ</div>
+      <div id="kpiModalProject" style="font-size:0.92rem;font-weight:600;color:var(--text);line-height:1.5"></div>
+      <div style="font-size:0.78rem;color:var(--primary);margin-top:3px">ผู้รับผิดชอบ: <span id="kpiModalTeacher"></span></div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">1. ปัญหา / ความต้องการ / นโยบาย</label>
+      <textarea id="kpiProblem" class="problem-textarea" placeholder="ระบุปัญหา/ความต้องการ/นโยบายของโครงการนี้..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">2. กลุ่มเป้าหมาย</label>
+      <textarea id="kpiTarget" class="problem-textarea" style="min-height:56px" placeholder="เช่น นักเรียนระดับมัธยมศึกษาตอนต้น, ครูและบุคลากร, ผู้ปกครอง ฯลฯ"></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">3. ตัวชี้วัดงานประกันคุณภาพ
+        <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(KPI ทุกตัวต้องสอดคล้องข้อนี้เสมอ · ตั้งค่าเริ่มต้นได้ในเมนูตั้งค่า)</span>
+      </label>
+      <textarea id="kpiQA" class="problem-textarea" style="min-height:96px" placeholder="พิมพ์ที่นี่ หรือ นำเข้าไฟล์ตัวชี้วัดงานประกันในหน้าตั้งค่า..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">4. จำนวน KPI ที่ต้องการ</label>
+      <select id="kpiCount" class="form-select">
+        <option value="1">1 ตัวชี้วัด</option>
+        <option value="2">2 ตัวชี้วัด</option>
+        <option value="3" selected>3 ตัวชี้วัด</option>
+        <option value="4">4 ตัวชี้วัด</option>
+        <option value="5">5 ตัวชี้วัด</option>
+        <option value="6">6 ตัวชี้วัด</option>
+        <option value="7">7 ตัวชี้วัด</option>
+        <option value="8">8 ตัวชี้วัด</option>
+        <option value="9">9 ตัวชี้วัด</option>
+        <option value="10">10 ตัวชี้วัด</option>
+      </select>
+    </div>
+
+    <button class="save-btn" style="width:100%;justify-content:center" onclick="generateKpiPrompt()">✨ Generate Master Prompt</button>
+
+    <div id="kpiResultArea" style="display:none;margin-top:16px">
+      <div class="detail-label">📋 Master Prompt (สำหรับส่งให้ AI ช่วยคิด KPI)</div>
+      <pre class="prompt-box visible" id="kpiPromptBox"></pre>
+      <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+        <button class="project-btn primary-btn" onclick="copyKpiPrompt()">📋 คัดลอก Prompt</button>
+      </div>
+      <div class="ai-links" id="kpiAiLinks"></div>
+    </div>
+
+    <div class="divider"></div>
+    <div class="detail-section" style="background:#f0fdf4;border-color:#bbf7d0">
+      <div class="detail-label" style="color:#059669">📤 ส่งข้อมูล KPI โครงการ</div>
+      <div style="font-size:0.78rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+        นำผลลัพธ์ KPI ที่ได้จาก AI มาวางในช่องนี้ (ตัวชี้วัดงานประกัน + ตัวชี้วัดเพิ่มเติม) แล้วกดส่งเพื่อบันทึกเข้าโครงการ
+      </div>
+      <textarea id="kpiResult" class="problem-textarea" style="min-height:120px;background:#fff"
+        placeholder="วางผลลัพธ์ KPI ทั้งหมดจาก AI ที่นี่..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+        <button class="save-btn" style="background:linear-gradient(135deg,#059669,#34d399);box-shadow:0 4px 14px rgba(5,150,105,0.3)" onclick="submitKpiResult()">✅ ส่งข้อมูล KPI โครงการ</button>
+      </div>
     </div>
   </div>
 </div>
@@ -763,17 +892,19 @@ function projectKey(teacher, project) {
 // ═══════════════════════════════════════════════
 function showSection(id) {
   document.getElementById('landingSection').style.display = 'none';
-  ['aiSection','manualSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id==='aiSection') renderTeacherGrid('ai');
   if (id==='manualSection') renderTeacherGrid('manual');
+  if (id==='kpiSection') renderTeacherGrid('kpi');
   if (id==='statsSection') renderStats();
 }
 
 function goBack() {
-  ['aiSection','manualSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   document.getElementById('aiProjectPanel').style.display = 'none';
   document.getElementById('manualProjectPanel').style.display = 'none';
+  document.getElementById('kpiProjectPanel').style.display = 'none';
   document.getElementById('landingSection').style.display = 'block';
 }
 
@@ -791,7 +922,9 @@ function renderTeacherGrid(mode) {
   grid.innerHTML = '';
   grid.style.display = 'grid';
   projects.forEach(t => {
-    const done = t.projects.filter(p => savedData[projectKey(t.teacher,p)]?.strategyId).length;
+    const done = mode==='kpi'
+      ? t.projects.filter(p => savedData[projectKey(t.teacher,p)]?.kpiSubmitted).length
+      : t.projects.filter(p => savedData[projectKey(t.teacher,p)]?.strategyId).length;
     const pct = t.projects.length > 0 ? Math.round(done/t.projects.length*100) : 0;
     const initials = t.teacher.replace(/ครู|อาจารย์/g,'').charAt(0) || t.teacher.charAt(0);
     const card = document.createElement('div');
@@ -852,6 +985,20 @@ function openTeacherProjects(mode, td) {
             <div class="ai-links" id="ailinks_${key}"></div>
           </div>
         </div>`;
+    } else if (mode==='kpi') {
+      const kbadge = saved?.kpiSubmitted
+        ? `<span class="badge badge-done">✓ ส่งข้อมูลแล้ว</span>`
+        : (saved?.kpiGenerated
+          ? `<span class="badge badge-pending" style="background:#ddd6fe;color:#5b21b6">● ออกแบบแล้ว</span>`
+          : `<span class="badge badge-pending">ยังไม่ออกแบบ</span>`);
+      row.innerHTML = `
+        <div class="project-row-header" style="cursor:pointer">
+          <div class="project-name">${project}</div>
+          <div class="project-badges">
+            ${kbadge}
+            <button class="project-btn primary-btn kpi-open-btn">🎯 ออกแบบ KPI</button>
+          </div>
+        </div>`;
     } else {
       const s = saved;
       row.innerHTML = `
@@ -898,6 +1045,14 @@ function openTeacherProjects(mode, td) {
         const _t = td.teacher, _p = project, _k = key;
         genBtn.addEventListener('click', () => generatePrompt(_t, _p, _k));
       }
+    }
+    if (mode==='kpi') {
+      const _t = td.teacher, _p = project, _k = key;
+      const openK = () => openKpiModal(_t, _p, _k);
+      const obtn = row.querySelector('.kpi-open-btn');
+      if (obtn) obtn.addEventListener('click', (e)=>{ e.stopPropagation(); openK(); });
+      const hdr = row.querySelector('.project-row-header');
+      if (hdr) hdr.addEventListener('click', (e)=>{ if(!e.target.closest('button')) openK(); });
     }
     if (mode==='manual') {
       // bind save button with closure — avoids broken inline onclick with Thai/special chars
@@ -1073,6 +1228,194 @@ function copyPrompt(key) {
 }
 
 // ═══════════════════════════════════════════════
+// KPI DESIGNER
+// ═══════════════════════════════════════════════
+function openKpiModal(teacher, project, key) {
+  window.__kpiCtx = { teacher, project, key };
+  const saved = savedData[key] || {};
+  document.getElementById('kpiModalProject').textContent = project;
+  document.getElementById('kpiModalTeacher').textContent = teacher;
+  document.getElementById('kpiProblem').value = saved.problem || '';
+  document.getElementById('kpiTarget').value = saved.targetGroup || '';
+  const defQA = localStorage.getItem('ktw_qa_indicators') || '';
+  document.getElementById('kpiQA').value = saved.qaIndicators || defQA;
+  document.getElementById('kpiCount').value = saved.kpiCount || '3';
+  document.getElementById('kpiResult').value = saved.kpiResult || '';
+  const box = document.getElementById('kpiPromptBox');
+  box.textContent = '';
+  document.getElementById('kpiResultArea').style.display = 'none';
+  document.getElementById('kpiModal').classList.add('open');
+}
+
+async function generateKpiPrompt() {
+  const ctx = window.__kpiCtx || {};
+  const { teacher, project, key } = ctx;
+  if (!key) return;
+  const problem = (document.getElementById('kpiProblem').value || '').trim();
+  const target  = (document.getElementById('kpiTarget').value || '').trim();
+  const qa      = (document.getElementById('kpiQA').value || '').trim();
+  const count   = document.getElementById('kpiCount').value || '3';
+
+  if (!target) { Swal.fire({icon:'warning',title:'กรุณากรอกกลุ่มเป้าหมาย',confirmButtonColor:'#6c3fc5'}); return; }
+  if (!qa)     { Swal.fire({icon:'warning',title:'กรุณากรอก/นำเข้าตัวชี้วัดงานประกันคุณภาพ',text:'KPI ทุกตัวต้องอ้างอิงตัวชี้วัดงานประกันเสมอ',confirmButtonColor:'#6c3fc5'}); return; }
+
+  const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการออกแบบตัวชี้วัดความสำเร็จของโครงการ (KPI) และงานประกันคุณภาพการศึกษาของสถานศึกษา
+
+ภารกิจของคุณ:
+โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" ที่เป็น KPI บังคับอยู่แล้ว ซึ่งต้องคงไว้ในโครงการตามเดิม ห้ามแก้ไข ห้ามดัดแปลง
+ให้คุณ "ออกแบบตัวชี้วัด KPI เพิ่มเติม" อีกจำนวน ${count} ตัวชี้วัด (ไม่นับรวมตัวชี้วัดงานประกัน)
+จากนั้นรวม KPI ทั้งหมด = ตัวชี้วัดงานประกัน (คงเดิม) + KPI เพิ่มเติมที่ออกแบบใหม่ เพื่อนำไปใส่ในโครงการ
+
+═══════════════════════════════════════════════
+ข้อมูลโครงการ
+═══════════════════════════════════════════════
+ชื่อโครงการ   : ${project}
+ผู้รับผิดชอบ  : ${teacher}
+ปัญหา / ความต้องการ / นโยบาย :
+${problem || '(ยังไม่ได้ระบุ)'}
+กลุ่มเป้าหมาย :
+${target}
+
+═══════════════════════════════════════════════
+ตัวชี้วัดงานประกันคุณภาพ (KPI บังคับ — คงไว้ตามเดิม ห้ามแก้ไข)
+═══════════════════════════════════════════════
+${qa}
+
+═══════════════════════════════════════════════
+ข้อกำหนดการออกแบบ KPI
+═══════════════════════════════════════════════
+1. ตัวชี้วัดงานประกันคุณภาพ (ส่วนที่ 1) ให้คงข้อความตัวชี้วัด "ตามเดิม ทุกข้อ ห้ามแก้ไขถ้อยคำ"
+   แต่ให้คุณช่วยออกแบบเพิ่มสำหรับแต่ละตัวชี้วัดงานประกัน:
+   • เครื่องมือ/วิธีเก็บข้อมูล (เช่น แบบสอบถาม แบบประเมิน แบบสังเกตพฤติกรรม แบบทดสอบ บันทึกการเข้าร่วมกิจกรรม แบบบันทึกผลงาน ฯลฯ)
+   • วิธีสรุป/คำนวณข้อมูล เพื่อให้ได้มาซึ่งค่าร้อยละ/ผลของตัวชี้วัดนั้น (อธิบายวิธีนับ/สูตรคำนวณ)
+2. ออกแบบ KPI เพิ่มเติม (ส่วนที่ 2) จำนวน ${count} ตัว (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน) ในโครงสร้างประโยคดังนี้:
+   "ร้อยละ [ค่าเป้าหมาย] ของ ${target} [สถานการณ์/พฤติกรรม/ผลลัพธ์ที่ต้องการ พร้อมเกณฑ์ที่เหมาะสมตามบริบทของโครงการ]"
+   • กำหนดค่าร้อยละเป้าหมายให้สมเหตุสมผลและสอดคล้องกับลักษณะของโครงการ
+   • ระบุเกณฑ์ที่ชัดเจน วัดผลได้จริง สอดคล้องกับปัญหา/ความต้องการ/นโยบาย และกลุ่มเป้าหมายข้างต้น
+3. KPI เพิ่มเติมแต่ละตัว ให้ระบุเครื่องมือ/วิธีเก็บข้อมูล และวิธีสรุป/ที่มาของค่าร้อยละ เช่นเดียวกับข้อ 1
+
+═══════════════════════════════════════════════
+รูปแบบผลลัพธ์ที่ต้องการ (ภาษาไทยทางการ)
+═══════════════════════════════════════════════
+ตัวชี้วัดความสำเร็จของโครงการ (KPI) ทั้งหมด
+
+ส่วนที่ 1 : ตัวชี้วัดงานประกันคุณภาพ (คงข้อความเดิม)
+KPI งานประกันที่ 1
+ตัวชี้วัด : (คัดลอกข้อความตัวชี้วัดงานประกันข้อที่ 1 มาตามเดิม ห้ามแก้ไข)
+เครื่องมือเก็บข้อมูล : ...
+วิธีสรุปข้อมูล / ที่มาของร้อยละ : ...
+
+(ทำซ้ำในรูปแบบเดียวกันให้ครบทุกตัวชี้วัดงานประกัน)
+
+ส่วนที่ 2 : ตัวชี้วัดเพิ่มเติม (${count} ตัว)
+KPI เพิ่มเติมที่ 1
+ตัวชี้วัด : ร้อยละ ... ของ ${target} ...
+เครื่องมือเก็บข้อมูล : ...
+วิธีสรุปข้อมูล / ที่มาของร้อยละ : ...
+
+(ทำซ้ำในรูปแบบเดียวกันจนครบ ${count} ตัว)`;
+
+  const box = document.getElementById('kpiPromptBox');
+  box.textContent = prompt;
+  document.getElementById('kpiResultArea').style.display = 'block';
+  window.__kpiPrompt = prompt;
+  document.getElementById('kpiAiLinks').innerHTML =
+    aiLinks.map(l=>`<a href="${l.url}" target="_blank" class="ai-link-btn ${l.color}">${l.icon} ${l.name}</a>`).join('');
+
+  // persist inputs
+  const payload = { ...(savedData[key]||{}), teacher, project, problem, targetGroup:target, qaIndicators:qa, kpiCount:count, kpiGenerated:true, kpiSavedAt:new Date().toISOString() };
+  try { await saveAssignment(key, payload); } catch(e) { savedData[key] = payload; }
+
+  // update badge in list (if open) — designed but not yet submitted
+  const row = document.getElementById('row_'+key);
+  if (row) { const b = row.querySelector('.project-badges .badge'); if (b && !savedData[key]?.kpiSubmitted) b.outerHTML = `<span class="badge badge-pending" style="background:#ddd6fe;color:#5b21b6">● ออกแบบแล้ว</span>`; }
+  renderLandingStats();
+}
+
+function copyKpiPrompt() {
+  const p = window.__kpiPrompt;
+  if (!p) { Swal.fire({icon:'warning',title:'กรุณา Generate ก่อน',timer:1500,showConfirmButton:false}); return; }
+  navigator.clipboard.writeText(p).then(()=>{
+    Swal.fire({icon:'success',title:'คัดลอก Master Prompt แล้ว!',timer:1500,showConfirmButton:false,toast:true,position:'top-end'});
+  }).catch(()=>{
+    Swal.fire({ title:'คัดลอก Master Prompt', input:'textarea', inputValue:p,
+      inputAttributes:{ style:'height:300px;font-size:0.78rem;font-family:monospace' },
+      confirmButtonText:'ปิด', confirmButtonColor:'#6c3fc5' });
+  });
+}
+
+async function submitKpiResult() {
+  const ctx = window.__kpiCtx || {};
+  const { teacher, project, key } = ctx;
+  if (!key) return;
+  const result = (document.getElementById('kpiResult').value || '').trim();
+  if (!result) { Swal.fire({icon:'warning',title:'กรุณาวางผลลัพธ์ KPI จาก AI ก่อน',confirmButtonColor:'#6c3fc5'}); return; }
+
+  const problem = (document.getElementById('kpiProblem').value || '').trim();
+  const target  = (document.getElementById('kpiTarget').value || '').trim();
+  const qa      = (document.getElementById('kpiQA').value || '').trim();
+  const count   = document.getElementById('kpiCount').value || '3';
+
+  const payload = { ...(savedData[key]||{}), teacher, project, problem, targetGroup:target, qaIndicators:qa, kpiCount:count,
+    kpiResult:result, kpiGenerated:true, kpiSubmitted:true, kpiSubmittedAt:new Date().toISOString() };
+  try {
+    await saveAssignment(key, payload);
+    const row = document.getElementById('row_'+key);
+    if (row) { const b = row.querySelector('.project-badges .badge'); if (b) b.outerHTML = `<span class="badge badge-done">✓ ส่งข้อมูลแล้ว</span>`; }
+    renderLandingStats();
+    closeModal('kpiModal');
+    Swal.fire({ icon:'success', title:'ส่งข้อมูล KPI สำเร็จ!',
+      html:`บันทึก KPI ของโครงการเข้าฐานข้อมูลแล้ว<br><span style="font-size:0.82rem;color:#6b7280">สามารถส่งออกเป็น Excel ได้ในเมนูตั้งค่า</span>`,
+      confirmButtonColor:'#6c3fc5' });
+  } catch(e) {
+    savedData[key] = payload;
+    Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message});
+  }
+}
+
+// ─── QA INDICATORS (settings) ───
+function importQA() {
+  const file = document.getElementById('qaFile').files[0];
+  if (!file) { Swal.fire({icon:'warning',title:'กรุณาเลือกไฟล์',confirmButtonColor:'#6c3fc5'}); return; }
+  const reader = new FileReader();
+  const name = file.name.toLowerCase();
+  reader.onload = function(e) {
+    try {
+      let lines = [];
+      if (name.endsWith('.csv') || name.endsWith('.txt')) {
+        lines = e.target.result.split('\n').map(r => (r.split(',')[0]||'').trim().replace(/^"|"$/g,''));
+      } else {
+        const wb = XLSX.read(e.target.result, {type:'binary'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        lines = rows.map(r => String(r[0]||'').trim());
+      }
+      const SKIP = new Set(['0','ตัวชี้วัด','ตัวชี้วัดงานประกัน','ตัวชี้วัดงานประกันคุณภาพ','มาตรฐาน','รายการ']);
+      lines = lines.map(l => l.replace(/^\d+[.)]\s*/,'').trim()).filter(l => l && !SKIP.has(l));
+      if (lines.length === 0) { Swal.fire({icon:'error',title:'ไม่พบข้อมูล',text:'ตรวจสอบไฟล์: ให้ตัวชี้วัดอยู่ในคอลัมน์แรก ทีละบรรทัด',confirmButtonColor:'#6c3fc5'}); return; }
+      const text = lines.join('\n');
+      document.getElementById('qaText').value = text;
+      localStorage.setItem('ktw_qa_indicators', text);
+      Swal.fire({icon:'success',title:'นำเข้าสำเร็จ!',html:`พบ <b>${lines.length}</b> ตัวชี้วัด และตั้งเป็นค่าเริ่มต้นแล้ว`,confirmButtonColor:'#6c3fc5'});
+    } catch(err) { Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:err.message}); }
+  };
+  if (name.endsWith('.csv') || name.endsWith('.txt')) reader.readAsText(file,'UTF-8');
+  else reader.readAsBinaryString(file);
+}
+
+function saveQA() {
+  const t = (document.getElementById('qaText').value || '').trim();
+  localStorage.setItem('ktw_qa_indicators', t);
+  Swal.fire({icon:'success',title:'บันทึกค่าเริ่มต้นแล้ว',timer:1500,showConfirmButton:false,toast:true,position:'top-end'});
+}
+
+function clearQA() {
+  localStorage.removeItem('ktw_qa_indicators');
+  document.getElementById('qaText').value = '';
+  Swal.fire({icon:'success',title:'ล้างค่าเริ่มต้นแล้ว',timer:1200,showConfirmButton:false,toast:true,position:'top-end'});
+}
+
+// ═══════════════════════════════════════════════
 // SAVE MANUAL
 // ═══════════════════════════════════════════════
 async function saveManual(teacher, project, key) {
@@ -1198,6 +1541,7 @@ function renderStats() {
 function openSettingsModal() {
   renderAiLinksEditor();
   document.getElementById('announceText').value = localStorage.getItem('ktw_announce')||'';
+  document.getElementById('qaText').value = localStorage.getItem('ktw_qa_indicators')||'';
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1304,6 +1648,22 @@ function exportExcel() {
   const ws = XLSX.utils.aoa_to_sheet(rows);
   ws['!cols'] = [40,15,8,40,45,60,12].map(w=>({wch:w}));
   XLSX.utils.book_append_sheet(wb, ws, 'โครงการ');
+
+  // KPI sheet
+  const kRows = [['ชื่อโครงการ','ผู้รับผิดชอบ','กลุ่มเป้าหมาย','ตัวชี้วัดงานประกันคุณภาพ','จำนวน KPI เพิ่มเติม','ผลลัพธ์ KPI (จาก AI)','วันที่ส่งข้อมูล']];
+  projects.forEach(t => {
+    t.projects.forEach(p => {
+      const d = savedData[projectKey(t.teacher,p)];
+      if (d?.kpiSubmitted || d?.kpiResult) {
+        kRows.push([p, t.teacher, d?.targetGroup||'', d?.qaIndicators||'', d?.kpiCount||'', d?.kpiResult||'',
+          d?.kpiSubmittedAt ? new Date(d.kpiSubmittedAt).toLocaleDateString('th-TH') : '']);
+      }
+    });
+  });
+  const wsK = XLSX.utils.aoa_to_sheet(kRows);
+  wsK['!cols'] = [40,15,30,45,12,70,12].map(w=>({wch:w}));
+  XLSX.utils.book_append_sheet(wb, wsK, 'KPI โครงการ');
+
   XLSX.writeFile(wb, 'KTW_Projects_'+new Date().toISOString().slice(0,10)+'.xlsx');
 }
 
