@@ -104,8 +104,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 .container{max-width:1100px;margin:0 auto;padding:32px 18px 64px}
 
 /* ═══ LANDING CARDS (redesigned) ═══ */
-.landing-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:36px}
-@media(max-width:980px){.landing-grid{grid-template-columns:1fr 1fr}}
+.landing-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-bottom:36px}
 @media(max-width:640px){.landing-grid{grid-template-columns:1fr}}
 
 .landing-card{
@@ -154,6 +153,10 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 .card-icon-wrap.indigo{
   background:linear-gradient(135deg,#4338ca,#6366f1);
   box-shadow:0 6px 20px rgba(99,102,241,0.35);
+}
+.card-icon-wrap.teal{
+  background:linear-gradient(135deg,#0f766e,#14b8a6);
+  box-shadow:0 6px 20px rgba(20,184,166,0.35);
 }
 
 .card-chip{
@@ -494,6 +497,25 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
         </div>
       </div>
 
+      <!-- Card 4 -->
+      <div class="landing-card" onclick="showSection('qaFormSection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#0f766e,#5eead4)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap teal">📝</div>
+          <div class="card-chip">ส่วนที่ 4 · QA Form</div>
+          <div class="card-title">ฟอร์มระบุโครงการ<br>รองรับงานประกันคุณภาพ</div>
+          <div class="card-desc">จับคู่ค่าเป้าหมาย (KPI งานประกัน) + ผู้รับผิดชอบ เข้ากับชื่อโครงการที่รองรับ พร้อมแนบลิงก์ฟอร์มให้คัดลอก แล้วบันทึกเพื่อใช้เป็นค่าเริ่มต้นในส่วนที่ 3</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">🎯 ค่าเป้าหมาย</span>
+              <span class="card-feat-tag">🔗 ลิงก์ฟอร์ม</span>
+              <span class="card-feat-tag">💾 บันทึก</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <!-- Stats Preview -->
@@ -542,6 +564,51 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
   </div>
 
+  <!-- SECTION 4: QA FORM (ADMIN) -->
+  <div id="qaFormSection" class="section">
+    <div class="section-header">
+      <div class="section-title">📝 ตั้งค่าฟอร์มงานประกันคุณภาพ</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+
+    <div style="background:linear-gradient(135deg,#ecfdf5,#f0fdfa);border:1.5px solid #99f6e4;border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:16px">
+      <div style="font-size:0.86rem;font-weight:700;color:#0f766e">วิธีใช้</div>
+      <div style="font-size:0.8rem;color:var(--text3);margin-top:4px;line-height:1.65">
+        1) นำเข้า/พิมพ์ <b>ค่าเป้าหมาย (KPI งานประกัน)</b> และ <b>ผู้รับผิดชอบ</b> แล้วกด <b>บันทึก</b><br>
+        2) คัดลอก <b>ลิงก์ฟอร์มสำหรับครู</b> ด้านล่าง ส่งเข้ากลุ่มไลน์ ให้ครูแต่ละคนเปิดลิงก์ เลือกชื่อตนเอง แล้วเลือกโครงการที่รองรับค่าเป้าหมายของตน<br>
+        3) ข้อมูลที่ครูกรอกจะแสดงเป็นค่าเริ่มต้นใน modal ของส่วนที่ 3 โดยอัตโนมัติ
+      </div>
+    </div>
+
+    <!-- Share link -->
+    <div style="background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow)">
+      <div class="detail-label" style="color:#0f766e">🔗 ลิงก์ฟอร์มสำหรับครู (ส่งเข้ากลุ่มไลน์)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input type="text" id="qaShareLink" readonly
+          style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:0.84rem;background:var(--surface2);color:var(--primary-dark)">
+        <button class="save-btn" style="padding:9px 18px;font-size:0.85rem;background:linear-gradient(135deg,#0f766e,#14b8a6);box-shadow:0 4px 14px rgba(20,184,166,0.3)" onclick="copyShareLink()">📋 คัดลอกลิงก์</button>
+        <button class="project-btn" onclick="openTeacherFormPreview()">👁 ดูตัวอย่างฟอร์ม</button>
+      </div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-top:6px">* ครูต้องเปิดลิงก์นี้บนอุปกรณ์ที่เชื่อมต่ออินเทอร์เน็ต และเลือกชื่อของตนเองเพื่อกรอกข้อมูล</div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
+      <div style="flex:1;min-width:230px">
+        <input type="file" id="qaTargetFile" accept=".csv,.xlsx,.xls"
+          style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.82rem;">
+        <div style="font-size:0.72rem;color:var(--text3);margin-top:4px">คอลัมน์ A = ค่าเป้าหมาย (KPI งานประกัน), คอลัมน์ B = ผู้รับผิดชอบ</div>
+      </div>
+      <button class="project-btn primary-btn" onclick="importQaTargets()">📥 นำเข้าค่าเป้าหมาย</button>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+      <button class="project-btn" onclick="addQaFormRow()">+ เพิ่มแถว</button>
+      <button class="save-btn" style="padding:9px 22px;font-size:0.88rem" onclick="saveQaForms()">💾 บันทึกค่าเป้าหมาย</button>
+    </div>
+
+    <div class="project-list" id="qaFormList"></div>
+  </div>
+
   <!-- SECTION 3: KPI -->
   <div id="kpiSection" class="section">
     <div class="section-header">
@@ -565,6 +632,44 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
     </div>
     <div id="statsContent"></div>
+  </div>
+</div>
+
+<!-- TEACHER FORM VIEW (เปิดผ่านลิงก์ #form) -->
+<div id="teacherFormView" style="display:none;min-height:100vh;background:#f0ecff">
+  <div class="hero" style="padding:34px 24px 40px">
+    <div class="hero-inner">
+      <div class="hero-school-logo">
+        <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" alt="Logo KTW"
+             onerror="this.style.display='none';this.parentElement.innerHTML='🏫'">
+      </div>
+      <div class="hero-subtitle">โรงเรียนกระดุมทองวิทยา · สังกัด อบจ.ศรีสะเกษ</div>
+      <h1 class="hero-title" style="font-size:1.5rem">ฟอร์มระบุโครงการ<br>รองรับงานประกันคุณภาพ</h1>
+      <div class="hero-desc">เลือกชื่อของท่าน แล้วเลือกโครงการที่รองรับค่าเป้าหมายแต่ละข้อ</div>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:760px;padding-top:24px">
+    <div id="tfLoading" style="text-align:center;color:var(--text3);padding:30px">⏳ กำลังโหลดข้อมูล...</div>
+
+    <div id="tfBody" style="display:none">
+      <div class="detail-section" style="background:var(--surface);box-shadow:var(--shadow)">
+        <label class="form-label">เลือกชื่อของท่าน (ผู้รับผิดชอบ)</label>
+        <select class="form-select" id="tfTeacher" onchange="onTeacherFormSelect()">
+          <option value="">— เลือกชื่อครู —</option>
+        </select>
+      </div>
+
+      <div id="tfTargets" style="margin-top:6px"></div>
+
+      <div id="tfSaveBar" style="display:none;margin-top:8px">
+        <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#0f766e,#14b8a6);box-shadow:0 4px 14px rgba(20,184,166,0.3)" onclick="submitTeacherForm()">✅ บันทึกข้อมูลโครงการ</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:0.72rem;color:var(--text3);margin-top:26px;padding-bottom:30px">
+      ระบบจัดโครงการลงยุทธศาสตร์ · พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง
+    </div>
   </div>
 </div>
 
@@ -834,6 +939,7 @@ function buildProjectsFromRaw(raw) {
 // STATE
 // ═══════════════════════════════════════════════
 let projects = JSON.parse(localStorage.getItem('ktw_projects2') || 'null') || buildProjectsFromRaw(DEFAULT_PROJECTS_RAW);
+let qaForms = JSON.parse(localStorage.getItem('ktw_qa_forms') || 'null') || [];
 let savedData = {};
 let aiLinks = JSON.parse(localStorage.getItem('ktw_ai_links') || 'null') || [
   { name:"Gemini", url:"https://gemini.google.com", icon:"✨", color:"btn-gemini" },
@@ -856,6 +962,11 @@ if (ann) { document.getElementById('announceBanner').textContent = ann; document
 
 renderLandingStats();
 
+// route for teacher-facing form link (#form)
+window.__tfChoices = window.__tfChoices || {};
+window.addEventListener('hashchange', routeHash);
+routeHash();
+
 // ═══════════════════════════════════════════════
 // FIRESTORE
 // ═══════════════════════════════════════════════
@@ -866,6 +977,33 @@ async function loadAllSavedData() {
     snap.forEach(d => { savedData[d.id] = d.data(); });
     renderLandingStats();
   } catch(e) { console.warn('Firestore:', e); }
+  try {
+    const qsnap = await fsModules.getDocs(fsModules.collection(db, 'qaforms'));
+    qsnap.forEach(d => {
+      if (d.id === '_list' && Array.isArray(d.data().items)) {
+        qaForms = d.data().items;
+        localStorage.setItem('ktw_qa_forms', JSON.stringify(qaForms));
+      }
+      if (d.id === '_choices' && d.data().items) {
+        window.__tfChoices = d.data().items;
+      }
+      if (d.id === '_projects' && Array.isArray(d.data().items) && d.data().items.length) {
+        projects = d.data().items;
+        localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+      }
+    });
+  } catch(e) { console.warn('Firestore qaforms:', e); }
+  if (window.__formMode) renderTeacherForm();
+}
+
+async function persistProjectsCloud() {
+  if (!db) return;
+  try { await fsModules.setDoc(fsModules.doc(db, 'qaforms', '_projects'), { items: projects }); } catch(e) { console.warn(e); }
+}
+
+async function persistQaFormsCloud() {
+  if (!db) return;
+  try { await fsModules.setDoc(fsModules.doc(db, 'qaforms', '_list'), { items: qaForms }); } catch(e) { console.warn(e); }
 }
 
 async function saveAssignment(key, data) {
@@ -892,16 +1030,17 @@ function projectKey(teacher, project) {
 // ═══════════════════════════════════════════════
 function showSection(id) {
   document.getElementById('landingSection').style.display = 'none';
-  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','qaFormSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   document.getElementById(id).classList.add('active');
   if (id==='aiSection') renderTeacherGrid('ai');
   if (id==='manualSection') renderTeacherGrid('manual');
   if (id==='kpiSection') renderTeacherGrid('kpi');
+  if (id==='qaFormSection') renderQaForm();
   if (id==='statsSection') renderStats();
 }
 
 function goBack() {
-  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','qaFormSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   document.getElementById('aiProjectPanel').style.display = 'none';
   document.getElementById('manualProjectPanel').style.display = 'none';
   document.getElementById('kpiProjectPanel').style.display = 'none';
@@ -1416,6 +1555,263 @@ function clearQA() {
 }
 
 // ═══════════════════════════════════════════════
+// QA FORM — ระบุโครงการรองรับงานประกันคุณภาพ
+// ═══════════════════════════════════════════════
+function renderQaForm() {
+  const sl = document.getElementById('qaShareLink');
+  if (sl) sl.value = buildShareLink();
+
+  const list = document.getElementById('qaFormList');
+  if (!qaForms.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--text3);padding:30px 10px;background:var(--surface);border:1.5px dashed var(--border);border-radius:var(--radius-sm)">
+      ยังไม่มีข้อมูล — นำเข้าค่าเป้าหมายจากไฟล์ หรือกด "+ เพิ่มแถว"</div>`;
+    return;
+  }
+  list.innerHTML = qaForms.map((f,i)=>`
+    <div class="project-row qaf-row" data-id="${ea(f.id||'')}">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:0.78rem;font-weight:700;color:#0f766e">รายการที่ ${i+1}</div>
+        <button class="project-btn" style="color:var(--danger)" onclick="removeQaForm(${i})">🗑 ลบแถว</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">ค่าเป้าหมาย (KPI งานประกัน)</label>
+        <textarea class="problem-textarea qaf-target" style="min-height:60px" placeholder="พิมพ์ค่าเป้าหมาย/ตัวชี้วัดงานประกัน...">${ea(f.target||'')}</textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">ผู้รับผิดชอบ</label>
+        <input type="text" class="qaf-teacher" value="${ea(f.teacher||'')}" placeholder="เช่น ครูสมชาย"
+          style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Sarabun',sans-serif;font-size:0.87rem">
+      </div>
+    </div>`).join('');
+}
+
+function collectQaForms() {
+  const rows = document.querySelectorAll('#qaFormList .qaf-row');
+  const arr = [];
+  rows.forEach(r => {
+    arr.push({
+      id: r.dataset.id || ('q' + Math.random().toString(36).slice(2,9)),
+      target: (r.querySelector('.qaf-target')?.value||'').trim(),
+      teacher: (r.querySelector('.qaf-teacher')?.value||'').trim()
+    });
+  });
+  qaForms = arr;
+}
+
+function addQaFormRow() {
+  collectQaForms();
+  qaForms.push({ id:'q'+Math.random().toString(36).slice(2,9), target:'', teacher:'' });
+  renderQaForm();
+}
+
+function removeQaForm(i) {
+  collectQaForms();
+  qaForms.splice(i,1);
+  renderQaForm();
+}
+
+function buildShareLink() {
+  return location.origin + location.pathname + '#form';
+}
+
+function copyShareLink() {
+  const link = buildShareLink();
+  navigator.clipboard.writeText(link).then(()=>{
+    Swal.fire({icon:'success',title:'คัดลอกลิงก์แล้ว!',html:'นำลิงก์ไปส่งในกลุ่มไลน์ให้ครูกรอกข้อมูลได้เลย',confirmButtonColor:'#0f766e'});
+  }).catch(()=>{
+    Swal.fire({ title:'ลิงก์ฟอร์มสำหรับครู', input:'text', inputValue:link, confirmButtonText:'ปิด', confirmButtonColor:'#0f766e' });
+  });
+}
+
+function importQaTargets() {
+  const file = document.getElementById('qaTargetFile').files[0];
+  if (!file) { Swal.fire({icon:'warning',title:'กรุณาเลือกไฟล์',confirmButtonColor:'#6c3fc5'}); return; }
+  const reader = new FileReader();
+  const name = file.name.toLowerCase();
+  reader.onload = function(e) {
+    try {
+      let rows = [];
+      if (name.endsWith('.csv')) {
+        rows = e.target.result.split('\n').map(r => r.split(',').map(c=>c.trim().replace(/^"|"$/g,'')));
+      } else {
+        const wb = XLSX.read(e.target.result, {type:'binary'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      }
+      const SKIP = new Set(['0','ค่าเป้าหมาย','ตัวชี้วัด','ตัวชี้วัดงานประกัน','ตัวชี้วัดงานประกันคุณภาพ','kpi','KPI']);
+      const imported = [];
+      rows.forEach(r => {
+        if (!r) return;
+        const target = String(r[0]||'').trim().replace(/^\d+[.)]\s*/,'');
+        const teacher = String(r[1]||'').trim();
+        if (!target || SKIP.has(target)) return;
+        imported.push({ id:'q'+Math.random().toString(36).slice(2,9), target, teacher });
+      });
+      if (!imported.length) { Swal.fire({icon:'error',title:'ไม่พบข้อมูล',text:'คอลัมน์ A = ค่าเป้าหมาย, คอลัมน์ B = ผู้รับผิดชอบ',confirmButtonColor:'#6c3fc5'}); return; }
+      Swal.fire({
+        icon:'question', title:`พบ ${imported.length} ค่าเป้าหมาย`,
+        text: qaForms.length ? 'ต้องการแทนที่รายการเดิม หรือเพิ่มต่อท้าย?' : 'นำเข้าข้อมูลทั้งหมด?',
+        showCancelButton:true, showDenyButton: qaForms.length>0,
+        confirmButtonText: qaForms.length ? 'แทนที่' : 'นำเข้า', denyButtonText:'เพิ่มต่อท้าย', cancelButtonText:'ยกเลิก',
+        confirmButtonColor:'#0f766e', denyButtonColor:'#6c3fc5'
+      }).then(res => {
+        if (res.isConfirmed) qaForms = imported;
+        else if (res.isDenied) { collectQaForms(); qaForms = qaForms.concat(imported); }
+        else return;
+        localStorage.setItem('ktw_qa_forms', JSON.stringify(qaForms));
+        renderQaForm();
+        Swal.fire({icon:'success',title:'นำเข้าสำเร็จ!',timer:1400,showConfirmButton:false,toast:true,position:'top-end'});
+      });
+    } catch(err) { Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:err.message}); }
+  };
+  if (name.endsWith('.csv')) reader.readAsText(file,'UTF-8');
+  else reader.readAsBinaryString(file);
+}
+
+async function saveQaForms() {
+  collectQaForms();
+  qaForms = qaForms.filter(f => f.target || f.teacher);
+  localStorage.setItem('ktw_qa_forms', JSON.stringify(qaForms));
+  await persistQaFormsCloud();
+  renderQaForm();
+  Swal.fire({
+    icon:'success', title:'บันทึกสำเร็จ!',
+    html:`บันทึก <b>${qaForms.length}</b> ค่าเป้าหมายแล้ว<br><span style="font-size:0.82rem;color:#6b7280">คัดลอกลิงก์ด้านบนส่งให้ครูกรอกได้เลย</span>`,
+    confirmButtonColor:'#0f766e'
+  });
+}
+
+// ═══════════════════════════════════════════════
+// TEACHER-FACING FORM (เปิดผ่านลิงก์ #form)
+// ═══════════════════════════════════════════════
+function uniqueTeachersWithTargets() {
+  const set = [];
+  qaForms.forEach(f => { if (f.teacher && f.target && !set.includes(f.teacher)) set.push(f.teacher); });
+  return set;
+}
+
+function enterTeacherFormMode() {
+  window.__formMode = true;
+  const nav = document.querySelector('.navbar'); if (nav) nav.style.display = 'none';
+  const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = 'none';
+  const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = 'none';
+  document.getElementById('teacherFormView').style.display = 'block';
+  window.scrollTo(0,0);
+  renderTeacherForm();
+}
+
+function exitTeacherFormMode() {
+  window.__formMode = false;
+  const nav = document.querySelector('.navbar'); if (nav) nav.style.display = '';
+  const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = '';
+  const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = '';
+  document.getElementById('teacherFormView').style.display = 'none';
+}
+
+function openTeacherFormPreview() { location.hash = '#form'; }
+
+function routeHash() {
+  if ((location.hash||'').toLowerCase() === '#form') enterTeacherFormMode();
+  else exitTeacherFormMode();
+}
+
+function renderTeacherForm() {
+  const loading = document.getElementById('tfLoading');
+  const body = document.getElementById('tfBody');
+  const teachers = uniqueTeachersWithTargets();
+  if (!teachers.length) {
+    loading.innerHTML = (db ? 'ยังไม่มีข้อมูลค่าเป้าหมาย กรุณาติดต่อผู้ดูแลระบบ' : '⏳ กำลังโหลดข้อมูล...');
+    loading.style.display = 'block'; body.style.display = 'none';
+    return;
+  }
+  loading.style.display = 'none';
+  body.style.display = 'block';
+  const sel = document.getElementById('tfTeacher');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— เลือกชื่อครู —</option>' +
+    teachers.map(t=>`<option value="${ea(t)}"${cur===t?' selected':''}>${t}</option>`).join('');
+  if (cur && teachers.includes(cur)) onTeacherFormSelect();
+  else { document.getElementById('tfTargets').innerHTML=''; document.getElementById('tfSaveBar').style.display='none'; }
+}
+
+function onTeacherFormSelect() {
+  const teacher = document.getElementById('tfTeacher').value;
+  const wrap = document.getElementById('tfTargets');
+  const saveBar = document.getElementById('tfSaveBar');
+  if (!teacher) { wrap.innerHTML=''; saveBar.style.display='none'; return; }
+
+  const myTargets = qaForms.filter(f => f.teacher===teacher && f.target);
+  const tp = projects.find(p => p.teacher===teacher);
+  const projOptions = tp ? tp.projects : [];
+  const choices = window.__tfChoices || {};
+
+  wrap.innerHTML = myTargets.map((f,i)=>{
+    const prev = choices[f.id] || '';
+    return `
+    <div class="detail-section" style="background:var(--surface);box-shadow:var(--shadow)">
+      <div style="font-size:0.74rem;font-weight:700;color:#0f766e;margin-bottom:6px">ค่าเป้าหมายที่ ${i+1}</div>
+      <div style="font-size:0.9rem;color:var(--text);line-height:1.65;margin-bottom:10px">${ea(f.target)}</div>
+      <label class="form-label">เลือกโครงการที่รองรับค่าเป้าหมายนี้</label>
+      <select class="form-select tf-proj" data-qid="${ea(f.id)}">
+        <option value="">— เลือกโครงการ —</option>
+        ${projOptions.map(p=>`<option value="${ea(p)}"${prev===p?' selected':''}>${p}</option>`).join('')}
+      </select>
+    </div>`;
+  }).join('');
+
+  if (!projOptions.length) {
+    wrap.innerHTML += `<div style="text-align:center;color:var(--danger);font-size:0.84rem;padding:12px;background:#fef2f2;border-radius:10px;margin-top:6px">ไม่พบโครงการที่ผูกกับชื่อนี้ในฐานข้อมูล กรุณาติดต่อผู้ดูแลระบบ</div>`;
+  }
+  saveBar.style.display = (myTargets.length && projOptions.length) ? 'block' : 'none';
+}
+
+async function submitTeacherForm() {
+  const teacher = document.getElementById('tfTeacher').value;
+  if (!teacher) { Swal.fire({icon:'warning',title:'กรุณาเลือกชื่อครู',confirmButtonColor:'#0f766e'}); return; }
+
+  const selects = document.querySelectorAll('#tfTargets .tf-proj');
+  const choices = window.__tfChoices || {};
+  const patch = {};
+  const byProject = {};
+  let chosen = 0;
+  selects.forEach(s => {
+    const qid = s.dataset.qid;
+    const proj = s.value;
+    const f = qaForms.find(x => x.id===qid);
+    if (!f) return;
+    if (proj) {
+      chosen++; choices[qid] = proj; patch[qid] = proj;
+      const key = projectKey(teacher, proj);
+      if (!byProject[key]) byProject[key] = { project:proj, targets:[] };
+      byProject[key].targets.push(f.target);
+    }
+  });
+  if (!chosen) { Swal.fire({icon:'warning',title:'กรุณาเลือกโครงการอย่างน้อย 1 ค่าเป้าหมาย',confirmButtonColor:'#0f766e'}); return; }
+
+  // write per-project QA indicators (default for Section 3)
+  for (const [key,g] of Object.entries(byProject)) {
+    const payload = { ...(savedData[key]||{}), teacher, project:g.project,
+      qaIndicators: g.targets.join('\n'), qaTarget: g.targets.join('\n'), qaFromForm:true };
+    try { await saveAssignment(key, payload); } catch(e) { savedData[key] = payload; }
+  }
+  // make sure projects are present in list
+  Object.values(byProject).forEach(g => {
+    let t = projects.find(x => x.teacher===teacher);
+    if (!t) { t = { teacher, projects:[] }; projects.push(t); }
+    if (!t.projects.includes(g.project)) t.projects.push(g.project);
+  });
+  localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+
+  // persist teacher choices (merge so other teachers' choices are preserved)
+  window.__tfChoices = choices;
+  try { if (db) await fsModules.setDoc(fsModules.doc(db,'qaforms','_choices'), { items: patch }, { merge:true }); } catch(e) { console.warn(e); }
+
+  Swal.fire({ icon:'success', title:'บันทึกข้อมูลเรียบร้อย!',
+    html:`ขอบคุณครับ ระบบบันทึกโครงการที่ท่านเลือกแล้ว (${chosen} ค่าเป้าหมาย)`,
+    confirmButtonColor:'#0f766e' });
+}
+
+// ═══════════════════════════════════════════════
 // SAVE MANUAL
 // ═══════════════════════════════════════════════
 async function saveManual(teacher, project, key) {
@@ -1623,6 +2019,7 @@ function importProjects() {
       }
       projects = Object.entries(map).map(([teacher,ps])=>({teacher,projects:ps}));
       localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+      persistProjectsCloud();
       closeModal('settingsModal');
       renderLandingStats();
       Swal.fire({icon:'success',title:`นำเข้าสำเร็จ!`,html:`พบ <b>${count}</b> ผู้รับผิดชอบ <b>${projects.reduce((a,t)=>a+t.projects.length,0)}</b> โครงการ`,confirmButtonColor:'#6c3fc5'});
@@ -1724,6 +2121,7 @@ function resetToDefault() {
     if (r.isConfirmed) {
       projects = buildProjectsFromRaw(DEFAULT_PROJECTS_RAW);
       localStorage.removeItem('ktw_projects2');
+      persistProjectsCloud();
       closeModal('settingsModal');
       renderLandingStats();
       Swal.fire({icon:'success',title:'รีเซ็ตเรียบร้อย',timer:1500,showConfirmButton:false});
