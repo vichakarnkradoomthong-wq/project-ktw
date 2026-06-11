@@ -766,7 +766,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
 
     <div class="form-group">
-      <label class="form-label">2. กลุ่มเป้าหมาย <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(แยกตามจำนวนตัวชี้วัดเพิ่มเติมในข้อ 4 — ระบุกลุ่มเป้าหมายของ KPI แต่ละตัวให้เจาะจง)</span></label>
+      <label class="form-label">2. กลุ่มเป้าหมาย <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(แยกตามจำนวนตัวชี้วัดงานแผนงานฯในข้อ 4 — ระบุกลุ่มเป้าหมายของ KPI แต่ละตัวให้เจาะจง)</span></label>
       <div id="kpiTargetList"></div>
     </div>
 
@@ -778,7 +778,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
 
     <div class="form-group">
-      <label class="form-label">4. จำนวน KPI ที่ต้องการ <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(ตัวชี้วัดเพิ่มเติม)</span></label>
+      <label class="form-label">4. จำนวน KPI ที่ต้องการ <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(ตัวชี้วัดงานแผนงานฯ)</span></label>
       <select id="kpiCount" class="form-select" onchange="renderKpiTargets()">
         <option value="0">ไม่เพิ่ม (มีเฉพาะตัวชี้วัดงานประกัน)</option>
         <option value="1">1 ตัวชี้วัด</option>
@@ -809,7 +809,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     <div class="detail-section" style="background:#f0fdf4;border-color:#bbf7d0">
       <div class="detail-label" style="color:#059669">📤 ส่งข้อมูล KPI โครงการ</div>
       <div style="font-size:0.78rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
-        นำผลลัพธ์ KPI ที่ได้จาก AI มาวางในช่องนี้ (ตัวชี้วัดงานประกัน + ตัวชี้วัดเพิ่มเติม) แล้วกดส่งเพื่อบันทึกเข้าโครงการ
+        นำผลลัพธ์ KPI ที่ได้จาก AI มาวางในช่องนี้ (ตัวชี้วัดงานประกัน + ตัวชี้วัดงานแผนงานฯ) แล้วกดส่งเพื่อบันทึกเข้าโครงการ
       </div>
       <textarea id="kpiResult" class="problem-textarea" style="min-height:120px;background:#fff"
         placeholder="วางผลลัพธ์ KPI ทั้งหมดจาก AI ที่นี่..."></textarea>
@@ -1424,7 +1424,7 @@ function renderKpiTargets() {
   const count = parseInt(document.getElementById('kpiCount').value || '0', 10);
   const wrap = document.getElementById('kpiTargetList');
   if (!count) {
-    wrap.innerHTML = `<div style="font-size:0.8rem;color:var(--text3);padding:8px 10px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px">ไม่มีตัวชี้วัดเพิ่มเติม (ใช้เฉพาะตัวชี้วัดงานประกันในข้อ 3)</div>`;
+    wrap.innerHTML = `<div style="font-size:0.8rem;color:var(--text3);padding:8px 10px;background:var(--surface2);border:1px dashed var(--border);border-radius:8px">ไม่มีตัวชี้วัดงานแผนงานฯ (ใช้เฉพาะตัวชี้วัดงานประกันในข้อ 3)</div>`;
     return;
   }
   // preserve any values already typed
@@ -1435,7 +1435,7 @@ function renderKpiTargets() {
     const val = current[i] || stored[i] || '';
     html += `
       <div style="margin-bottom:8px">
-        <div style="font-size:0.74rem;font-weight:700;color:var(--primary);margin-bottom:3px">กลุ่มเป้าหมายของ KPI เพิ่มเติมที่ ${i+1}</div>
+        <div style="font-size:0.74rem;font-weight:700;color:var(--primary);margin-bottom:3px">กลุ่มเป้าหมายของ KPI งานแผนงานฯที่ ${i+1}</div>
         <textarea class="problem-textarea kpi-target" style="min-height:48px" placeholder="เช่น นักเรียนระดับมัธยมศึกษาตอนต้น, ครูและบุคลากร, ผู้ปกครอง ฯลฯ">${ea(val)}</textarea>
       </div>`;
   }
@@ -1457,20 +1457,20 @@ async function generateKpiPrompt() {
   const hasAdd = count > 0;
 
   if (!hasQA && !hasAdd) {
-    Swal.fire({icon:'warning',title:'ยังไม่มีข้อมูลให้ออกแบบ',text:'โครงการต้องมีตัวชี้วัดงานประกัน (ข้อ 3) หรือกำหนดจำนวนตัวชี้วัดเพิ่มเติม (ข้อ 4) อย่างน้อยหนึ่งอย่าง',confirmButtonColor:'#6c3fc5'}); return;
+    Swal.fire({icon:'warning',title:'ยังไม่มีข้อมูลให้ออกแบบ',text:'โครงการต้องมีตัวชี้วัดงานประกัน (ข้อ 3) หรือกำหนดจำนวนตัวชี้วัดงานแผนงานฯ (ข้อ 4) อย่างน้อยหนึ่งอย่าง',confirmButtonColor:'#6c3fc5'}); return;
   }
   if (hasAdd && targets.some(t => !t)) {
-    Swal.fire({icon:'warning',title:'กรุณากรอกกลุ่มเป้าหมายให้ครบทุกตัวชี้วัดเพิ่มเติม',confirmButtonColor:'#6c3fc5'}); return;
+    Swal.fire({icon:'warning',title:'กรุณากรอกกลุ่มเป้าหมายให้ครบทุกตัวชี้วัดงานแผนงานฯ',confirmButtonColor:'#6c3fc5'}); return;
   }
 
   // ── build mission line ──
   let mission;
   if (hasQA && hasAdd) {
     mission = `โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" ที่เป็น KPI บังคับอยู่แล้ว ซึ่งต้องคงไว้ในโครงการตามเดิม ห้ามแก้ไข ห้ามดัดแปลง
-ให้คุณ "ออกแบบตัวชี้วัด KPI เพิ่มเติม" อีกจำนวน ${count} ตัวชี้วัด (ไม่นับรวมตัวชี้วัดงานประกัน) โดยแต่ละตัวให้ใช้กลุ่มเป้าหมายเฉพาะตามที่ระบุไว้ของ KPI ตัวนั้น
-จากนั้นรวม KPI ทั้งหมด = ตัวชี้วัดงานประกัน (คงเดิม) + KPI เพิ่มเติมที่ออกแบบใหม่ เพื่อนำไปใส่ในโครงการ`;
+ให้คุณ "ออกแบบตัวชี้วัด KPI งานแผนงานฯ" อีกจำนวน ${count} ตัวชี้วัด (ไม่นับรวมตัวชี้วัดงานประกัน) โดยแต่ละตัวให้ใช้กลุ่มเป้าหมายเฉพาะตามที่ระบุไว้ของ KPI ตัวนั้น
+จากนั้นรวม KPI ทั้งหมด = ตัวชี้วัดงานประกัน (คงเดิม) + KPI งานแผนงานฯที่ออกแบบใหม่ เพื่อนำไปใส่ในโครงการ`;
   } else if (hasQA && !hasAdd) {
-    mission = `โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" จำนวนมากอยู่แล้ว และ "ไม่ต้องการออกแบบตัวชี้วัดเพิ่มเติม"
+    mission = `โครงการนี้มี "ตัวชี้วัดงานประกันคุณภาพ" จำนวนมากอยู่แล้ว และ "ไม่ต้องการออกแบบตัวชี้วัดงานแผนงานฯ"
 ให้คุณคงข้อความตัวชี้วัดงานประกันเดิมไว้ทุกข้อ (ห้ามแก้ไข ห้ามดัดแปลง) แล้วช่วยออกแบบ "เครื่องมือเก็บข้อมูล" และ "วิธีสรุป/ที่มาของค่าร้อยละ" ให้ตัวชี้วัดงานประกันแต่ละข้อ`;
   } else {
     mission = `โครงการนี้ "ไม่ต้องรองรับตัวชี้วัดงานประกันคุณภาพ"
@@ -1485,8 +1485,8 @@ ${problem || '(ยังไม่ได้ระบุ)'}`;
   if (hasAdd) {
     dataSection += `
 
-กลุ่มเป้าหมายของตัวชี้วัดเพิ่มเติมแต่ละตัว :
-${targets.map((t,i)=>`- KPI เพิ่มเติมที่ ${i+1} : ${t}`).join('\n')}`;
+กลุ่มเป้าหมายของตัวชี้วัดงานแผนงานฯแต่ละตัว :
+${targets.map((t,i)=>`- KPI งานแผนงานฯที่ ${i+1} : ${t}`).join('\n')}`;
   }
 
   // ── QA section ──
@@ -1501,8 +1501,8 @@ ${qa}` : '';
   const reqQA = `ตัวชี้วัดงานประกันคุณภาพ ให้คงข้อความตัวชี้วัด "ตามเดิม ทุกข้อ ห้ามแก้ไขถ้อยคำ" แล้วช่วยออกแบบสำหรับแต่ละตัวชี้วัดงานประกัน:
    • เครื่องมือ/วิธีเก็บข้อมูล (เช่น แบบสอบถาม แบบประเมิน แบบสังเกตพฤติกรรม แบบทดสอบ บันทึกการเข้าร่วมกิจกรรม แบบบันทึกผลงาน ฯลฯ)
    • วิธีสรุป/คำนวณข้อมูล เพื่อให้ได้มาซึ่งค่าร้อยละ/ผลของตัวชี้วัดนั้น (อธิบายวิธีนับ/สูตรคำนวณ)`;
-  const reqAdd = `ออกแบบ KPI เพิ่มเติม จำนวน ${count} ตัว${hasQA ? ' (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน)' : ' ให้สอดคล้องกับปัญหา/ความต้องการ/นโยบายของโครงการ'}
-   โดย KPI เพิ่มเติมแต่ละตัวต้อง "ใช้กลุ่มเป้าหมายเฉพาะของตัวนั้นตามที่ระบุไว้ข้างต้น" ในโครงสร้างประโยคดังนี้:
+  const reqAdd = `ออกแบบ KPI งานแผนงานฯ จำนวน ${count} ตัว${hasQA ? ' (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน)' : ' ให้สอดคล้องกับปัญหา/ความต้องการ/นโยบายของโครงการ'}
+   โดย KPI งานแผนงานฯแต่ละตัวต้อง "ใช้กลุ่มเป้าหมายเฉพาะของตัวนั้นตามที่ระบุไว้ข้างต้น" ในโครงสร้างประโยคดังนี้:
    "ร้อยละ [ค่าเป้าหมาย] ของ [กลุ่มเป้าหมายของ KPI ตัวนั้น] [สถานการณ์/พฤติกรรม/ผลลัพธ์ที่ต้องการ พร้อมเกณฑ์ที่เหมาะสมตามบริบทของโครงการ]"
    • กำหนดค่าร้อยละเป้าหมายให้สมเหตุสมผลและสอดคล้องกับลักษณะของโครงการ
    • ระบุเกณฑ์ที่ชัดเจน วัดผลได้จริง สอดคล้องกับปัญหา/ความต้องการ/นโยบาย และกลุ่มเป้าหมายของ KPI ตัวนั้น
@@ -1526,12 +1526,12 @@ ${qa}` : '';
   // Section 2 rows: one entry per additional KPI
   const addLines = hasAdd
     ? targets.map((t, i) => `
-[KPI เพิ่มเติมที่ ${i+1}]
+[KPI งานแผนงานฯที่ ${i+1}]
 กลุ่มเป้าหมาย     : ${t}
 ตัวชี้วัด         : ร้อยละ <ค่า> ของ ${t} <สถานการณ์/พฤติกรรม/ผลลัพธ์ พร้อมเกณฑ์>
 เครื่องมือเก็บข้อมูล : <ระบุเครื่องมือ>
 วิธีสรุปข้อมูล / ที่มาของร้อยละ : <อธิบายวิธีนับ/สูตรคำนวณ>`).join('\n')
-    : `\n[KPI เพิ่มเติมที่ 1]\nกลุ่มเป้าหมาย     : [ไม่มี]\nตัวชี้วัด         : [ไม่มี]\nเครื่องมือเก็บข้อมูล : [ไม่มี]\nวิธีสรุปข้อมูล / ที่มาของร้อยละ : [ไม่มี]`;
+    : `\n[KPI งานแผนงานฯที่ 1]\nกลุ่มเป้าหมาย     : [ไม่มี]\nตัวชี้วัด         : [ไม่มี]\nเครื่องมือเก็บข้อมูล : [ไม่มี]\nวิธีสรุปข้อมูล / ที่มาของร้อยละ : [ไม่มี]`;
 
   const outputBlock = `ชื่อโครงการ : ${project}
 ผู้รับผิดชอบ : ${teacher}
@@ -1539,7 +1539,7 @@ ${qa}` : '';
 ══ ส่วนที่ 1 : ตัวชี้วัดงานประกันคุณภาพ ══
 ${qaLines}
 
-══ ส่วนที่ 2 : ตัวชี้วัดเพิ่มเติม ══
+══ ส่วนที่ 2 : ตัวชี้วัดงานแผนงานฯ ══
 ${addLines}
 
 ⚠️ กฎเหล็ก: ห้ามเพิ่ม ลด หรือเปลี่ยนแปลงโครงสร้าง field ใด ๆ ข้างต้น ต้องตอบครบทุก field ทุกรายการ และใช้รูปแบบ "[KPI ...] / field : ค่า" นี้เท่านั้น ห้ามใช้ bullet, markdown, หรือตาราง`;
@@ -2182,7 +2182,7 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, ws, 'โครงการ');
 
   // KPI sheet
-  const kRows = [['ชื่อโครงการ','ผู้รับผิดชอบ','กลุ่มเป้าหมาย','ตัวชี้วัดงานประกันคุณภาพ','จำนวน KPI เพิ่มเติม','ผลลัพธ์ KPI (จาก AI)','วันที่ส่งข้อมูล']];
+  const kRows = [['ชื่อโครงการ','ผู้รับผิดชอบ','กลุ่มเป้าหมาย','ตัวชี้วัดงานประกันคุณภาพ','จำนวน KPI งานแผนงานฯ','ผลลัพธ์ KPI (จาก AI)','วันที่ส่งข้อมูล']];
   projects.forEach(t => {
     t.projects.forEach(p => {
       const d = savedData[projectKey(t.teacher,p)];
