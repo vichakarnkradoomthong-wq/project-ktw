@@ -26,6 +26,7 @@
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Kanit:wght@400;500;600;700;800&display=swap');
@@ -701,6 +702,16 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     <div class="form-group">
       <div class="detail-label">2. ส่งออกข้อมูลยุทธศาสตร์เป็น .xlsx</div>
       <button class="project-btn primary-btn" onclick="exportExcel()">📤 ส่งออก Excel</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="form-group">
+      <div class="detail-label">3. สร้างตารางสรุปข้อมูล .docx (ตามแบบฟอร์มเป้าประสงค์และตัวชี้วัด)</div>
+      <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+        รวบรวมข้อมูลที่บันทึกไว้ จัดลงตาราง <b>เป้าประสงค์ (Goals) · ตัวชี้วัด (KPIs) · ข้อมูลปัจจุบัน · ค่าเป้าหมาย (Targets)</b>
+        ตามรูปแบบไฟล์แนบ (ช่อง <b>ค่าเป้าหมาย</b> เว้นว่างไว้ให้กรอกเอง) แล้วดาวน์โหลดเป็นไฟล์ Word
+      </div>
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:#2563eb" onclick="exportSummaryDocx()">📄 สร้าง &amp; ดาวน์โหลด .docx</button>
     </div>
 
     <div class="divider"></div>
@@ -1497,41 +1508,56 @@ ${targets.map((t,i)=>`- KPI งานแผนงานฯที่ ${i+1} : ${t
 ═══════════════════════════════════════════════
 ${qa}` : '';
 
+  // จำนวนตัวชี้วัดงานประกัน (ใช้ไล่เลขลำดับต่อเนื่องกับงานแผนงานฯ)
+  const qaArr = hasQA ? qa.split('\n').map(l=>l.trim()).filter(Boolean) : [];
+  const nQA = qaArr.length;
+
   // ── requirements ──
-  const reqQA = `ตัวชี้วัดงานประกันคุณภาพ ให้คงข้อความตัวชี้วัด "ตามเดิม ทุกข้อ ห้ามแก้ไขถ้อยคำ" แล้วช่วยออกแบบสำหรับแต่ละตัวชี้วัดงานประกัน:
-   • เครื่องมือ/วิธีเก็บข้อมูล (เช่น แบบสอบถาม แบบประเมิน แบบสังเกตพฤติกรรม แบบทดสอบ บันทึกการเข้าร่วมกิจกรรม แบบบันทึกผลงาน ฯลฯ)
-   • วิธีสรุป/คำนวณข้อมูล เพื่อให้ได้มาซึ่งค่าร้อยละ/ผลของตัวชี้วัดนั้น (อธิบายวิธีนับ/สูตรคำนวณ)`;
-  const reqAdd = `ออกแบบ KPI งานแผนงานฯ จำนวน ${count} ตัว${hasQA ? ' (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน)' : ' ให้สอดคล้องกับปัญหา/ความต้องการ/นโยบายของโครงการ'}
-   โดย KPI งานแผนงานฯแต่ละตัวต้อง "ใช้กลุ่มเป้าหมายเฉพาะของตัวนั้นตามที่ระบุไว้ข้างต้น" ในโครงสร้างประโยคดังนี้:
-   "ร้อยละ [ค่าเป้าหมาย] ของ [กลุ่มเป้าหมายของ KPI ตัวนั้น] [สถานการณ์/พฤติกรรม/ผลลัพธ์ที่ต้องการ พร้อมเกณฑ์ที่เหมาะสมตามบริบทของโครงการ]"
-   • กำหนดค่าร้อยละเป้าหมายให้สมเหตุสมผลและสอดคล้องกับลักษณะของโครงการ
-   • ระบุเกณฑ์ที่ชัดเจน วัดผลได้จริง สอดคล้องกับปัญหา/ความต้องการ/นโยบาย และกลุ่มเป้าหมายของ KPI ตัวนั้น
-   • ระบุเครื่องมือ/วิธีเก็บข้อมูล และวิธีสรุป/ที่มาของค่าร้อยละ ของ KPI แต่ละตัว`;
+  // คำอธิบาย 8 หัวข้อรายละเอียดของตัวชี้วัด (ใช้ร่วมกันทุกกรณี)
+  const fieldsSpec = `สำหรับ "ตัวชี้วัดทุกตัว" (ทั้งงานประกันคุณภาพ และงานแผนงานฯ) ให้ระบุรายละเอียดให้ครบทั้ง 8 หัวข้อดังนี้:
+   1) ตัวชี้วัด : ข้อความตัวชี้วัด
+   2) ขอบเขตความหมาย : นิยาม/อธิบายความหมายของตัวชี้วัดนั้นว่า "หมายถึง" อะไร ให้ชัดเจน เข้าใจตรงกัน
+   3) หน่วยวัด : เช่น ร้อยละ / จำนวน / ระดับคุณภาพ ฯลฯ (ส่วนใหญ่ใช้ "ร้อยละ")
+   4) เป้าหมาย/เกณฑ์ (ปี 2571 – 2575) : ค่าเป้าหมายที่ต้องการบรรลุ เช่น ร้อยละ 90
+   5) วิธีการคำนวณ : สูตร/วิธีคำนวณค่าของตัวชี้วัด เช่น (จำนวนที่ผ่านเกณฑ์ / จำนวนทั้งหมด) x 100
+   6) ข้อมูลปัจจุบัน (ข้อมูลพื้นฐาน) : ค่าพื้นฐาน/สถานการณ์ปัจจุบันก่อนดำเนินโครงการ เช่น ร้อยละ 80
+   7) แหล่งข้อมูล/วิธีเก็บรวบรวมข้อมูล : ฝ่าย/แหล่งที่มาของข้อมูล และวิธีเก็บรวบรวม เช่น ฝ่ายบริหารงานวิชาการ/คำนวณหาค่าร้อยละ
+   8) ความถี่ในการเก็บรวบรวมข้อมูล/รายงาน : เช่น ภาคเรียนละ 1 ครั้ง / ปีการศึกษาละ 1 ครั้ง`;
+
+  const reqQA = `ตัวชี้วัดงานประกันคุณภาพ ให้คงข้อความ "ตัวชี้วัด (หัวข้อ 1)" ตามเดิมทุกข้อ ห้ามแก้ไขถ้อยคำ แล้วเติมรายละเอียดหัวข้อ 2–8 ให้ครบทุกข้อ`;
+  const reqAdd = `ออกแบบตัวชี้วัดงานแผนงานฯ จำนวน ${count} ตัว${hasQA ? ' (เพิ่มจากตัวชี้วัดงานประกัน ห้ามซ้ำกับตัวชี้วัดงานประกัน)' : ' ให้สอดคล้องกับปัญหา/ความต้องการ/นโยบายของโครงการ'}
+   โดยข้อความ "ตัวชี้วัด (หัวข้อ 1)" ของแต่ละตัวต้องใช้กลุ่มเป้าหมายเฉพาะของตัวนั้นตามที่ระบุไว้ข้างต้น ในโครงสร้างประโยค:
+   "ร้อยละ [ค่าเป้าหมาย] ของ [กลุ่มเป้าหมายของตัวชี้วัดนั้น] [สถานการณ์/พฤติกรรม/ผลลัพธ์ พร้อมเกณฑ์ที่เหมาะสมตามบริบทของโครงการ]"
+   แล้วเติมรายละเอียดหัวข้อ 2–8 ให้ครบทุกตัว`;
+
   const reqItems = [];
   if (hasQA) reqItems.push(reqQA);
   if (hasAdd) reqItems.push(reqAdd);
-  const reqBlock = reqItems.map((r,i)=>`${i+1}. ${r}`).join('\n');
+  reqItems.push(fieldsSpec);
+  const reqBlock = reqItems.map((r,i)=>`${i+1}. ${r}`).join('\n\n');
 
-  // ── output format ──
-  // ── unified output block (same structure every case) ──
-  // Section 1 rows: one entry per QA indicator
+  // ── output format — บล็อกรายละเอียดตัวชี้วัด 8 หัวข้อ ต่อ 1 ตัวชี้วัด ──
+  function kpiTemplate(no, indicatorLine){
+    return `[ตัวชี้วัดที่ ${no}]
+1. ตัวชี้วัด : ${indicatorLine}
+2. ขอบเขตความหมาย : <ระบุนิยาม/ความหมายของตัวชี้วัดนี้ให้ชัดเจน — "หมายถึง ..." >
+3. หน่วยวัด : <เช่น ร้อยละ>
+4. เป้าหมาย/เกณฑ์ (ปี 2571 – 2575) : <ค่าเป้าหมาย เช่น ร้อยละ 90>
+5. วิธีการคำนวณ : <สูตร/วิธีคำนวณ เช่น (จำนวนที่ผ่านเกณฑ์ / จำนวนทั้งหมด) x 100>
+6. ข้อมูลปัจจุบัน (ข้อมูลพื้นฐาน) : <ค่าพื้นฐานปัจจุบัน เช่น ร้อยละ 80>
+7. แหล่งข้อมูล/วิธีเก็บรวบรวมข้อมูล : <แหล่งข้อมูล/วิธีเก็บ เช่น ฝ่ายบริหารงานวิชาการ/คำนวณหาค่าร้อยละ>
+8. ความถี่ในการเก็บรวบรวมข้อมูล/รายงาน : <เช่น ภาคเรียนละ 1 ครั้ง>`;
+  }
+
+  // Section 1: ตัวชี้วัดงานประกัน (ข้อความหัวข้อ 1 คงเดิม)
   const qaLines = hasQA
-    ? qa.split('\n').map(l=>l.trim()).filter(Boolean).map((line, i) => `
-[KPI งานประกันที่ ${i+1}]
-ตัวชี้วัด         : ${line}
-เครื่องมือเก็บข้อมูล : <ระบุเครื่องมือ>
-วิธีสรุปข้อมูล / ที่มาของร้อยละ : <อธิบายวิธีนับ/สูตรคำนวณ>`).join('\n')
-    : `\n[KPI งานประกันที่ 1]\nตัวชี้วัด         : [ไม่มี]\nเครื่องมือเก็บข้อมูล : [ไม่มี]\nวิธีสรุปข้อมูล / ที่มาของร้อยละ : [ไม่มี]`;
+    ? qaArr.map((line, i) => kpiTemplate(i+1, line)).join('\n\n')
+    : kpiTemplate(1, '[ไม่มี]');
 
-  // Section 2 rows: one entry per additional KPI
+  // Section 2: ตัวชี้วัดงานแผนงานฯ (ไล่เลขต่อจากงานประกัน)
   const addLines = hasAdd
-    ? targets.map((t, i) => `
-[KPI งานแผนงานฯที่ ${i+1}]
-กลุ่มเป้าหมาย     : ${t}
-ตัวชี้วัด         : ร้อยละ <ค่า> ของ ${t} <สถานการณ์/พฤติกรรม/ผลลัพธ์ พร้อมเกณฑ์>
-เครื่องมือเก็บข้อมูล : <ระบุเครื่องมือ>
-วิธีสรุปข้อมูล / ที่มาของร้อยละ : <อธิบายวิธีนับ/สูตรคำนวณ>`).join('\n')
-    : `\n[KPI งานแผนงานฯที่ 1]\nกลุ่มเป้าหมาย     : [ไม่มี]\nตัวชี้วัด         : [ไม่มี]\nเครื่องมือเก็บข้อมูล : [ไม่มี]\nวิธีสรุปข้อมูล / ที่มาของร้อยละ : [ไม่มี]`;
+    ? targets.map((t, i) => `(กลุ่มเป้าหมายของตัวชี้วัดนี้ : ${t})\n` + kpiTemplate(nQA + i + 1, `ร้อยละ <ค่า> ของ ${t} <สถานการณ์/พฤติกรรม/ผลลัพธ์ พร้อมเกณฑ์>`)).join('\n\n')
+    : kpiTemplate(nQA + 1, '[ไม่มี]');
 
   const outputBlock = `ชื่อโครงการ : ${project}
 ผู้รับผิดชอบ : ${teacher}
@@ -1542,7 +1568,7 @@ ${qaLines}
 ══ ส่วนที่ 2 : ตัวชี้วัดงานแผนงานฯ ══
 ${addLines}
 
-⚠️ กฎเหล็ก: ห้ามเพิ่ม ลด หรือเปลี่ยนแปลงโครงสร้าง field ใด ๆ ข้างต้น ต้องตอบครบทุก field ทุกรายการ และใช้รูปแบบ "[KPI ...] / field : ค่า" นี้เท่านั้น ห้ามใช้ bullet, markdown, หรือตาราง`;
+⚠️ กฎเหล็ก: ทุกตัวชี้วัดต้องตอบให้ครบทั้ง 8 หัวข้อ ตามรูปแบบ "[ตัวชี้วัดที่ N]" และ "เลข. ชื่อหัวข้อ : ค่า" นี้เท่านั้น ห้ามเพิ่ม/ลด/เปลี่ยนชื่อหัวข้อ ห้ามใช้ bullet, markdown หรือตาราง และห้ามแก้ไขถ้อยคำของตัวชี้วัดงานประกันในหัวข้อ 1`;
 
   const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการออกแบบตัวชี้วัดความสำเร็จของโครงการ (KPI) และงานประกันคุณภาพการศึกษาของสถานศึกษา
 
@@ -2197,6 +2223,255 @@ function exportExcel() {
   XLSX.utils.book_append_sheet(wb, wsK, 'KPI โครงการ');
 
   XLSX.writeFile(wb, 'KTW_Projects_'+new Date().toISOString().slice(0,10)+'.xlsx');
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT SUMMARY .DOCX (เป้าประสงค์ / ตัวชี้วัด / ค่าเป้าหมาย)
+// รูปแบบตรงตามไฟล์แนบตัวอย่าง — ช่องค่าเป้าหมายเว้นว่าง
+// ═══════════════════════════════════════════════
+const DOCX_FONT = 'TH SarabunIT๙';
+const DOCX_COLS = [2836,3969,1843,1559,992,992,993,992,992];
+
+function dxEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// run(s) — รองรับขึ้นบรรทัดใหม่ด้วย \n => <w:br/>
+function dxRun(text,o){
+  o = o||{};
+  const b=o.b, sz=o.sz||32, color=o.color||'000000', italic=o.italic;
+  const parts = String(text==null?'':text).split('\n');
+  let runs='';
+  parts.forEach((p,i)=>{
+    if(i>0) runs+='<w:r><w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/></w:rPr><w:br/></w:r>';
+    runs+='<w:r><w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/>'+
+      (b?'<w:b/><w:bCs/>':'')+(italic?'<w:i/><w:iCs/>':'')+
+      '<w:color w:val="'+color+'"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/><w:cs/></w:rPr>'+
+      '<w:t xml:space="preserve">'+dxEsc(p)+'</w:t></w:r>';
+  });
+  return runs;
+}
+function dxPara(text,o){
+  o = o||{};
+  const jc=o.center?'<w:jc w:val="center"/>':'';
+  const sz=o.sz||32;
+  return '<w:p><w:pPr><w:spacing w:after="0" w:line="216" w:lineRule="auto"/>'+jc+
+    '<w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/></w:rPr></w:pPr>'+
+    (text===''?'':dxRun(text,o))+'</w:p>';
+}
+// cell
+function dxTc(w,inner,o){
+  o = o||{};
+  let pr='<w:tcW w:w="'+w+'" w:type="dxa"/>';
+  if(o.gridSpan) pr+='<w:gridSpan w:val="'+o.gridSpan+'"/>';
+  if(o.vMerge==='restart') pr+='<w:vMerge w:val="restart"/>';
+  else if(o.vMerge==='continue') pr+='<w:vMerge/>';
+  pr+='<w:vAlign w:val="center"/>';
+  return '<w:tc><w:tcPr>'+pr+'</w:tcPr>'+(inner||dxPara(''))+'</w:tc>';
+}
+
+function dxBuildTable(groups){
+  const C = DOCX_COLS;
+  // header row 0
+  const h0 =
+    dxTc(C[0], dxPara('เป้าประสงค์\n(Goals)',{center:true,b:true}), {vMerge:'restart'})+
+    dxTc(C[1], dxPara('ตัวชี้วัด\n(KPIs)',{center:true,b:true}), {vMerge:'restart'})+
+    dxTc(C[2], dxPara('ข้อมูลปัจจุบัน\n(Baseline Data)',{center:true,b:true}), {vMerge:'restart'})+
+    dxTc(C[3]+C[4]+C[5]+C[6]+C[7]+C[8], dxPara('ค่าเป้าหมาย (Targets)',{center:true,b:true}), {gridSpan:6});
+  // header row 1
+  const h1 =
+    dxTc(C[0],'',{vMerge:'continue'})+
+    dxTc(C[1],'',{vMerge:'continue'})+
+    dxTc(C[2],'',{vMerge:'continue'})+
+    dxTc(C[3], dxPara('ปี 2571-2575',{center:true,b:true}))+
+    dxTc(C[4], dxPara('ปี 2571',{center:true,b:true}))+
+    dxTc(C[5], dxPara('ปี 2572',{center:true,b:true}))+
+    dxTc(C[6], dxPara('ปี 2573',{center:true,b:true}))+
+    dxTc(C[7], dxPara('ปี 2574',{center:true,b:true}))+
+    dxTc(C[8], dxPara('ปี 2575',{center:true,b:true}));
+  let rows='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+h0+'</w:tr><w:tr><w:trPr><w:cantSplit/></w:trPr>'+h1+'</w:tr>';
+
+  // data rows — กลุ่มตามเป้าประสงค์, เซลล์เป้าประสงค์ merge ครอบทุก KPI
+  groups.forEach(g=>{
+    const kpis = (g.kpis && g.kpis.length) ? g.kpis : [{kpi:'',baseline:''}];
+    kpis.forEach((item,i)=>{
+      // รองรับทั้งรูปแบบ object {kpi,baseline} และ string (เผื่อกรณีตารางเปล่า)
+      const kpiText  = (item && typeof item==='object') ? (item.kpi||'')      : (item||'');
+      const baseline = (item && typeof item==='object') ? (item.baseline||'') : '';
+      const goalCell = (i===0)
+        ? dxTc(C[0], dxPara(g.goal,{}), {vMerge:'restart'})
+        : dxTc(C[0],'',{vMerge:'continue'});
+      rows += '<w:tr><w:trPr><w:cantSplit/></w:trPr>'+goalCell+
+        dxTc(C[1], dxPara(kpiText,{}))+
+        dxTc(C[2], dxPara(baseline,{center:true}))+
+        dxTc(C[3], dxPara(''))+
+        dxTc(C[4], dxPara(''))+
+        dxTc(C[5], dxPara(''))+
+        dxTc(C[6], dxPara(''))+
+        dxTc(C[7], dxPara(''))+
+        dxTc(C[8], dxPara(''))+'</w:tr>';
+    });
+  });
+
+  const grid = C.map(c=>'<w:gridCol w:w="'+c+'"/>').join('');
+  const borders='<w:tblBorders>'+
+    '<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders>';
+  return '<w:tbl><w:tblPr><w:tblW w:w="15168" w:type="dxa"/><w:tblInd w:w="-856" w:type="dxa"/>'+borders+
+    '<w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>'+
+    '<w:tblGrid>'+grid+'</w:tblGrid>'+rows+'</w:tbl>';
+}
+
+function dxBuildDocument(groups){
+  const intro =
+    dxPara('กิจกรรมที่ 6 รายละเอียดตัวชี้วัดและค่าเป้าหมาย',{b:true,center:true,sz:36})+
+    dxPara('****************************',{b:true,center:true,sz:32})+
+    '<w:p><w:pPr><w:spacing w:after="0" w:line="216" w:lineRule="auto"/><w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr>'+
+      dxRun('๑.๖ เป้าประสงค์ ',{b:true,sz:32})+
+      dxRun('(ต้องสนองตอบและสอดคล้องกับมาตรฐานการศึกษา/หลักสูตรของสถานศึกษา) ',{italic:true,sz:32,color:'FF0000'})+
+      dxRun('(1 เป้าประสงค์อาจจะมีหลายตัวชี้วัด)',{sz:32,color:'FF0000'})+
+    '</w:p>'+
+    dxPara('',{});
+  const table = dxBuildTable(groups);
+  const sect='<w:sectPr><w:type w:val="continuous"/><w:pgSz w:w="16839" w:h="11907" w:orient="landscape" w:code="9"/>'+
+    '<w:pgMar w:top="1418" w:right="1418" w:bottom="1985" w:left="1985" w:header="567" w:footer="567" w:gutter="0"/>'+
+    '<w:cols w:space="708"/><w:docGrid w:linePitch="435"/></w:sectPr>';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+intro+table+sect+'</w:body></w:document>';
+}
+
+// ดึงตัวชี้วัด + ข้อมูลปัจจุบัน จากข้อมูลที่บันทึก (kpiResult จาก AI → qaIndicators)
+// คืนค่าเป็น array ของ { kpi, baseline }
+function dxExtractKpis(d){
+  const out=[];
+  const isPlaceholder=v=>(!v || v==='[ไม่มี]' || /^[<\[].*[>\]]$/.test(v));
+  const res=(d.kpiResult||'').trim();
+  if(res){
+    let cur=null;
+    res.split('\n').forEach(line=>{
+      // ตัวชี้วัด (หัวข้อ 1) — เริ่มบล็อกใหม่
+      const mk=line.match(/^\s*(?:\d+[.)]\s*)?ตัวชี้วัด\s*[:：]\s*(.+)$/);
+      if(mk){
+        const v=mk[1].trim();
+        if(!isPlaceholder(v)){ cur={kpi:v,baseline:''}; out.push(cur); }
+        else cur=null;
+        return;
+      }
+      // ข้อมูลปัจจุบัน / ข้อมูลพื้นฐาน (หัวข้อ 6) — ใส่เข้าบล็อกปัจจุบัน
+      const mb=line.match(/^\s*(?:\d+[.)]\s*)?ข้อมูลปัจจุบัน[^:：]*[:：]\s*(.+)$/);
+      if(mb && cur){
+        let b=mb[1].trim();
+        if(!isPlaceholder(b)){
+          // เอาตัวเลขร้อยละไว้ในช่องข้อมูลปัจจุบัน (ตัดคำว่า "ร้อยละ" ออก เหลือเฉพาะตัวเลข)
+          cur.baseline=b.replace(/ร้อยละ/g,'').trim();
+        }
+      }
+    });
+  }
+  if(!out.length){
+    const qa=(d.qaIndicators||'').trim();
+    if(qa) qa.split('\n').forEach(l=>{ l=l.trim(); if(l) out.push({kpi:l,baseline:''}); });
+  }
+  // ประมวลผลแต่ละตัวชี้วัด:
+  //  - ตัดเลขลำดับนำหน้าออก
+  //  - ดึงตัวเลข "ร้อยละ NN" ที่ฝังในข้อความตัวชี้วัด ออกไปไว้ที่ข้อมูลปัจจุบัน
+  //    แล้วลบตัวเลขนั้นออกจากข้อความ (เหลือคำว่า "ร้อยละ" ไว้)
+  return out.map(o=>{
+    let kpi = o.kpi.replace(/^\d+[.)]\s*/,'').trim();
+    let baseline = o.baseline;
+    const m = kpi.match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
+    if(m){
+      baseline = m[1];  // ตัวเลขที่ฝังในตัวชี้วัด มาก่อนค่าจากหัวข้อ 6
+      kpi = kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim();
+    }
+    return { kpi, baseline };
+  }).filter(o=>o.kpi);
+}
+
+// รวบรวมข้อมูล จัดกลุ่มตามเป้าประสงค์
+function dxCollectGroups(){
+  const groups={}; const order=[];
+  projects.forEach(t=>{
+    t.projects.forEach(p=>{
+      const d=savedData[projectKey(t.teacher,p)];
+      if(!d || !d.strategyId) return;
+      const sid=d.strategyId;
+      const strat=STRATEGIES.find(s=>s.id===sid);
+      const goalLabel=sid+'.'+(d.goal || (strat?strat.goal:''));
+      if(!groups[sid]){ groups[sid]={goal:goalLabel,kpis:[]}; order.push(sid); }
+      dxExtractKpis(d).forEach(o=>{ if(o.kpi && !groups[sid].kpis.some(x=>x.kpi===o.kpi)) groups[sid].kpis.push(o); });
+    });
+  });
+  // เรียงตามหมายเลขยุทธศาสตร์ และใส่เลขลำดับตัวชี้วัดใหม่
+  return order.sort((a,b)=>a-b).map(sid=>{
+    const g=groups[sid];
+    return { goal:g.goal, kpis:g.kpis.map((o,i)=>({ kpi:(i+1)+'.'+o.kpi, baseline:o.baseline })) };
+  });
+}
+
+function dxDownload(groups){
+  if(typeof JSZip==='undefined'){
+    Swal.fire({icon:'error',title:'ไลบรารีสร้างไฟล์ยังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่อีกครั้ง',confirmButtonColor:'#6c3fc5'}); return;
+  }
+  const doc=dxBuildDocument(groups);
+  const CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+  const RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>'+
+    '<w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:rPrDefault></w:docDefaults>'+
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+
+  const zip=new JSZip();
+  zip.file('[Content_Types].xml',CT);
+  zip.folder('_rels').file('.rels',RELS);
+  const word=zip.folder('word');
+  word.file('document.xml',doc);
+  word.file('styles.xml',STYLES);
+  word.folder('_rels').file('document.xml.rels',DRELS);
+  zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='ตารางเป้าประสงค์และตัวชี้วัด_'+new Date().toISOString().slice(0,10)+'.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    const totalKpi=groups.reduce((a,g)=>a+(g.kpis.length||0),0);
+    Swal.fire({icon:'success',title:'สร้างไฟล์สำเร็จ!',
+      html:'ดาวน์โหลดตารางสรุปแล้ว<br><span style="font-size:0.84rem;color:#6b7280">เป้าประสงค์ <b>'+groups.length+'</b> ข้อ · ตัวชี้วัด <b>'+totalKpi+'</b> รายการ · ช่องค่าเป้าหมายเว้นว่างไว้ให้กรอกเอง</span>',
+      confirmButtonColor:'#2563eb'});
+  }).catch(e=>{
+    Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message});
+  });
+}
+
+function exportSummaryDocx(){
+  const groups=dxCollectGroups();
+  if(!groups.length){
+    Swal.fire({
+      icon:'question', title:'ยังไม่มีข้อมูลที่บันทึก',
+      html:'ยังไม่มีโครงการที่ระบุ "ยุทธศาสตร์/เป้าประสงค์" ในส่วนที่ 2<br>ต้องการดาวน์โหลด <b>ตารางเปล่า</b> (เป้าประสงค์ทั้ง 7 ข้อ) เป็นแม่แบบหรือไม่?',
+      showCancelButton:true, confirmButtonText:'ดาวน์โหลดตารางเปล่า', cancelButtonText:'ยกเลิก',
+      confirmButtonColor:'#2563eb', cancelButtonColor:'#6c3fc5'
+    }).then(r=>{
+      if(r.isConfirmed){
+        const blank=STRATEGIES.map(s=>({goal:s.id+'.'+s.goal,kpis:[]}));
+        dxDownload(blank);
+      }
+    });
+    return;
+  }
+  dxDownload(groups);
 }
 
 async function clearAllData() {
