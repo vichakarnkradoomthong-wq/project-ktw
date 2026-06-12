@@ -159,6 +159,10 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
   background:linear-gradient(135deg,#0f766e,#14b8a6);
   box-shadow:0 6px 20px rgba(20,184,166,0.35);
 }
+.card-icon-wrap.blue{
+  background:linear-gradient(135deg,#1d4ed8,#3b82f6);
+  box-shadow:0 6px 20px rgba(59,130,246,0.35);
+}
 
 .card-chip{
   display:inline-flex;align-items:center;gap:5px;
@@ -517,9 +521,26 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
         </div>
       </div>
 
-    </div>
+      <!-- Card 5 -->
+      <div class="landing-card" onclick="showSection('trendSection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#1d4ed8,#60a5fa)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap blue">📈</div>
+          <div class="card-chip">ส่วนที่ 5 · Annual Targets</div>
+          <div class="card-title">ระบุแนวโน้มร้อยละ<br>รายปี (ค่าเป้าหมาย)</div>
+          <div class="card-desc">เลือกครู → เลือกโครงการ → ดูข้อมูลปัจจุบัน (Baseline) แล้วกรอกค่าเป้าหมายรายปี 2571–2575 ของแต่ละตัวชี้วัด · บันทึกลงช่องค่าเป้าหมายในไฟล์ตารางสรุป .docx</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">📅 รายปี</span>
+              <span class="card-feat-tag">🔒 ล็อก 2575</span>
+              <span class="card-feat-tag">📄 .docx</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+          </div>
+        </div>
+      </div>
 
-    <!-- Stats Preview -->
+    </div>
     <div class="stats-preview">
       <div class="stats-preview-title">📊 สรุปภาพรวม</div>
       <div class="stats-preview-grid" id="landingStats"></div>
@@ -588,6 +609,15 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
     </div>
     <div id="statsContent"></div>
+  </div>
+
+  <div id="trendSection" class="section">
+    <div class="section-header">
+      <div class="section-title">📈 ระบุแนวโน้มร้อยละรายปี (ค่าเป้าหมาย)</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+    <div id="trendTeacherGrid" class="teacher-grid"></div>
+    <div id="trendProjectPanel" style="display:none"></div>
   </div>
 </div>
 
@@ -1069,17 +1099,18 @@ function clearProjectPanels() {
 
 function showSection(id) {
   document.getElementById('landingSection').style.display = 'none';
-  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection','trendSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById(id).classList.add('active');
   if (id==='aiSection') renderTeacherGrid('ai');
   if (id==='manualSection') renderTeacherGrid('manual');
   if (id==='kpiSection') renderTeacherGrid('kpi');
   if (id==='statsSection') renderStats();
+  if (id==='trendSection') renderTrendTeachers();
 }
 
 function goBack() {
-  ['aiSection','manualSection','kpiSection','statsSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection','trendSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById('landingSection').style.display = 'block';
 }
@@ -1578,6 +1609,8 @@ ${qaLines}
 ${addLines}
 
 ⚠️ กฎเหล็ก: ทุกตัวชี้วัดต้องตอบให้ครบทั้ง 8 หัวข้อ ตามรูปแบบ "[ตัวชี้วัดที่ N]" และ "เลข. ชื่อหัวข้อ : ค่า" นี้เท่านั้น ห้ามเพิ่ม/ลด/เปลี่ยนชื่อหัวข้อ ห้ามใช้ bullet, markdown หรือตาราง และห้ามแก้ไขถ้อยคำของตัวชี้วัดงานประกันในหัวข้อ 1
+
+📌 สำคัญมาก: ก่อนเริ่มตอบ ให้พิมพ์บรรทัดต่อไปนี้ออกมาทุกตัวอักษรตามที่กำหนด แล้วจึงตามด้วยคำตอบตัวชี้วัดทั้งหมดทันที ห้ามละเว้น ห้ามเพิ่มคำอธิบายใดๆ ก่อนหรือหลัง marker นี้:
 
 ⬇️ ─────────────────────────────────────────── ⬇️
 เริ่มคัดลอก (copy) จากตรงนี้
@@ -2382,18 +2415,21 @@ function dxBuildTable(groups){
       // รองรับทั้งรูปแบบ object {kpi,baseline} และ string (เผื่อกรณีตารางเปล่า)
       const kpiText  = (item && typeof item==='object') ? (item.kpi||'')      : (item||'');
       const baseline = (item && typeof item==='object') ? (item.baseline||'') : '';
+      const y        = (item && typeof item==='object' && item.yearly) ? item.yearly : {};
+      // คอลัมน์รวม ปี 2571-2575 = ปี 2575 (ล็อกให้ตรงกัน)
+      const cCombined = (y.combined!=null && y.combined!=='') ? y.combined : (y.y75||'');
       const goalCell = (i===0)
         ? dxTc(C[0], dxPara(g.goal,{}), {vMerge:'restart'})
         : dxTc(C[0],'',{vMerge:'continue'});
       rows += '<w:tr><w:trPr><w:cantSplit/></w:trPr>'+goalCell+
         dxTc(C[1], dxPara(kpiText,{}))+
         dxTc(C[2], dxPara(baseline,{center:true}))+
-        dxTc(C[3], dxPara(''))+
-        dxTc(C[4], dxPara(''))+
-        dxTc(C[5], dxPara(''))+
-        dxTc(C[6], dxPara(''))+
-        dxTc(C[7], dxPara(''))+
-        dxTc(C[8], dxPara(''))+'</w:tr>';
+        dxTc(C[3], dxPara(cCombined,{center:true}))+
+        dxTc(C[4], dxPara(y.y71||'',{center:true}))+
+        dxTc(C[5], dxPara(y.y72||'',{center:true}))+
+        dxTc(C[6], dxPara(y.y73||'',{center:true}))+
+        dxTc(C[7], dxPara(y.y74||'',{center:true}))+
+        dxTc(C[8], dxPara(y.y75||'',{center:true}))+'</w:tr>';
     });
   });
 
@@ -2477,6 +2513,180 @@ function dxExtractKpis(d){
 }
 
 // ═══════════════════════════════════════════════
+// ส่วนที่ 5 · แนวโน้มร้อยละรายปี (ค่าเป้าหมาย Targets)
+// ดึงตัวชี้วัด + baseline ต่อโครงการ ด้วย logic เดียวกับ collectAllKpiItems/dxCollectGroups
+// เพื่อให้ "ลำดับตัวชี้วัด (index)" ตรงกับที่บันทึก yearlyTargets และที่ออกไฟล์ .docx
+// ═══════════════════════════════════════════════
+function ttGetProjectKpis(teacher, project){
+  const d = savedData[projectKey(teacher, project)];
+  if(!d) return [];
+  let blocks = [];
+  if(d.kpiResult) blocks = cvParseKpiResult(d.kpiResult);
+  if(!blocks.length && d.qaIndicators){
+    blocks = (d.qaIndicators||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>({kpi:l}));
+  }
+  const out = [];
+  blocks.forEach(b=>{
+    const kpiRaw = (b.kpi||'').replace(/^\d+[.)]\s*/,'').trim();
+    if(!kpiRaw && !b.scope && !b.unit && !b.target) return; // ข้ามบล็อกว่าง (ตรงกับ collectAllKpiItems)
+    let kpi = kpiRaw, baseline = '';
+    if(b.baselineRaw) baseline = b.baselineRaw.replace(/ร้อยละ/g,'').trim();
+    const m = kpi.match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
+    if(m){ baseline = m[1]; kpi = kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim(); }
+    out.push({ kpi, baseline });
+  });
+  return out;
+}
+
+function renderTrendTeachers(){
+  const grid = document.getElementById('trendTeacherGrid');
+  document.getElementById('trendProjectPanel').style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+  projects.forEach(t => {
+    // นับโครงการที่กรอกค่าเป้าหมายรายปีแล้ว
+    const done = t.projects.filter(p => {
+      const d = savedData[projectKey(t.teacher,p)];
+      return d?.yearlyTargets && Object.values(d.yearlyTargets).some(y=>y && (y.y71||y.y72||y.y73||y.y74||y.y75));
+    }).length;
+    const pct = t.projects.length > 0 ? Math.round(done/t.projects.length*100) : 0;
+    const initials = t.teacher.replace(/ครู|อาจารย์/g,'').charAt(0) || t.teacher.charAt(0);
+    const card = document.createElement('div');
+    card.className = 'teacher-card';
+    card.innerHTML = `
+      <div class="teacher-avatar" style="background:linear-gradient(135deg,#1d4ed8,#3b82f6)">${initials}</div>
+      <div class="teacher-name">${t.teacher}</div>
+      <div class="teacher-count">${done}/${t.projects.length} โครงการ</div>
+      <div class="teacher-progress"><div class="teacher-progress-fill" style="width:${pct}%;background:linear-gradient(90deg,#1d4ed8,#60a5fa)"></div></div>
+    `;
+    card.onclick = () => openTrendProjects(t);
+    grid.appendChild(card);
+  });
+}
+
+function openTrendProjects(td){
+  document.getElementById('trendTeacherGrid').style.display = 'none';
+  const panel = document.getElementById('trendProjectPanel');
+  panel.style.display = 'block';
+  let rows = '';
+  td.projects.forEach(project => {
+    const d = savedData[projectKey(td.teacher, project)];
+    const kpis = ttGetProjectKpis(td.teacher, project);
+    const filled = d?.yearlyTargets && Object.values(d.yearlyTargets).some(y=>y && (y.y71||y.y72||y.y73||y.y74||y.y75));
+    let badge;
+    if(!kpis.length) badge = `<span class="badge badge-pending">ยังไม่มีตัวชี้วัด</span>`;
+    else if(filled) badge = `<span class="badge badge-done">✓ กรอกแล้ว</span>`;
+    else badge = `<span class="badge badge-pending">รอกรอกค่าเป้าหมาย</span>`;
+    const disabled = kpis.length ? '' : 'style="opacity:0.55;cursor:not-allowed"';
+    rows += `
+      <div class="project-row" ${disabled} ${kpis.length?`onclick="openTrendEditor('${encodeURIComponent(td.teacher)}','${encodeURIComponent(project)}')"`:''}>
+        <div class="project-row-header">
+          <div class="project-name">${project}<div style="font-size:0.76rem;color:var(--text3);font-weight:400;margin-top:3px">${kpis.length} ตัวชี้วัด</div></div>
+          <div class="project-badges">${badge}</div>
+        </div>
+      </div>`;
+  });
+  panel.innerHTML = `
+    <div class="section-header">
+      <div class="section-title">📚 โครงการของ <span style="color:var(--primary)">${td.teacher}</span></div>
+      <button class="back-btn" onclick="renderTrendTeachers()">← เลือกครูคนอื่น</button>
+    </div>
+    <div style="font-size:0.8rem;color:var(--text3);margin:6px 0 14px">คลิกโครงการเพื่อกรอกค่าเป้าหมายรายปี · โครงการที่ยังไม่มีตัวชี้วัดต้องไปออกแบบ KPI (ส่วนที่ 3) และส่งผลก่อน</div>
+    <div class="project-list">${rows}</div>`;
+}
+
+function openTrendEditor(teacherEnc, projectEnc){
+  const teacher = decodeURIComponent(teacherEnc);
+  const project = decodeURIComponent(projectEnc);
+  const key = projectKey(teacher, project);
+  const d = savedData[key] || {};
+  const kpis = ttGetProjectKpis(teacher, project);
+  const yt = d.yearlyTargets || {};
+
+  let kpiCards = '';
+  kpis.forEach((k, idx) => {
+    const v = yt[idx] || {};
+    const baseShow = k.baseline ? (k.baseline + (/^[0-9.]+$/.test(k.baseline) ? '' : '')) : '—';
+    kpiCards += `
+      <div class="tt-kpi-card" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
+        <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">
+          <span style="background:#1d4ed8;color:#fff;font-size:0.74rem;font-weight:700;padding:3px 9px;border-radius:6px;flex-shrink:0;margin-top:1px">ตัวชี้วัดที่ ${idx+1}</span>
+          <div style="font-size:0.88rem;color:var(--text);line-height:1.45">${k.kpi || '—'}</div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div style="flex:0 0 110px">
+            <label style="font-size:0.72rem;color:var(--text3);display:block;margin-bottom:4px">ข้อมูลปัจจุบัน<br>(Baseline)</label>
+            <input type="text" value="${baseShow==='—'?'':baseShow}" readonly
+              style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface3);color:var(--text2);font-size:0.86rem;text-align:center">
+          </div>
+          <div style="flex:1;min-width:280px">
+            <label style="font-size:0.72rem;color:var(--text3);display:block;margin-bottom:4px">ค่าเป้าหมายรายปี (กรอกเป็นตัวเลขร้อยละ เช่น 90)</label>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+              ${[71,72,73,74,75].map(yr=>`
+                <div style="text-align:center">
+                  <div style="font-size:0.7rem;color:var(--text3);margin-bottom:3px">25${yr}</div>
+                  <input type="text" inputmode="decimal" class="tt-year" data-idx="${idx}" data-yr="y${yr}"
+                    value="${v['y'+yr]!=null?v['y'+yr]:''}" placeholder="-"
+                    ${yr===75?`oninput="ttSync2575(${idx})"`:''}
+                    style="width:100%;padding:8px 4px;border:1.5px solid ${yr===75?'#1d4ed8':'var(--border)'};border-radius:8px;background:var(--surface);color:var(--text);font-size:0.86rem;text-align:center">
+                </div>`).join('')}
+            </div>
+          </div>
+          <div style="flex:0 0 120px">
+            <label style="font-size:0.72rem;color:#1d4ed8;display:block;margin-bottom:4px;font-weight:600">🔒 ปี 2571-2575<br>(= ปี 2575)</label>
+            <input type="text" class="tt-combined" data-idx="${idx}" value="${v.y75!=null?v.y75:''}" readonly
+              style="width:100%;padding:8px 10px;border:1.5px solid #1d4ed8;border-radius:8px;background:#eff6ff;color:#1d4ed8;font-size:0.86rem;text-align:center;font-weight:700">
+          </div>
+        </div>
+      </div>`;
+  });
+
+  const panel = document.getElementById('trendProjectPanel');
+  panel.innerHTML = `
+    <div class="section-header">
+      <div class="section-title">📈 ค่าเป้าหมายรายปี</div>
+      <button class="back-btn" onclick="openTrendProjects(projects.find(t=>t.teacher==='${teacher.replace(/'/g,"\\'")}'))">← กลับรายการโครงการ</button>
+    </div>
+    <div style="background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1.5px solid #bfdbfe;border-radius:10px;padding:11px 15px;margin:8px 0 16px">
+      <div style="font-size:0.9rem;font-weight:600;color:#1d4ed8;margin-bottom:2px">${project}</div>
+      <div style="font-size:0.78rem;color:var(--text3)">ผู้รับผิดชอบ: ${teacher} · ช่อง <b>ปี 2575</b> จะถูกคัดลอกไปยังคอลัมน์รวม <b>ปี 2571-2575</b> โดยอัตโนมัติ (ล็อกให้ตรงกัน)</div>
+    </div>
+    ${kpiCards || '<div style="text-align:center;padding:24px;color:var(--text3)">ไม่มีตัวชี้วัด</div>'}
+    <button class="project-btn primary-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#1d4ed8,#3b82f6);border-color:#1d4ed8;margin-top:6px"
+      onclick="saveTrendTargets('${encodeURIComponent(teacher)}','${encodeURIComponent(project)}')">💾 บันทึกค่าเป้าหมายรายปี</button>`;
+}
+
+// ช่องปี 2575 → คัดลอกไปคอลัมน์รวม ปี 2571-2575 (ล็อกให้ตรงกัน)
+function ttSync2575(idx){
+  const src = document.querySelector('.tt-year[data-idx="'+idx+'"][data-yr="y75"]');
+  const dst = document.querySelector('.tt-combined[data-idx="'+idx+'"]');
+  if(src && dst) dst.value = src.value;
+}
+
+async function saveTrendTargets(teacherEnc, projectEnc){
+  const teacher = decodeURIComponent(teacherEnc);
+  const project = decodeURIComponent(projectEnc);
+  const key = projectKey(teacher, project);
+  const yearly = {};
+  document.querySelectorAll('#trendProjectPanel .tt-year').forEach(inp=>{
+    const idx = inp.dataset.idx, yr = inp.dataset.yr;
+    if(!yearly[idx]) yearly[idx] = {};
+    yearly[idx][yr] = inp.value.trim();
+  });
+  // ล็อกคอลัมน์รวม = ปี 2575
+  Object.keys(yearly).forEach(idx=>{ yearly[idx].combined = yearly[idx].y75 || ''; });
+
+  const payload = { ...(savedData[key]||{}), teacher, project, yearlyTargets: yearly, yearlyTargetsSavedAt: new Date().toISOString() };
+  try { await saveAssignment(key, payload); } catch(e){ savedData[key] = payload; }
+
+  Swal.fire({ icon:'success', title:'บันทึกค่าเป้าหมายรายปีแล้ว',
+    html:'ค่าเป้าหมายจะถูกนำไปกรอกในช่อง <b>ค่าเป้าหมาย (Targets)</b> ของไฟล์ตารางสรุป .docx โดยอัตโนมัติ',
+    confirmButtonColor:'#1d4ed8' });
+  // refresh badge
+  openTrendProjects(projects.find(t=>t.teacher===teacher));
+}
+
+// ═══════════════════════════════════════════════
 // ตัวรวบรวม KPI กลาง — ใช้ร่วมกันทั้งเมนู #3 (ตารางสรุป) และ #4 (ใบปะหน้า)
 // ทำให้จำนวนตัวชี้วัดทั้งสองเมนู "ตรงกันเสมอ"
 // คืน array ของ { goalNo, goalText, kpi, scope, unit, target, formula, baselineRaw, source, freq }
@@ -2496,6 +2706,8 @@ function collectAllKpiItems(){
       if(!blocks.length && d.qaIndicators){
         blocks=(d.qaIndicators||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>({kpi:l}));
       }
+      const yt = d.yearlyTargets || {};
+      let kIdx = 0;
       blocks.forEach(b=>{
         const kpi=(b.kpi||'').replace(/^\d+[.)]\s*/,'').trim();
         if(!kpi && !b.scope && !b.unit && !b.target) return; // ข้ามบล็อกว่างจริง ๆ
@@ -2504,8 +2716,10 @@ function collectAllKpiItems(){
           kpi,
           scope:b.scope||'', unit:b.unit||'', target:b.target||'',
           formula:b.formula||'', baselineRaw:b.baselineRaw||'',
-          source:b.source||'', freq:b.freq||''
+          source:b.source||'', freq:b.freq||'',
+          yearly: yt[kIdx] || null
         });
+        kIdx++;
       });
     });
   });
@@ -2529,12 +2743,12 @@ function dxCollectGroups(){
     if(it.baselineRaw) baseline=it.baselineRaw.replace(/ร้อยละ/g,'').trim();
     const m=kpi.match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
     if(m){ baseline=m[1]; kpi=kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim(); }
-    groups[key].kpis.push({ kpi, baseline });
+    groups[key].kpis.push({ kpi, baseline, yearly: it.yearly || null });
   });
   return order
     .map(k=>groups[k])
     .sort((a,b)=>a.sort-b.sort)
-    .map(g=>({ goal:g.goal, kpis:g.kpis.map((o,i)=>({ kpi:(i+1)+'.'+o.kpi, baseline:o.baseline })) }));
+    .map(g=>({ goal:g.goal, kpis:g.kpis.map((o,i)=>({ kpi:(i+1)+'.'+o.kpi, baseline:o.baseline, yearly:o.yearly })) }));
 }
 
 function dxDownload(groups){
