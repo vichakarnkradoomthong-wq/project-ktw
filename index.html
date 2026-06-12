@@ -163,6 +163,10 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
   background:linear-gradient(135deg,#1d4ed8,#3b82f6);
   box-shadow:0 6px 20px rgba(59,130,246,0.35);
 }
+.card-icon-wrap.amber{
+  background:linear-gradient(135deg,#b45309,#f59e0b);
+  box-shadow:0 6px 20px rgba(245,158,11,0.35);
+}
 
 .card-chip{
   display:inline-flex;align-items:center;gap:5px;
@@ -540,6 +544,25 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
         </div>
       </div>
 
+      <!-- Card 6 -->
+      <div class="landing-card" onclick="showSection('verifySection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#b45309,#fbbf24)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap amber">🔍</div>
+          <div class="card-chip">ส่วนที่ 6 · Verify &amp; Export</div>
+          <div class="card-title">ตรวจสอบตัวชี้วัด<br>ทั้งหมดก่อนส่งออก</div>
+          <div class="card-desc">สรุปข้อมูลโครงการและตัวชี้วัดทั้งหมดในที่เดียว · ค้นหาและกรองตามเป้าประสงค์/ประเภท · ตรวจทานก่อนกดสร้างไฟล์ .docx และ Excel</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">🔎 ค้นหา</span>
+              <span class="card-feat-tag">🧮 กรอง</span>
+              <span class="card-feat-tag">📄 Export</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="stats-preview">
       <div class="stats-preview-title">📊 สรุปภาพรวม</div>
@@ -618,6 +641,14 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
     <div id="trendTeacherGrid" class="teacher-grid"></div>
     <div id="trendProjectPanel" style="display:none"></div>
+  </div>
+
+  <div id="verifySection" class="section">
+    <div class="section-header">
+      <div class="section-title">🔍 ตรวจสอบตัวชี้วัดก่อนส่งออก</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+    <div id="verifyContent"></div>
   </div>
 </div>
 
@@ -1099,7 +1130,7 @@ function clearProjectPanels() {
 
 function showSection(id) {
   document.getElementById('landingSection').style.display = 'none';
-  ['aiSection','manualSection','kpiSection','statsSection','trendSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection','trendSection','verifySection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById(id).classList.add('active');
   if (id==='aiSection') renderTeacherGrid('ai');
@@ -1107,10 +1138,11 @@ function showSection(id) {
   if (id==='kpiSection') renderTeacherGrid('kpi');
   if (id==='statsSection') renderStats();
   if (id==='trendSection') renderTrendTeachers();
+  if (id==='verifySection') renderVerify();
 }
 
 function goBack() {
-  ['aiSection','manualSection','kpiSection','statsSection','trendSection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection','trendSection','verifySection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById('landingSection').style.display = 'block';
 }
@@ -1680,7 +1712,9 @@ async function submitKpiResult() {
   const count   = document.getElementById('kpiCount').value || '3';
 
   const payload = { ...(savedData[key]||{}), teacher, project, problem, targetGroups:targets, targetGroup:targets.join(' | '), qaIndicators:qa, kpiCount:count,
-    kpiResult:result, kpiGenerated:true, kpiSubmitted:true, kpiSubmittedAt:new Date().toISOString() };
+    kpiResult:result, kpiGenerated:true, kpiSubmitted:true, kpiSubmittedAt:new Date().toISOString(),
+    // ส่งข้อมูล KPI ใหม่ = ยึดตัวชี้วัดชุดใหม่แทนชุดเดิมทั้งหมด (ล้างค่าเป้าหมายรายปี/การแก้ไขเดิมที่ผูกกับ index เก่า)
+    yearlyTargets:{}, kpiEdits:{} };
   try {
     await saveAssignment(key, payload);
     const row = document.getElementById('row_'+key);
@@ -2529,17 +2563,21 @@ function ttGetProjectKpis(teacher, project){
     fallback = true;
   }
   const out = [];
+  const edits = d.kpiEdits || {};
   blocks.forEach(b=>{
     const kpiRaw = (b.kpi||'').replace(/^\d+[.)]\s*/,'').trim();
     if(!kpiRaw && !b.scope && !b.unit && !b.target) return; // ข้ามบล็อกว่าง (ตรงกับ collectAllKpiItems)
-    let kpi = kpiRaw, baseline = '';
+    const visIndex = out.length;
+    const ed = edits[visIndex] || {};
+    const rawText = (ed.kpi != null) ? ed.kpi : kpiRaw;
+    let kpi = rawText, baseline = '';
     if(b.baselineRaw) baseline = b.baselineRaw.replace(/ร้อยละ/g,'').trim();
     const m = kpi.match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
     if(m){ baseline = m[1]; kpi = kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim(); }
+    if(Object.prototype.hasOwnProperty.call(ed,'baseline')) baseline = ed.baseline;
     // ลำดับแรก nQA ตัว = ตัวชี้วัดงานประกันฯ, ที่เหลือ = งานแผนงานฯ (โหมด fallback ทั้งหมดเป็นงานประกันฯ)
-    const visIndex = out.length;
     const type = fallback ? 'qa' : (visIndex < nQA ? 'qa' : 'plan');
-    out.push({ kpi, baseline, type });
+    out.push({ kpi, baseline, type, raw: rawText });
   });
   return out;
 }
@@ -2608,6 +2646,8 @@ function openTrendEditor(teacherEnc, projectEnc){
   const d = savedData[key] || {};
   const kpis = ttGetProjectKpis(teacher, project);
   const yt = d.yearlyTargets || {};
+  window.__ttKpis = kpis;
+  window.__ttCtx = { teacher, project };
 
   let kpiCards = '';
   const tEnc = encodeURIComponent(teacher), pEnc = encodeURIComponent(project);
@@ -2621,7 +2661,9 @@ function openTrendEditor(teacherEnc, projectEnc){
       <div class="tt-kpi-card" style="position:relative;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
         <button onclick="event.stopPropagation();ttToggleMenu(${idx})" title="ตัวเลือก"
           style="position:absolute;top:10px;right:10px;width:30px;height:30px;border:none;background:none;cursor:pointer;font-size:1.25rem;line-height:1;color:var(--text3);border-radius:7px;display:flex;align-items:center;justify-content:center">⋮</button>
-        <div id="ttMenu_${idx}" class="tt-menu" style="display:none;position:absolute;top:40px;right:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.16);z-index:30;overflow:hidden;min-width:178px">
+        <div id="ttMenu_${idx}" class="tt-menu" style="display:none;position:absolute;top:40px;right:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.16);z-index:30;overflow:hidden;min-width:188px">
+          <button onclick="ttAskEditKpi('${tEnc}','${pEnc}',${idx})"
+            style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:var(--text);text-align:left;border-bottom:1px solid var(--border)">✏️ แก้ไขตัวชี้วัด</button>
           <button onclick="ttAskDelete('${tEnc}','${pEnc}',${idx})"
             style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:#dc2626;text-align:left">🗑 ลบตัวชี้วัดนี้</button>
         </div>
@@ -2631,9 +2673,11 @@ function openTrendEditor(teacherEnc, projectEnc){
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
           <div style="flex:0 0 110px">
-            <label style="font-size:0.72rem;color:var(--text3);display:block;margin-bottom:4px">ข้อมูลปัจจุบัน<br>(Baseline)</label>
-            <input type="text" value="${baseShow==='—'?'':baseShow}" readonly
-              style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface3);color:var(--text2);font-size:0.86rem;text-align:center">
+            <label style="font-size:0.72rem;color:var(--text3);display:block;margin-bottom:4px">ข้อมูลปัจจุบัน (Baseline)<br><span style="color:#1d4ed8">✎ แก้ไขได้</span></label>
+            <input type="text" inputmode="decimal" class="tt-baseline" data-idx="${idx}"
+              value="${baseShow==='—'?'':baseShow}" placeholder="-"
+              onchange="ttEditBaseline('${tEnc}','${pEnc}',${idx},this.value)"
+              style="width:100%;padding:8px 10px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:0.86rem;text-align:center">
           </div>
           <div style="flex:1;min-width:280px">
             <label style="font-size:0.72rem;color:var(--text3);display:block;margin-bottom:4px">ค่าเป้าหมายรายปี (กรอกเป็นตัวเลขร้อยละ เช่น 90)</label>
@@ -2702,21 +2746,31 @@ async function saveTrendTargets(teacherEnc, projectEnc){
   openTrendProjects(projects.find(t=>t.teacher===teacher));
 }
 
-// ── เมนูจุด 3 จุด ของการ์ดตัวชี้วัด ──
-function ttToggleMenu(idx){
-  const m = document.getElementById('ttMenu_'+idx);
+// ── เมนูจุด 3 จุด ของการ์ดตัวชี้วัด (ใช้ร่วมส่วนที่ 5 และ 6) ──
+function ttToggleMenu(idx){ kpiMenuToggle('ttMenu_'+idx); }
+function kpiMenuToggle(id){
+  const m = document.getElementById(id);
   const open = m && m.style.display !== 'none';
-  document.querySelectorAll('#trendProjectPanel .tt-menu').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.tt-menu,.vf-menu').forEach(el=>el.style.display='none');
   if(m && !open) m.style.display = 'block';
 }
 // ปิดเมนูเมื่อคลิกที่อื่น
 document.addEventListener('click', e=>{
-  if(e.target.closest && (e.target.closest('.tt-menu') || (e.target.tagName==='BUTTON' && e.target.textContent==='⋮'))) return;
-  document.querySelectorAll('#trendProjectPanel .tt-menu').forEach(el=>el.style.display='none');
+  if(e.target.closest && (e.target.closest('.tt-menu') || e.target.closest('.vf-menu') || (e.target.tagName==='BUTTON' && e.target.textContent==='⋮'))) return;
+  document.querySelectorAll('.tt-menu,.vf-menu').forEach(el=>el.style.display='none');
 });
 
+// refresh มุมมองที่ถูกต้องหลังแก้ไข/ลบ (ส่วนที่ 5 = editor, ส่วนที่ 6 = ตารางตรวจสอบ)
+function ttRefreshAfterChange(teacher, project){
+  if(document.getElementById('verifySection')?.classList.contains('active')){
+    vfRender();
+  } else {
+    openTrendEditor(encodeURIComponent(teacher), encodeURIComponent(project));
+  }
+}
+
 function ttAskDelete(teacherEnc, projectEnc, idx){
-  document.querySelectorAll('#trendProjectPanel .tt-menu').forEach(el=>el.style.display='none');
+  document.querySelectorAll('.tt-menu,.vf-menu').forEach(el=>el.style.display='none');
   Swal.fire({
     icon:'warning', title:'ลบตัวชี้วัดนี้?',
     html:'ตัวชี้วัดนี้จะถูกลบออกจาก <b>ทุกที่ในระบบ</b><br><span style="font-size:0.83rem;color:#6b7280">(ตารางสรุป .docx · ใบปะหน้า · สถิติ · ค่าเป้าหมายรายปี)<br>เหมาะสำหรับลบข้อความที่ระบบตัดคำผิดมาเป็นตัวชี้วัด · ไม่สามารถย้อนกลับได้</span>',
@@ -2816,13 +2870,199 @@ async function deleteTrendKpi(teacher, project, displayIdx){
     });
     d.yearlyTargets = newYT;
   }
+  // เลื่อน index ของ kpiEdits ให้สอดคล้องกัน
+  if(d.kpiEdits){
+    const newED = {};
+    Object.keys(d.kpiEdits).map(Number).sort((a,b)=>a-b).forEach(k=>{
+      if(k === displayIdx) return;
+      newED[k > displayIdx ? k-1 : k] = d.kpiEdits[k];
+    });
+    d.kpiEdits = newED;
+  }
 
   d.teacher = teacher; d.project = project;
   try { await saveAssignment(key, d); } catch(e){ /* offline */ }
   savedData[key] = d;
 
   Swal.fire({ icon:'success', title:'ลบตัวชี้วัดแล้ว', timer:1400, showConfirmButton:false });
-  openTrendEditor(encodeURIComponent(teacher), encodeURIComponent(project));
+  ttRefreshAfterChange(teacher, project);
+}
+
+// บันทึกการแก้ไขตัวชี้วัด (ข้อความ/baseline) ลง kpiEdits — มีผลกับทุกที่ในระบบ
+async function ttSetKpiEdit(teacher, project, idx, patch){
+  const key = projectKey(teacher, project);
+  const d = { ...(savedData[key]||{}) };
+  const edits = { ...(d.kpiEdits||{}) };
+  edits[idx] = { ...(edits[idx]||{}), ...patch };
+  d.kpiEdits = edits; d.teacher = teacher; d.project = project;
+  try { await saveAssignment(key, d); } catch(e){ /* offline */ }
+  savedData[key] = d;
+}
+
+// แก้ไขค่า Baseline (บันทึกอัตโนมัติเมื่อออกจากช่อง)
+async function ttEditBaseline(teacherEnc, projectEnc, idx, value){
+  const teacher = decodeURIComponent(teacherEnc), project = decodeURIComponent(projectEnc);
+  await ttSetKpiEdit(teacher, project, idx, { baseline: (value||'').trim() });
+}
+
+// แก้ไขข้อความตัวชี้วัด (เปลี่ยนตามทุกที่ในระบบ) — ใช้ได้ทั้งส่วนที่ 5 และ 6
+function ttAskEditKpi(teacherEnc, projectEnc, idx){
+  document.querySelectorAll('.tt-menu,.vf-menu').forEach(el=>el.style.display='none');
+  const teacher = decodeURIComponent(teacherEnc), project = decodeURIComponent(projectEnc);
+  const kpis = ttGetProjectKpis(teacher, project);
+  const cur = kpis[idx] ? (kpis[idx].raw || kpis[idx].kpi || '') : '';
+  Swal.fire({
+    title:'แก้ไขข้อความตัวชี้วัด',
+    input:'textarea',
+    inputValue:cur,
+    inputAttributes:{ style:'min-height:120px;font-family:Sarabun,sans-serif;font-size:0.95rem;line-height:1.5' },
+    html:'<div style="font-size:0.82rem;color:#6b7280;text-align:left">การแก้ไขนี้จะมีผลกับ<b>ทุกที่ในระบบ</b> (ตารางสรุป .docx · ใบปะหน้า · สถิติ · ส่วนที่ 5/6)<br>หมายเหตุ: หากใส่ "ร้อยละ NN" ในข้อความ ระบบจะย้ายตัวเลขไปไว้ในช่อง Baseline ให้อัตโนมัติ</div>',
+    showCancelButton:true, confirmButtonText:'บันทึก', cancelButtonText:'ยกเลิก',
+    confirmButtonColor:'#1d4ed8', cancelButtonColor:'#6b7280',
+    inputValidator:(v)=> (!v||!v.trim()) ? 'กรุณากรอกข้อความตัวชี้วัด (หากต้องการลบ ให้ใช้เมนูลบแทน)' : undefined
+  }).then(async r=>{
+    if(r.isConfirmed){
+      await ttSetKpiEdit(teacher, project, idx, { kpi: r.value.trim() });
+      Swal.fire({ icon:'success', title:'แก้ไขตัวชี้วัดแล้ว', timer:1300, showConfirmButton:false });
+      ttRefreshAfterChange(teacher, project);
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════
+// ส่วนที่ 6 · ตรวจสอบตัวชี้วัดทั้งหมดก่อนส่งออก (ค้นหา + กรอง + ปุ่ม export)
+// ═══════════════════════════════════════════════
+function vfCollectRows(){
+  const rows=[];
+  projects.forEach(t=>{
+    t.projects.forEach(p=>{
+      const d=savedData[projectKey(t.teacher,p)];
+      if(!d) return;
+      const sid=d.strategyId||0;
+      const strat=sid?STRATEGIES.find(s=>s.id===sid):null;
+      const goalText=strat?strat.goal:(d.goal||'');
+      const kpis=ttGetProjectKpis(t.teacher,p);
+      if(!kpis.length) return;
+      const yt=d.yearlyTargets||{};
+      kpis.forEach((k,i)=>{
+        const y=yt[i]||{};
+        const hasYearly=!!(y.y71||y.y72||y.y73||y.y74||y.y75);
+        rows.push({ teacher:t.teacher, project:p, goalNo:sid, goalText, kpiNo:i+1, kpi:k.kpi, baseline:k.baseline, type:k.type, y, hasYearly });
+      });
+    });
+  });
+  return rows.sort((a,b)=>(a.goalNo||999)-(b.goalNo||999));
+}
+
+function renderVerify(){
+  const goalOpts = STRATEGIES.map(s=>`<option value="${s.id}">เป้าประสงค์ที่ ${s.id}</option>`).join('');
+  document.getElementById('verifyContent').innerHTML = `
+    <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px">
+      <div style="font-size:0.86rem;color:#92400e;line-height:1.6">ตรวจทานตัวชี้วัดทั้งหมดให้ครบถ้วนถูกต้อง แล้วจึงกดสร้างไฟล์ส่งออกด้านล่าง · ต้องการแก้ไข/ลบตัวชี้วัด ทำได้ที่ <b>ส่วนที่ 5</b> · ค่าที่แสดงคือค่าล่าสุดหลังการแก้ไข</div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center">
+      <input id="vfSearch" type="text" oninput="vfRender()" placeholder="🔎 ค้นหา: ตัวชี้วัด / โครงการ / ครู / เป้าประสงค์"
+        style="flex:1;min-width:240px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Sarabun',sans-serif;font-size:0.88rem;background:var(--surface);color:var(--text)">
+      <select id="vfGoal" onchange="vfRender()" class="form-select" style="width:auto;min-width:170px">
+        <option value="">เป้าประสงค์: ทั้งหมด</option>${goalOpts}
+      </select>
+      <select id="vfType" onchange="vfRender()" class="form-select" style="width:auto;min-width:160px">
+        <option value="">ประเภท: ทั้งหมด</option>
+        <option value="qa">ตัวชี้วัดประกันฯ</option>
+        <option value="plan">ตัวชี้วัดแผนงานฯ</option>
+      </select>
+    </div>
+
+    <div id="vfSummary" style="margin-bottom:14px"></div>
+    <div id="vfResults"></div>
+
+    <div class="divider" style="margin:22px 0 16px"></div>
+    <div class="detail-label" style="margin-bottom:10px">📤 ส่งออกข้อมูล (ชุดเดียวกับเมนูตั้งค่า)</div>
+    <div style="display:flex;flex-wrap:wrap;gap:10px">
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:#2563eb" onclick="exportSummaryDocx()">📄 ตารางสรุป .docx</button>
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 ใบปะหน้า .docx</button>
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#059669,#34d399);border-color:#059669" onclick="exportExcel()">📊 ส่งออก Excel</button>
+    </div>`;
+  vfRender();
+}
+
+function vfRender(){
+  const rows = vfCollectRows();
+  const q  = (document.getElementById('vfSearch')?.value||'').trim().toLowerCase();
+  const gf = document.getElementById('vfGoal')?.value||'';
+  const tf = document.getElementById('vfType')?.value||'';
+  const filtered = rows.filter(r=>{
+    if(gf && String(r.goalNo)!==gf) return false;
+    if(tf && r.type!==tf) return false;
+    if(q){
+      const hay=(r.kpi+' '+r.project+' '+r.teacher+' '+r.goalText).toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const totalAll = rows.length;
+  const qaN = filtered.filter(r=>r.type==='qa').length;
+  const planN = filtered.filter(r=>r.type==='plan').length;
+  const withY = filtered.filter(r=>r.hasYearly).length;
+  const projN = new Set(filtered.map(r=>r.teacher+'||'+r.project)).size;
+  document.getElementById('vfSummary').innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:0.8rem">
+      <span style="background:var(--surface3);padding:6px 12px;border-radius:8px">แสดง <b>${filtered.length}</b> / ${totalAll} ตัวชี้วัด</span>
+      <span style="background:#ecfdf5;color:#065f46;padding:6px 12px;border-radius:8px">ประกันฯ <b>${qaN}</b></span>
+      <span style="background:#fff7ed;color:#9a3412;padding:6px 12px;border-radius:8px">แผนงานฯ <b>${planN}</b></span>
+      <span style="background:#eff6ff;color:#1d4ed8;padding:6px 12px;border-radius:8px">กรอกค่าเป้าหมายแล้ว <b>${withY}</b></span>
+      <span style="background:var(--surface3);padding:6px 12px;border-radius:8px"><b>${projN}</b> โครงการ</span>
+    </div>`;
+
+  if(!filtered.length){
+    document.getElementById('vfResults').innerHTML = `<div style="text-align:center;padding:30px;color:var(--text3);background:var(--surface2);border:1.5px dashed var(--border);border-radius:12px">ไม่พบตัวชี้วัดที่ตรงกับเงื่อนไข${totalAll===0?' · ยังไม่มีตัวชี้วัดที่บันทึกในระบบ':''}</div>`;
+    return;
+  }
+
+  const groups={}; const order=[];
+  filtered.forEach(r=>{ const k=r.goalNo||('g_'+r.goalText); if(!groups[k]){groups[k]={goalNo:r.goalNo,goalText:r.goalText,rows:[]};order.push(k);} groups[k].rows.push(r); });
+  let html=''; let vi=0;
+  order.forEach(k=>{
+    const g=groups[k];
+    html += `<div style="margin-bottom:18px">
+      <div style="font-size:0.88rem;font-weight:700;color:var(--primary);background:var(--surface3);padding:8px 14px;border-radius:8px;margin-bottom:10px">
+        ${g.goalNo?('เป้าประสงค์ที่ '+g.goalNo):'ไม่ระบุเป้าประสงค์'} <span style="font-weight:400;color:var(--text3)">· ${ea(g.goalText||'—')} · ${g.rows.length} ตัวชี้วัด</span>
+      </div>`;
+    g.rows.forEach(r=>{
+      const typeBadge = r.type==='qa'
+        ? '<span style="background:#d1fae5;color:#065f46;font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap">ประกันฯ</span>'
+        : '<span style="background:#fed7aa;color:#9a3412;font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap">แผนงานฯ</span>';
+      const yrs=[71,72,73,74,75].map(n=>r.y['y'+n]||'-').join(' / ');
+      const tEnc=encodeURIComponent(r.teacher), pEnc=encodeURIComponent(r.project), idx=r.kpiNo-1, mid='vfMenu_'+vi;
+      html += `<div style="position:relative;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:9px">
+        <div style="display:flex;gap:8px;align-items:flex-start;justify-content:space-between">
+          <div style="font-size:0.86rem;color:var(--text);line-height:1.45;flex:1">${r.kpiNo}. ${ea(r.kpi)||'—'}</div>
+          <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+            ${typeBadge}
+            <button onclick="event.stopPropagation();kpiMenuToggle('${mid}')" title="ตัวเลือก"
+              style="width:26px;height:26px;border:none;background:none;cursor:pointer;font-size:1.2rem;line-height:1;color:var(--text3);border-radius:6px;display:flex;align-items:center;justify-content:center">⋮</button>
+          </div>
+          <div id="${mid}" class="vf-menu" style="display:none;position:absolute;top:36px;right:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.16);z-index:30;overflow:hidden;min-width:188px">
+            <button onclick="ttAskEditKpi('${tEnc}','${pEnc}',${idx})"
+              style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:var(--text);text-align:left;border-bottom:1px solid var(--border)">✏️ แก้ไขตัวชี้วัด</button>
+            <button onclick="ttAskDelete('${tEnc}','${pEnc}',${idx})"
+              style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:#dc2626;text-align:left">🗑 ลบตัวชี้วัดนี้</button>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:7px;font-size:0.74rem;color:var(--text3)">
+          <span>👤 ${ea(r.teacher)}</span>
+          <span style="flex:1;min-width:140px">📁 ${ea(r.project)}</span>
+          <span>Baseline: <b style="color:var(--text2)">${ea(r.baseline||'-')}</b></span>
+          <span>ค่าเป้าหมาย 71-75: <b style="color:#1d4ed8">${ea(yrs)}</b></span>
+        </div>
+      </div>`;
+      vi++;
+    });
+    html += `</div>`;
+  });
+  document.getElementById('vfResults').innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════
@@ -2846,15 +3086,22 @@ function collectAllKpiItems(){
         blocks=(d.qaIndicators||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>({kpi:l}));
       }
       const yt = d.yearlyTargets || {};
+      const edits = d.kpiEdits || {};
       let kIdx = 0;
       blocks.forEach(b=>{
-        const kpi=(b.kpi||'').replace(/^\d+[.)]\s*/,'').trim();
-        if(!kpi && !b.scope && !b.unit && !b.target) return; // ข้ามบล็อกว่างจริง ๆ
+        const kpiRaw=(b.kpi||'').replace(/^\d+[.)]\s*/,'').trim();
+        if(!kpiRaw && !b.scope && !b.unit && !b.target) return; // ข้ามบล็อกว่างจริง ๆ
+        const ed = edits[kIdx] || {};
+        const kpi = (ed.kpi != null) ? ed.kpi : kpiRaw;
+        const hasBaseEdit = Object.prototype.hasOwnProperty.call(ed,'baseline');
         out.push({
           goalNo:sid, goalText,
+          teacher:t.teacher, project:p,
           kpi,
           scope:b.scope||'', unit:b.unit||'', target:b.target||'',
-          formula:b.formula||'', baselineRaw:b.baselineRaw||'',
+          formula:b.formula||'',
+          baselineRaw: hasBaseEdit ? (ed.baseline ? ('ร้อยละ '+ed.baseline) : '') : (b.baselineRaw||''),
+          baselineOverride: hasBaseEdit ? ed.baseline : undefined,
           source:b.source||'', freq:b.freq||'',
           yearly: yt[kIdx] || null
         });
@@ -2882,6 +3129,7 @@ function dxCollectGroups(){
     if(it.baselineRaw) baseline=it.baselineRaw.replace(/ร้อยละ/g,'').trim();
     const m=kpi.match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
     if(m){ baseline=m[1]; kpi=kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim(); }
+    if(it.baselineOverride!==undefined) baseline=it.baselineOverride; // ค่าที่ผู้ใช้แก้ไขเอง มีลำดับสูงสุด
     groups[key].kpis.push({ kpi, baseline, yearly: it.yearly || null });
   });
   return order
@@ -3132,6 +3380,7 @@ function cvCollectAll(){
       const m = (it.kpi||'').match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
       if(m) baselineRaw = 'ร้อยละ '+m[1];
     }
+    if(it.baselineOverride!==undefined) baselineRaw = it.baselineOverride ? ('ร้อยละ '+it.baselineOverride) : '';
     return { goalNo:it.goalNo, goalText:it.goalText, kpiNo:counter[g],
       kpi: it.kpi, scope: it.scope, unit: it.unit, target: it.target,
       formula: it.formula, baselineRaw, source: it.source, freq: it.freq };
