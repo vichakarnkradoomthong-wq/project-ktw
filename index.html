@@ -716,14 +716,23 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 
     <div class="divider"></div>
     <div class="form-group">
-      <div class="detail-label">3. จัดการลิงก์ AI (เพิ่ม/แก้ไข)</div>
+      <div class="detail-label">4. สร้างใบปะหน้าอธิบายตัวชี้วัด .docx (รายละเอียด 8 หัวข้อ · 1 หน้า/ตัวชี้วัด)</div>
+      <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+        ดึงข้อมูลจาก KPI ที่ส่งผลจาก AI แล้ว สร้างเอกสาร Word <b>1 หน้าต่อตัวชี้วัด</b> ประกอบด้วยหัวกระดาษ (เป้าประสงค์ที่) และกล่องรายละเอียด 8 หัวข้อ ฟอนต์ TH SarabunPSK · กระดาษ A4 แนวตั้ง
+      </div>
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 สร้างใบปะหน้า &amp; ดาวน์โหลด .docx</button>
+    </div>
+
+    <div class="divider"></div>
+    <div class="form-group">
+      <div class="detail-label">5. จัดการลิงก์ AI (เพิ่ม/แก้ไข)</div>
       <div id="aiLinksEditor"></div>
       <button class="project-btn" style="margin-top:7px" onclick="addAiLink()">+ เพิ่มลิงก์</button>
     </div>
 
     <div class="divider"></div>
     <div class="form-group">
-      <div class="detail-label">4. ประกาศแสดงเมื่อเปิดเว็บ</div>
+      <div class="detail-label">6. ประกาศแสดงเมื่อเปิดเว็บ</div>
       <textarea id="announceText" class="problem-textarea" placeholder="พิมพ์ข้อความประกาศที่นี่..."></textarea>
       <div style="display:flex;gap:8px;margin-top:8px">
         <button class="project-btn primary-btn" onclick="saveAnnounce()">💾 บันทึกประกาศ</button>
@@ -733,7 +742,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 
     <div class="divider"></div>
     <div class="form-group">
-      <div class="detail-label">5. ตัวชี้วัดงานประกันคุณภาพ (ค่าเริ่มต้นสำหรับตัวช่วยออกแบบ KPI)</div>
+      <div class="detail-label">7. ตัวชี้วัดงานประกันคุณภาพ (ค่าเริ่มต้นสำหรับตัวช่วยออกแบบ KPI)</div>
       <input type="file" id="qaFile" accept=".csv,.xlsx,.xls,.txt"
         style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
       <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
@@ -2472,6 +2481,253 @@ function exportSummaryDocx(){
     return;
   }
   dxDownload(groups);
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT COVER PAGE DOCX — ใบปะหน้าอธิบายตัวชี้วัด (8 หัวข้อ · 1 หน้า/ตัวชี้วัด)
+// ฟอนต์ TH SarabunPSK · กระดาษ US Letter แนวตั้ง · กล่องกรอบเส้น
+// ═══════════════════════════════════════════════
+const CV_FONT = 'TH SarabunPSK';
+const CV_SZ   = 32;
+
+function cvEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function cvRpr(o){
+  o = o||{};
+  return '<w:rPr>'+
+    '<w:rFonts w:ascii="'+CV_FONT+'" w:hAnsi="'+CV_FONT+'" w:cs="'+CV_FONT+'"/>'+
+    (o.b ? '<w:b/><w:bCs/>' : '')+
+    (o.u ? '<w:u w:val="single"/>' : '')+
+    '<w:color w:val="'+(o.col||'000000')+'"/>'+
+    '<w:sz w:val="'+CV_SZ+'"/><w:szCs w:val="'+CV_SZ+'"/>'+
+  '</w:rPr>';
+}
+function cvRun(t,o){ return '<w:r>'+cvRpr(o)+'<w:t xml:space="preserve">'+cvEsc(t)+'</w:t></w:r>'; }
+function cvBr(o){    return '<w:r>'+cvRpr(o)+'<w:br/></w:r>'; }
+function cvPara(runs, jc){
+  const j = jc ? '<w:jc w:val="'+jc+'"/>' : '';
+  return '<w:p><w:pPr><w:spacing w:after="0" w:line="216" w:lineRule="auto"/>'+j+
+    '<w:rPr>'+cvRpr()+'</w:rPr></w:pPr>'+runs+'</w:p>';
+}
+
+// parse "A / B x 100" เป็น plain text "A / B × 100" ธรรมดา (ไม่ใช้ math fraction เพื่อ compatibility)
+function cvFormula(formula){
+  formula = (formula||'').trim();
+  // ทำให้อ่านง่าย: เปลี่ยน " x 100" / " X 100" → " × 100"
+  return formula.replace(/\s*[xX]\s*100$/, ' × 100');
+}
+
+// content ใน textbox: หัว + 8 หัวข้อ
+function cvBoxContent(kpiNo, d){
+  // header กลางกล่อง
+  const header = cvPara(cvRun('รายละเอียดตัวชี้วัดที่ ',{b:true})+cvRun(String(kpiNo),{b:true}), 'center');
+
+  // ข้อ 1+2 ในย่อหน้าเดียวกัน (ตามต้นฉบับ)
+  const p12 = '<w:p><w:pPr><w:spacing w:after="0" w:line="216" w:lineRule="auto"/><w:rPr>'+cvRpr()+'</w:rPr></w:pPr>'+
+    cvRun('1. ',{b:true})+cvRun('ตัวชี้วัดที่ ',{b:true})+cvRun(String(kpiNo)+' ',{b:true})+cvRun(d.kpi||'')+
+    cvBr()+
+    cvRun('2. ',{b:true})+cvRun('ขอบเขตความหมาย : ',{b:true})+cvRun(d.scope||'')+
+    cvBr()+cvBr()+
+  '</w:p>';
+
+  // ข้อ 3+4
+  const p34 = '<w:p><w:pPr><w:spacing w:after="0" w:line="216" w:lineRule="auto"/><w:rPr>'+cvRpr()+'</w:rPr></w:pPr>'+
+    cvRun('3. ',{b:true})+cvRun('หน่วยวัด',{b:true,u:true})+cvRun(' : ')+cvRun(d.unit||'')+cvBr()+
+    cvRun('4. ',{b:true})+cvRun('เป้าหมาย/เกณฑ์ (ปี 2571 – 2575)',{b:true})+cvRun(' : ')+cvRun(d.target||'')+
+  '</w:p>';
+
+  // ข้อ 5 วิธีการคำนวณ
+  const p5 = '<w:p><w:pPr><w:spacing w:after="0" w:line="216" w:lineRule="auto"/><w:rPr>'+cvRpr({b:true})+'</w:rPr></w:pPr>'+
+    cvRun('5. ',{b:true})+cvRun('วิธีการคำนวณ',{b:true,u:true})+cvRun(' : ',{b:true})+cvRun(cvFormula(d.formula))+
+  '</w:p>';
+
+  // ข้อ 6-8
+  const baseText = d.baselineRaw || (d.baseline ? 'ร้อยละ '+d.baseline : '');
+  const p678 = '<w:p><w:pPr><w:spacing w:after="0" w:line="216" w:lineRule="auto"/><w:rPr>'+cvRpr()+'</w:rPr></w:pPr>'+
+    cvRun('6. ',{b:true})+cvRun('ข้อมูลปัจจุบัน (ข้อมูลพื้นฐาน)',{b:true})+cvRun(' : ',{b:true})+cvRun(baseText)+cvBr()+
+    cvRun('7. ',{b:true})+cvRun('แหล่งข้อมูล/วิธีเก็บรวบรวมข้อมูล :',{b:true})+cvRun(' ')+cvRun(d.source||'')+cvBr()+
+    cvRun('8. ',{b:true})+cvRun('ความถี่ในการเก็บรวบรวมข้อมูล/รายงาน :',{b:true})+cvRun(' ')+cvRun(d.freq||'')+
+  '</w:p>';
+
+  return header + p12 + p34 + p5 + p678;
+}
+
+// floating textbox (กรอบเส้น)
+// กล่องกรอบเส้น = ตาราง 1 ช่อง (เสถียรใน Microsoft Word — ไม่เกิดไฟล์เสียหาย)
+function cvTextBox(content){
+  const W = 9360; // ความกว้างเนื้อหา (US Letter 12240 - margin 1440*2)
+  const borders =
+    '<w:tblBorders>'+
+      '<w:top w:val="single" w:sz="8" w:space="0" w:color="000000"/>'+
+      '<w:left w:val="single" w:sz="8" w:space="0" w:color="000000"/>'+
+      '<w:bottom w:val="single" w:sz="8" w:space="0" w:color="000000"/>'+
+      '<w:right w:val="single" w:sz="8" w:space="0" w:color="000000"/>'+
+    '</w:tblBorders>';
+  const cellMar =
+    '<w:tblCellMar>'+
+      '<w:top w:w="120" w:type="dxa"/><w:left w:w="150" w:type="dxa"/>'+
+      '<w:bottom w:w="120" w:type="dxa"/><w:right w:w="150" w:type="dxa"/>'+
+    '</w:tblCellMar>';
+  return '<w:tbl>'+
+    '<w:tblPr><w:tblW w:w="'+W+'" w:type="dxa"/><w:jc w:val="center"/>'+borders+cellMar+
+      '<w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>'+
+    '<w:tblGrid><w:gridCol w:w="'+W+'"/></w:tblGrid>'+
+    '<w:tr><w:trPr><w:trHeight w:val="5800" w:hRule="atLeast"/></w:trPr>'+
+      '<w:tc><w:tcPr><w:tcW w:w="'+W+'" w:type="dxa"/></w:tcPr>'+content+'</w:tc>'+
+    '</w:tr>'+
+  '</w:tbl>';
+}
+
+// สร้าง 1 หน้าต่อ 1 ตัวชี้วัด
+function cvBuildPage(goalNo, goalText, kpiNo, kpiData, isFirst){
+  // หัวกระดาษ (เป้าประสงค์) — หน้าถัด ๆ ไปขึ้นหน้าใหม่
+  const headSpacing = isFirst
+    ? '<w:spacing w:after="0" w:line="240" w:lineRule="auto"/>'
+    : '<w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:pageBreakBefore/>';
+  const goalLine = goalNo
+    ? cvRun('เป้าประสงค์ที่ ',{b:true})+cvRun(String(goalNo)+'.'+goalText)
+    : cvRun(goalText||'',{b:true});
+  const hdr =
+    '<w:p><w:pPr>'+headSpacing+'<w:jc w:val="center"/><w:rPr>'+cvRpr({b:true})+'</w:rPr></w:pPr>'+goalLine+'</w:p>'+
+    cvPara('', 'center');
+
+  const box = cvTextBox(cvBoxContent(kpiNo, kpiData));
+
+  return hdr + box;
+}
+
+// parse ข้อมูล kpiResult 8 หัวข้อ → object fields
+// จับค่าตาม "ชื่อหัวข้อ" (ไม่อิงเลขลำดับ) ทนต่อ markdown **, bullet, เลขลำดับที่ขาด/เกิน
+function cvParseKpiResult(kpiResult){
+  const items = []; let cur = null;
+  // ลำดับสำคัญ: ตรวจหัวข้ออื่นก่อน 'ตัวชี้วัด' (เพราะคำว่า 'ตัวชี้วัด' กว้าง)
+  const defs = [
+    ['scope',       /ขอบเขตความหมาย/],
+    ['unit',        /หน่วยวัด/],
+    ['target',      /เป้าหมาย|เกณฑ์/],
+    ['formula',     /วิธีการคำนวณ|วิธีคำนวณ/],
+    ['baselineRaw', /ข้อมูลปัจจุบัน|ข้อมูลพื้นฐาน/],
+    ['source',      /แหล่งข้อมูล/],
+    ['freq',        /ความถี่/],
+    ['kpi',         /ตัวชี้วัด/]
+  ];
+  const isPlh = v => !v || /^[<\[]/.test(v.trim());
+
+  (kpiResult||'').split('\n').forEach(raw=>{
+    // ลบ markdown ** __ และ bullet นำหน้า
+    let line = raw.replace(/[*_]{1,3}/g,'').replace(/^\s*[-•·]\s*/,'').trim();
+    if(!line) return;
+
+    // หัวบล็อก "[ตัวชี้วัดที่ N]" หรือ "รายละเอียดตัวชี้วัดที่ N" (ไม่มี ':') → เริ่มบล็อกใหม่
+    if(!/[:：]/.test(line) && /ตัวชี้วัดที่\s*\d+/.test(line)){
+      cur = { no: items.length+1 }; items.push(cur); return;
+    }
+
+    const ci = line.search(/[:：]/);
+    if(ci < 0) return;                       // ไม่ใช่บรรทัดหัวข้อ
+    const labelPart = line.slice(0, ci);
+    let val = line.slice(ci+1).trim();
+    if(isPlh(val)) val = '';
+
+    let key = null;
+    for(const [k,re] of defs){ if(re.test(labelPart)){ key = k; break; } }
+    if(!key) return;
+
+    if(key === 'kpi'){
+      // เริ่มตัวชี้วัดใหม่ — ถ้าบล็อกปัจจุบันยังว่าง (เพิ่งเปิดจากหัวบล็อก) ให้ใช้ซ้ำ
+      if(!cur || cur.kpi || Object.keys(cur).length > 1){
+        cur = { no: items.length+1 }; items.push(cur);
+      }
+      cur.kpi = val;
+    } else {
+      if(!cur){ cur = { no: items.length+1 }; items.push(cur); }
+      cur[key] = val;
+    }
+  });
+
+  // เก็บเฉพาะบล็อกที่มีข้อมูลอย่างน้อยหนึ่งหัวข้อ
+  return items.filter(it => it.kpi || it.scope || it.unit || it.target || it.formula || it.baselineRaw || it.source || it.freq);
+}
+
+// ดึงข้อมูลทั้งหมดจาก savedData → array ของ {goalNo,goalText,kpiNo,…fields}
+function cvCollectAll(){
+  const result = [];
+  projects.forEach(t=>{
+    t.projects.forEach(p=>{
+      const d = savedData[projectKey(t.teacher,p)];
+      if(!d || !d.kpiResult) return;           // ขอแค่มีผลลัพธ์ KPI (strategyId มีหรือไม่ก็ได้)
+      const sid = d.strategyId || 0;
+      const strat = sid ? STRATEGIES.find(s=>s.id===sid) : null;
+      const goalText = strat ? strat.goal : (d.goal || '');
+      const parsed = cvParseKpiResult(d.kpiResult);
+      if(!parsed.length) return;
+      parsed.forEach((kpi,i)=>{
+        // เติม baseline จาก kpi text ถ้า baselineRaw ว่าง
+        let baselineRaw = kpi.baselineRaw || '';
+        if(!baselineRaw){
+          const m = (kpi.kpi||'').match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
+          if(m) baselineRaw = 'ร้อยละ '+m[1];
+        }
+        result.push({ goalNo:sid, goalText, kpiNo:i+1,
+          kpi: (kpi.kpi||'').replace(/^\d+[.)]\s*/,'').trim(),
+          scope: kpi.scope||'', unit: kpi.unit||'', target: kpi.target||'',
+          formula: kpi.formula||'', baselineRaw,
+          source: kpi.source||'', freq: kpi.freq||'' });
+      });
+    });
+  });
+  return result;
+}
+
+function cvDownload(allKpis){
+  if(typeof JSZip==='undefined'){
+    Swal.fire({icon:'error',title:'ไลบรารียังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่',confirmButtonColor:'#6c3fc5'}); return;
+  }
+  let body='';
+  allKpis.forEach((k,i)=>{
+    body += cvBuildPage(k.goalNo, k.goalText, k.kpiNo, k, i===0);
+  });
+  const sect='<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="720" w:footer="720" w:gutter="0"/><w:cols w:space="720"/><w:docGrid w:linePitch="360"/></w:sectPr>';
+  const NS='xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" '+
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" '+
+    'xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" '+
+    'xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml" '+
+    'xmlns:w15="http://schemas.microsoft.com/office/word/2012/wordml" '+
+    'mc:Ignorable="w14 w15"';
+  const doc='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<w:document '+NS+'><w:body>'+body+sect+'</w:body></w:document>';
+  const CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+  const RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="'+CV_FONT+'" w:hAnsi="'+CV_FONT+'" w:cs="'+CV_FONT+'"/><w:sz w:val="'+CV_SZ+'"/><w:szCs w:val="'+CV_SZ+'"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+  const zip=new JSZip();
+  zip.file('[Content_Types].xml',CT);
+  zip.folder('_rels').file('.rels',RELS);
+  const w=zip.folder('word');
+  w.file('document.xml',doc); w.file('styles.xml',STYLES);
+  w.folder('_rels').file('document.xml.rels',DRELS);
+  zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})
+  .then(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='ใบปะหน้าตัวชี้วัด_'+new Date().toISOString().slice(0,10)+'.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    Swal.fire({icon:'success',title:'สร้างใบปะหน้าสำเร็จ!',
+      html:'ดาวน์โหลดใบปะหน้าแล้ว<br><span style="font-size:0.84rem;color:#6b7280">รวม <b>'+allKpis.length+'</b> ตัวชี้วัด · '+allKpis.length+' หน้า</span>',
+      confirmButtonColor:'#7c3aed'});
+  }).catch(e=>{ Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message}); });
+}
+
+function exportCoverDocx(){
+  const all = cvCollectAll();
+  if(!all.length){
+    Swal.fire({icon:'info',title:'ยังไม่มีข้อมูล KPI',
+      html:'ต้องมีโครงการที่<br>1) บันทึกยุทธศาสตร์ (ส่วนที่ 2) <b>และ</b><br>2) ส่งผลลัพธ์ KPI จาก AI (ส่วนที่ 3) แล้ว<br><span style="font-size:0.82rem;color:#6b7280">จึงจะสร้างใบปะหน้าได้</span>',
+      confirmButtonColor:'#7c3aed'});
+    return;
+  }
+  cvDownload(all);
 }
 
 async function clearAllData() {
