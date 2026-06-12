@@ -2520,10 +2520,13 @@ function dxExtractKpis(d){
 function ttGetProjectKpis(teacher, project){
   const d = savedData[projectKey(teacher, project)];
   if(!d) return [];
-  let blocks = [];
+  const qaArr = (d.qaIndicators||'').split('\n').map(l=>l.trim()).filter(Boolean);
+  const nQA = qaArr.length;
+  let blocks = []; let fallback = false;
   if(d.kpiResult) blocks = cvParseKpiResult(d.kpiResult);
   if(!blocks.length && d.qaIndicators){
-    blocks = (d.qaIndicators||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>({kpi:l}));
+    blocks = qaArr.map(l=>({kpi:l}));
+    fallback = true;
   }
   const out = [];
   blocks.forEach(b=>{
@@ -2533,7 +2536,10 @@ function ttGetProjectKpis(teacher, project){
     if(b.baselineRaw) baseline = b.baselineRaw.replace(/ร้อยละ/g,'').trim();
     const m = kpi.match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
     if(m){ baseline = m[1]; kpi = kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim(); }
-    out.push({ kpi, baseline });
+    // ลำดับแรก nQA ตัว = ตัวชี้วัดงานประกันฯ, ที่เหลือ = งานแผนงานฯ (โหมด fallback ทั้งหมดเป็นงานประกันฯ)
+    const visIndex = out.length;
+    const type = fallback ? 'qa' : (visIndex < nQA ? 'qa' : 'plan');
+    out.push({ kpi, baseline, type });
   });
   return out;
 }
@@ -2604,14 +2610,24 @@ function openTrendEditor(teacherEnc, projectEnc){
   const yt = d.yearlyTargets || {};
 
   let kpiCards = '';
+  const tEnc = encodeURIComponent(teacher), pEnc = encodeURIComponent(project);
   kpis.forEach((k, idx) => {
     const v = yt[idx] || {};
     const baseShow = k.baseline ? (k.baseline + (/^[0-9.]+$/.test(k.baseline) ? '' : '')) : '—';
+    const typeLabel = k.type === 'qa'
+      ? '<span style="color:#0f766e;font-weight:600;white-space:nowrap">(ตัวชี้วัดประกันฯ)</span>'
+      : '<span style="color:#b45309;font-weight:600;white-space:nowrap">(ตัวชี้วัดแผนงานฯ)</span>';
     kpiCards += `
-      <div class="tt-kpi-card" style="background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
-        <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">
+      <div class="tt-kpi-card" style="position:relative;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:14px">
+        <button onclick="event.stopPropagation();ttToggleMenu(${idx})" title="ตัวเลือก"
+          style="position:absolute;top:10px;right:10px;width:30px;height:30px;border:none;background:none;cursor:pointer;font-size:1.25rem;line-height:1;color:var(--text3);border-radius:7px;display:flex;align-items:center;justify-content:center">⋮</button>
+        <div id="ttMenu_${idx}" class="tt-menu" style="display:none;position:absolute;top:40px;right:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.16);z-index:30;overflow:hidden;min-width:178px">
+          <button onclick="ttAskDelete('${tEnc}','${pEnc}',${idx})"
+            style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:#dc2626;text-align:left">🗑 ลบตัวชี้วัดนี้</button>
+        </div>
+        <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px;padding-right:34px">
           <span style="background:#1d4ed8;color:#fff;font-size:0.74rem;font-weight:700;padding:3px 9px;border-radius:6px;flex-shrink:0;margin-top:1px">ตัวชี้วัดที่ ${idx+1}</span>
-          <div style="font-size:0.88rem;color:var(--text);line-height:1.45">${k.kpi || '—'}</div>
+          <div style="font-size:0.88rem;color:var(--text);line-height:1.45">${k.kpi || '—'} ${typeLabel}</div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
           <div style="flex:0 0 110px">
@@ -2684,6 +2700,129 @@ async function saveTrendTargets(teacherEnc, projectEnc){
     confirmButtonColor:'#1d4ed8' });
   // refresh badge
   openTrendProjects(projects.find(t=>t.teacher===teacher));
+}
+
+// ── เมนูจุด 3 จุด ของการ์ดตัวชี้วัด ──
+function ttToggleMenu(idx){
+  const m = document.getElementById('ttMenu_'+idx);
+  const open = m && m.style.display !== 'none';
+  document.querySelectorAll('#trendProjectPanel .tt-menu').forEach(el=>el.style.display='none');
+  if(m && !open) m.style.display = 'block';
+}
+// ปิดเมนูเมื่อคลิกที่อื่น
+document.addEventListener('click', e=>{
+  if(e.target.closest && (e.target.closest('.tt-menu') || (e.target.tagName==='BUTTON' && e.target.textContent==='⋮'))) return;
+  document.querySelectorAll('#trendProjectPanel .tt-menu').forEach(el=>el.style.display='none');
+});
+
+function ttAskDelete(teacherEnc, projectEnc, idx){
+  document.querySelectorAll('#trendProjectPanel .tt-menu').forEach(el=>el.style.display='none');
+  Swal.fire({
+    icon:'warning', title:'ลบตัวชี้วัดนี้?',
+    html:'ตัวชี้วัดนี้จะถูกลบออกจาก <b>ทุกที่ในระบบ</b><br><span style="font-size:0.83rem;color:#6b7280">(ตารางสรุป .docx · ใบปะหน้า · สถิติ · ค่าเป้าหมายรายปี)<br>เหมาะสำหรับลบข้อความที่ระบบตัดคำผิดมาเป็นตัวชี้วัด · ไม่สามารถย้อนกลับได้</span>',
+    showCancelButton:true, confirmButtonText:'ลบออกจากระบบ', cancelButtonText:'ยกเลิก',
+    confirmButtonColor:'#dc2626', cancelButtonColor:'#6b7280'
+  }).then(r=>{ if(r.isConfirmed) deleteTrendKpi(decodeURIComponent(teacherEnc), decodeURIComponent(projectEnc), idx); });
+}
+
+// normalize ภาษาไทย/อังกฤษ/ตัวเลข สำหรับจับคู่ข้อความ
+function ttNorm(s){ return String(s||'').replace(/[^\u0E00-\u0E7Fa-zA-Z0-9]/g,''); }
+
+// แยก kpiResult เป็นบล็อก พร้อมเก็บ "หมายเลขบรรทัดต้นฉบับ" ของแต่ละบล็อก
+// (เลียนแบบ logic ของ cvParseKpiResult เพื่อให้ลำดับตรงกัน) เพื่อใช้ตัดบล็อกออกจากข้อความได้แม่นยำ
+function ttRawBlocks(kpiResult){
+  const defs = [
+    ['scope',/ขอบเขตความหมาย/],['unit',/หน่วยวัด/],['target',/เป้าหมาย|เกณฑ์/],
+    ['formula',/วิธีการคำนวณ|วิธีคำนวณ/],['baselineRaw',/ข้อมูลปัจจุบัน|ข้อมูลพื้นฐาน/],
+    ['source',/แหล่งข้อมูล/],['freq',/ความถี่/],['kpi',/ตัวชี้วัด/]
+  ];
+  const isPlh = v => !v || /^[<\[]/.test(v.trim());
+  const lines = (kpiResult||'').split('\n');
+  const blocks = []; let cur = null;
+  lines.forEach((raw, idx)=>{
+    const line = raw.replace(/[*_]{1,3}/g,'').replace(/^\s*[-•·]\s*/,'').trim();
+    if(!line){ if(cur) cur.lineIdxs.push(idx); return; }
+    if(!/[:：]/.test(line) && /ตัวชี้วัดที่\s*\d+/.test(line)){
+      cur = { lineIdxs:[idx], fields:{} }; blocks.push(cur); return;
+    }
+    const ci = line.search(/[:：]/);
+    if(ci < 0){ if(cur) cur.lineIdxs.push(idx); return; }
+    const labelPart = line.slice(0, ci);
+    let val = line.slice(ci+1).trim(); if(isPlh(val)) val = '';
+    let kkey = null;
+    for(const [k,re] of defs){ if(re.test(labelPart)){ kkey = k; break; } }
+    if(!kkey){ if(cur) cur.lineIdxs.push(idx); return; }
+    if(kkey === 'kpi'){
+      if(!cur || cur.fields.kpi || Object.keys(cur.fields).length > 0){
+        cur = { lineIdxs:[idx], fields:{} }; blocks.push(cur);
+      } else { cur.lineIdxs.push(idx); }
+      cur.fields.kpi = val;
+    } else {
+      if(!cur){ cur = { lineIdxs:[idx], fields:{} }; blocks.push(cur); }
+      else cur.lineIdxs.push(idx);
+      cur.fields[kkey] = val;
+    }
+  });
+  return blocks;
+}
+
+// ลบตัวชี้วัดออกจาก "ทุกที่" : ตัดบล็อกออกจาก kpiResult, ลบบรรทัดที่ตรงกันจาก qaIndicators,
+// แล้วเลื่อน index ของ yearlyTargets ให้ถูกต้อง
+async function deleteTrendKpi(teacher, project, displayIdx){
+  const key = projectKey(teacher, project);
+  const d = { ...(savedData[key]||{}) };
+  if(!d) return;
+  let qaArr = (d.qaIndicators||'').split('\n');
+  const nonEmptyQaPos = []; qaArr.forEach((l,i)=>{ if(l.trim()) nonEmptyQaPos.push(i); });
+
+  let deletedText = '';
+  const hasKpiBlocks = d.kpiResult && cvParseKpiResult(d.kpiResult).length;
+
+  if(hasKpiBlocks){
+    // ── โหมด kpiResult : ตัดบล็อกออกจากข้อความ ──
+    const raws = ttRawBlocks(d.kpiResult);
+    const visible = [];
+    raws.forEach((b,bi)=>{
+      const f = b.fields;
+      const hasAny = f.kpi||f.scope||f.unit||f.target||f.formula||f.baselineRaw||f.source||f.freq;
+      if(!hasAny) return;
+      const kpiRaw = (f.kpi||'').replace(/^\d+[.)]\s*/,'').trim();
+      if(!kpiRaw && !f.scope && !f.unit && !f.target) return;
+      visible.push(bi);
+    });
+    const rawIdx = visible[displayIdx];
+    if(rawIdx != null){
+      deletedText = ttNorm((raws[rawIdx].fields.kpi||'').replace(/^\d+[.)]\s*/,'').replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?/,''));
+      const rm = new Set(raws[rawIdx].lineIdxs);
+      d.kpiResult = (d.kpiResult||'').split('\n').filter((_,i)=>!rm.has(i)).join('\n').replace(/\n{3,}/g,'\n\n').trim();
+    }
+    // ลบบรรทัดที่ตรงกันใน qaIndicators (ถ้าตัวนี้เป็นตัวชี้วัดงานประกันฯ)
+    if(deletedText && deletedText.length >= 6){
+      const ai = qaArr.findIndex(l=>{ const n = ttNorm(l); return n && (n===deletedText || n.includes(deletedText) || deletedText.includes(n)); });
+      if(ai >= 0){ qaArr.splice(ai,1); d.qaIndicators = qaArr.join('\n').replace(/\n{3,}/g,'\n\n').trim(); }
+    }
+  } else {
+    // ── โหมด fallback : ตัวชี้วัดคือบรรทัดใน qaIndicators ──
+    const pos = nonEmptyQaPos[displayIdx];
+    if(pos != null){ qaArr.splice(pos,1); d.qaIndicators = qaArr.join('\n').replace(/\n{3,}/g,'\n\n').trim(); }
+  }
+
+  // เลื่อน index ของ yearlyTargets
+  if(d.yearlyTargets){
+    const newYT = {};
+    Object.keys(d.yearlyTargets).map(Number).sort((a,b)=>a-b).forEach(k=>{
+      if(k === displayIdx) return;
+      newYT[k > displayIdx ? k-1 : k] = d.yearlyTargets[k];
+    });
+    d.yearlyTargets = newYT;
+  }
+
+  d.teacher = teacher; d.project = project;
+  try { await saveAssignment(key, d); } catch(e){ /* offline */ }
+  savedData[key] = d;
+
+  Swal.fire({ icon:'success', title:'ลบตัวชี้วัดแล้ว', timer:1400, showConfirmButton:false });
+  openTrendEditor(encodeURIComponent(teacher), encodeURIComponent(project));
 }
 
 // ═══════════════════════════════════════════════
