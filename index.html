@@ -2399,25 +2399,65 @@ function dxExtractKpis(d){
   }).filter(o=>o.kpi);
 }
 
-// รวบรวมข้อมูล จัดกลุ่มตามเป้าประสงค์
-function dxCollectGroups(){
-  const groups={}; const order=[];
+// ═══════════════════════════════════════════════
+// ตัวรวบรวม KPI กลาง — ใช้ร่วมกันทั้งเมนู #3 (ตารางสรุป) และ #4 (ใบปะหน้า)
+// ทำให้จำนวนตัวชี้วัดทั้งสองเมนู "ตรงกันเสมอ"
+// คืน array ของ { goalNo, goalText, kpi, scope, unit, target, formula, baselineRaw, source, freq }
+// ═══════════════════════════════════════════════
+function collectAllKpiItems(){
+  const out=[];
   projects.forEach(t=>{
     t.projects.forEach(p=>{
       const d=savedData[projectKey(t.teacher,p)];
-      if(!d || !d.strategyId) return;
-      const sid=d.strategyId;
-      const strat=STRATEGIES.find(s=>s.id===sid);
-      const goalLabel=sid+'.'+(d.goal || (strat?strat.goal:''));
-      if(!groups[sid]){ groups[sid]={goal:goalLabel,kpis:[]}; order.push(sid); }
-      dxExtractKpis(d).forEach(o=>{ if(o.kpi && !groups[sid].kpis.some(x=>x.kpi===o.kpi)) groups[sid].kpis.push(o); });
+      if(!d) return;
+      const sid=d.strategyId||0;
+      const strat=sid?STRATEGIES.find(s=>s.id===sid):null;
+      const goalText=strat?strat.goal:(d.goal||'');
+      let blocks=[];
+      if(d.kpiResult) blocks=cvParseKpiResult(d.kpiResult);
+      // fallback: ถ้าไม่มี block จาก kpiResult ใช้ตัวชี้วัดงานประกัน (qaIndicators) ทีละบรรทัด
+      if(!blocks.length && d.qaIndicators){
+        blocks=(d.qaIndicators||'').split('\n').map(l=>l.trim()).filter(Boolean).map(l=>({kpi:l}));
+      }
+      blocks.forEach(b=>{
+        const kpi=(b.kpi||'').replace(/^\d+[.)]\s*/,'').trim();
+        if(!kpi && !b.scope && !b.unit && !b.target) return; // ข้ามบล็อกว่างจริง ๆ
+        out.push({
+          goalNo:sid, goalText,
+          kpi,
+          scope:b.scope||'', unit:b.unit||'', target:b.target||'',
+          formula:b.formula||'', baselineRaw:b.baselineRaw||'',
+          source:b.source||'', freq:b.freq||''
+        });
+      });
     });
   });
-  // เรียงตามหมายเลขยุทธศาสตร์ และใส่เลขลำดับตัวชี้วัดใหม่
-  return order.sort((a,b)=>a-b).map(sid=>{
-    const g=groups[sid];
-    return { goal:g.goal, kpis:g.kpis.map((o,i)=>({ kpi:(i+1)+'.'+o.kpi, baseline:o.baseline })) };
+  // เรียงตามหมายเลขเป้าประสงค์ (goalNo=0 ไว้ท้ายสุด) เพื่อให้ลำดับทั้งสองเมนูตรงกัน
+  return out.sort((a,b)=>(a.goalNo||999)-(b.goalNo||999));
+}
+
+// รวบรวมข้อมูล จัดกลุ่มตามเป้าประสงค์ (เมนู #3 ตารางสรุป)
+function dxCollectGroups(){
+  const items=collectAllKpiItems();
+  const groups={}; const order=[];
+  items.forEach(it=>{
+    const key = it.goalNo || ('g_'+it.goalText);
+    if(!groups[key]){
+      const label = it.goalNo ? (it.goalNo+'.'+it.goalText) : (it.goalText||'อื่น ๆ');
+      groups[key]={ goal:label, sort:it.goalNo||999, kpis:[] };
+      order.push(key);
+    }
+    // แปลงสำหรับตาราง: ดึง "ร้อยละ NN" จากข้อความ → baseline แล้วลบเลขออกจากข้อความ
+    let kpi=it.kpi, baseline='';
+    if(it.baselineRaw) baseline=it.baselineRaw.replace(/ร้อยละ/g,'').trim();
+    const m=kpi.match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
+    if(m){ baseline=m[1]; kpi=kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim(); }
+    groups[key].kpis.push({ kpi, baseline });
   });
+  return order
+    .map(k=>groups[k])
+    .sort((a,b)=>a.sort-b.sort)
+    .map(g=>({ goal:g.goal, kpis:g.kpis.map((o,i)=>({ kpi:(i+1)+'.'+o.kpi, baseline:o.baseline })) }));
 }
 
 function dxDownload(groups){
@@ -2649,34 +2689,23 @@ function cvParseKpiResult(kpiResult){
   return items.filter(it => it.kpi || it.scope || it.unit || it.target || it.formula || it.baselineRaw || it.source || it.freq);
 }
 
-// ดึงข้อมูลทั้งหมดจาก savedData → array ของ {goalNo,goalText,kpiNo,…fields}
+// ดึงข้อมูลทั้งหมด (เมนู #4 ใบปะหน้า) — ใช้ตัวรวบรวมเดียวกับเมนู #3 จึงนับตรงกันเสมอ
 function cvCollectAll(){
-  const result = [];
-  projects.forEach(t=>{
-    t.projects.forEach(p=>{
-      const d = savedData[projectKey(t.teacher,p)];
-      if(!d || !d.kpiResult) return;           // ขอแค่มีผลลัพธ์ KPI (strategyId มีหรือไม่ก็ได้)
-      const sid = d.strategyId || 0;
-      const strat = sid ? STRATEGIES.find(s=>s.id===sid) : null;
-      const goalText = strat ? strat.goal : (d.goal || '');
-      const parsed = cvParseKpiResult(d.kpiResult);
-      if(!parsed.length) return;
-      parsed.forEach((kpi,i)=>{
-        // เติม baseline จาก kpi text ถ้า baselineRaw ว่าง
-        let baselineRaw = kpi.baselineRaw || '';
-        if(!baselineRaw){
-          const m = (kpi.kpi||'').match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
-          if(m) baselineRaw = 'ร้อยละ '+m[1];
-        }
-        result.push({ goalNo:sid, goalText, kpiNo:i+1,
-          kpi: (kpi.kpi||'').replace(/^\d+[.)]\s*/,'').trim(),
-          scope: kpi.scope||'', unit: kpi.unit||'', target: kpi.target||'',
-          formula: kpi.formula||'', baselineRaw,
-          source: kpi.source||'', freq: kpi.freq||'' });
-      });
-    });
+  const items = collectAllKpiItems();
+  const counter = {};   // เลขลำดับตัวชี้วัดต่อเป้าประสงค์ (ให้ตรงกับการนับในตารางสรุป)
+  return items.map(it=>{
+    const g = it.goalNo || ('g_'+it.goalText);
+    counter[g] = (counter[g]||0) + 1;
+    // เติม baseline จากข้อความตัวชี้วัด ถ้า baselineRaw ว่าง
+    let baselineRaw = it.baselineRaw || '';
+    if(!baselineRaw){
+      const m = (it.kpi||'').match(/ร้อยละ\s*([0-9]+(?:\.[0-9]+)?)/);
+      if(m) baselineRaw = 'ร้อยละ '+m[1];
+    }
+    return { goalNo:it.goalNo, goalText:it.goalText, kpiNo:counter[g],
+      kpi: it.kpi, scope: it.scope, unit: it.unit, target: it.target,
+      formula: it.formula, baselineRaw, source: it.source, freq: it.freq };
   });
-  return result;
 }
 
 function cvDownload(allKpis){
