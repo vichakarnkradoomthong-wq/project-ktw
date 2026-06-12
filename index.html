@@ -1577,7 +1577,11 @@ ${qaLines}
 ══ ส่วนที่ 2 : ตัวชี้วัดงานแผนงานฯ ══
 ${addLines}
 
-⚠️ กฎเหล็ก: ทุกตัวชี้วัดต้องตอบให้ครบทั้ง 8 หัวข้อ ตามรูปแบบ "[ตัวชี้วัดที่ N]" และ "เลข. ชื่อหัวข้อ : ค่า" นี้เท่านั้น ห้ามเพิ่ม/ลด/เปลี่ยนชื่อหัวข้อ ห้ามใช้ bullet, markdown หรือตาราง และห้ามแก้ไขถ้อยคำของตัวชี้วัดงานประกันในหัวข้อ 1`;
+⚠️ กฎเหล็ก: ทุกตัวชี้วัดต้องตอบให้ครบทั้ง 8 หัวข้อ ตามรูปแบบ "[ตัวชี้วัดที่ N]" และ "เลข. ชื่อหัวข้อ : ค่า" นี้เท่านั้น ห้ามเพิ่ม/ลด/เปลี่ยนชื่อหัวข้อ ห้ามใช้ bullet, markdown หรือตาราง และห้ามแก้ไขถ้อยคำของตัวชี้วัดงานประกันในหัวข้อ 1
+
+⬇️ ─────────────────────────────────────────── ⬇️
+เริ่มคัดลอก (copy) จากตรงนี้
+⬇️ ─────────────────────────────────────────── ⬇️`;
 
   const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการออกแบบตัวชี้วัดความสำเร็จของโครงการ (KPI) และงานประกันคุณภาพการศึกษาของสถานศึกษา
 
@@ -2045,12 +2049,47 @@ function renderStats() {
 
   const doneCount = done; // alias for template
 
+  // count projects with QA indicators saved (qaIndicators field)
+  const qaCount = Object.values(savedData).filter(d=>d?.qaIndicators && d.qaIndicators.trim()).length;
+  // count projects that have submitted KPI result (kpiSubmitted)
+  const kpiSubCount = Object.values(savedData).filter(d=>d?.kpiSubmitted).length;
+
   document.getElementById('statsContent').innerHTML = `
     <div class="stats-grid">
       <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">โครงการทั้งหมด</div></div>
       <div class="stat-card"><div class="stat-num" style="color:var(--success)">${doneCount}</div><div class="stat-label">บันทึกแล้ว</div></div>
       <div class="stat-card"><div class="stat-num" style="color:var(--warning)">${total-doneCount}</div><div class="stat-label">รอดำเนินการ</div></div>
       <div class="stat-card"><div class="stat-num" style="color:var(--primary)">${pct}%</div><div class="stat-label">ความคืบหน้า</div></div>
+    </div>
+
+    <div style="margin-bottom:24px">
+      <div class="bar-title" style="margin-bottom:14px">📋 สถานะงานประกันคุณภาพและ KPI โครงการ</div>
+      <div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(195px,1fr))">
+        <div class="stat-card" style="border-left:4px solid #0f766e">
+          <div class="stat-num" style="color:#0f766e">${qaCount}</div>
+          <div class="stat-label">โครงการที่บันทึกรองรับ<br>ตัวชี้วัดงานประกันคุณภาพ</div>
+          <div style="margin-top:8px;font-size:0.72rem;color:var(--text3)">${total>0?Math.round(qaCount/total*100):0}% ของโครงการทั้งหมด</div>
+          <div style="margin-top:6px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${total>0?Math.round(qaCount/total*100):0}%;background:linear-gradient(90deg,#0f766e,#14b8a6);border-radius:2px"></div>
+          </div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid #4338ca">
+          <div class="stat-num" style="color:#4338ca">${kpiSubCount}</div>
+          <div class="stat-label">โครงการที่ส่ง KPIs<br>(บันทึกผลลัพธ์ KPI แล้ว)</div>
+          <div style="margin-top:8px;font-size:0.72rem;color:var(--text3)">${total>0?Math.round(kpiSubCount/total*100):0}% ของโครงการทั้งหมด</div>
+          <div style="margin-top:6px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${total>0?Math.round(kpiSubCount/total*100):0}%;background:linear-gradient(90deg,#4338ca,#818cf8);border-radius:2px"></div>
+          </div>
+        </div>
+        <div class="stat-card" style="border-left:4px solid var(--warning)">
+          <div class="stat-num" style="color:var(--warning)">${total-kpiSubCount}</div>
+          <div class="stat-label">โครงการที่ยังไม่ส่ง KPIs</div>
+          <div style="margin-top:8px;font-size:0.72rem;color:var(--text3)">${total>0?Math.round((total-kpiSubCount)/total*100):0}% ของโครงการทั้งหมด</div>
+          <div style="margin-top:6px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${total>0?Math.round((total-kpiSubCount)/total*100):0}%;background:linear-gradient(90deg,#d97706,#fbbf24);border-radius:2px"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="bar-section">
