@@ -2576,8 +2576,9 @@ function ttGetProjectKpis(teacher, project){
     if(m){ baseline = m[1]; kpi = kpi.replace(/ร้อยละ\s*[0-9]+(?:\.[0-9]+)?\s*/, 'ร้อยละ').trim(); }
     if(Object.prototype.hasOwnProperty.call(ed,'baseline')) baseline = ed.baseline;
     // ลำดับแรก nQA ตัว = ตัวชี้วัดงานประกันฯ, ที่เหลือ = งานแผนงานฯ (โหมด fallback ทั้งหมดเป็นงานประกันฯ)
-    const type = fallback ? 'qa' : (visIndex < nQA ? 'qa' : 'plan');
-    out.push({ kpi, baseline, type, raw: rawText });
+    let type = fallback ? 'qa' : (visIndex < nQA ? 'qa' : 'plan');
+    if(ed.type === 'qa' || ed.type === 'plan') type = ed.type; // ผู้ใช้กำหนดประเภทเอง (override)
+    out.push({ kpi, baseline, type, raw: rawText, source: b.source||'', formula: b.formula||'' });
   });
   return out;
 }
@@ -2905,6 +2906,15 @@ async function ttEditBaseline(teacherEnc, projectEnc, idx, value){
   await ttSetKpiEdit(teacher, project, idx, { baseline: (value||'').trim() });
 }
 
+// เปลี่ยนประเภทตัวชี้วัด (งานประกันฯ ↔ งานแผนงานฯ) — เก็บใน kpiEdits ไม่แตะข้อมูล import
+async function ttSetKpiType(teacherEnc, projectEnc, idx, newType){
+  document.querySelectorAll('.tt-menu,.vf-menu').forEach(el=>el.style.display='none');
+  const teacher = decodeURIComponent(teacherEnc), project = decodeURIComponent(projectEnc);
+  await ttSetKpiEdit(teacher, project, idx, { type: newType });
+  Swal.fire({ icon:'success', title: newType==='qa' ? 'เปลี่ยนเป็นงานประกันฯ แล้ว' : 'เปลี่ยนเป็นงานแผนงานฯ แล้ว', timer:1300, showConfirmButton:false });
+  ttRefreshAfterChange(teacher, project);
+}
+
 // แก้ไขข้อความตัวชี้วัด (เปลี่ยนตามทุกที่ในระบบ) — ใช้ได้ทั้งส่วนที่ 5 และ 6
 function ttAskEditKpi(teacherEnc, projectEnc, idx){
   document.querySelectorAll('.tt-menu,.vf-menu').forEach(el=>el.style.display='none');
@@ -2927,6 +2937,155 @@ function ttAskEditKpi(teacherEnc, projectEnc, idx){
       ttRefreshAfterChange(teacher, project);
     }
   });
+}
+
+// เปิด modal เลือกรูปแบบการบันทึกใบสรุป
+function exportTeacherSheetsMenu(){
+  Swal.fire({
+    title:'🧾 ใบสรุปแจกครู (PDF)',
+    html:'<div style="font-size:0.9rem;color:#475569">เลือกรูปแบบการบันทึก</div>',
+    showCancelButton:true, showDenyButton:true,
+    confirmButtonText:'👥 บันทึกรวมทุกคน',
+    denyButtonText:'👤 บันทึกรายคน (เลือกชื่อ)',
+    cancelButtonText:'ยกเลิก',
+    confirmButtonColor:'#b45309', denyButtonColor:'#1d4ed8',
+    reverseButtons:true
+  }).then(r=>{
+    if(r.isConfirmed) exportTeacherSheets();
+    else if(r.isDenied) exportTeacherSheetsPick();
+  });
+}
+
+// เลือกครูรายคนก่อนสร้าง PDF
+function exportTeacherSheetsPick(){
+  const withData = projects.filter(t => t.projects.some(p=>{
+    const d = savedData[projectKey(t.teacher,p)];
+    if(!d) return false;
+    return ttGetProjectKpis(t.teacher,p).length>0 || (d.problem&&d.problem.trim()) || d.strategyId;
+  }));
+  if(!withData.length){ Swal.fire({ icon:'info', title:'ยังไม่มีข้อมูลโครงการ' }); return; }
+  const opts = {}; withData.forEach(t=>{ opts[t.teacher] = t.teacher; });
+  Swal.fire({
+    title:'เลือกครูผู้รับผิดชอบ',
+    input:'select', inputOptions:opts, inputPlaceholder:'— เลือกชื่อครู —',
+    showCancelButton:true, confirmButtonText:'สร้าง PDF', cancelButtonText:'ย้อนกลับ',
+    confirmButtonColor:'#1d4ed8',
+    inputValidator:(v)=> !v ? 'กรุณาเลือกชื่อครู' : undefined
+  }).then(r=>{
+    if(r.isConfirmed && r.value) exportTeacherSheets(r.value);
+    else if(r.dismiss===Swal.DismissReason.cancel) exportTeacherSheetsMenu();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// ใบสรุปแจกครู (.pdf) — 1 โครงการต่อ 1 หน้า · เรียงตามชื่อครู
+// ใช้ print-to-PDF ของเบราว์เซอร์ (รองรับฟอนต์ไทยเต็มที่)
+// ═══════════════════════════════════════════════
+function exportTeacherSheets(filterTeacher){
+  // รวบรวมโครงการที่มีข้อมูล แล้วเรียงตามชื่อครู → ชื่อโครงการ
+  const sheets = [];
+  projects.forEach(t=>{
+    if(filterTeacher && t.teacher !== filterTeacher) return;
+    t.projects.forEach(p=>{
+      const d = savedData[projectKey(t.teacher,p)];
+      if(!d) return;
+      const kpis = ttGetProjectKpis(t.teacher, p);
+      const hasInfo = (kpis.length>0) || (d.problem&&d.problem.trim()) || d.strategyId;
+      if(!hasInfo) return;
+      const strat = d.strategyId ? STRATEGIES.find(s=>s.id===d.strategyId) : null;
+      sheets.push({
+        teacher: t.teacher, project: p,
+        problem: (d.problem||'').trim(),
+        stratNo: d.strategyId||'', stratName: strat?strat.name:'',
+        goal: strat?strat.goal:(d.goalText||''),
+        tactic: (d.tacticText||'').trim(),
+        kpis
+      });
+    });
+  });
+  sheets.sort((a,b)=> a.teacher.localeCompare(b.teacher,'th') || a.project.localeCompare(b.project,'th'));
+
+  if(!sheets.length){
+    Swal.fire({ icon:'info', title: filterTeacher?('ครู '+filterTeacher+' ยังไม่มีข้อมูลโครงการ'):'ยังไม่มีข้อมูลโครงการ', text:'ต้องมีโครงการที่ระบุปัญหา/ยุทธศาสตร์ หรือมีตัวชี้วัดก่อนจึงจะสร้างใบสรุปได้' });
+    return;
+  }
+
+  const esc = s => ea(String(s||'')).replace(/\n/g,'<br>');
+  const pages = sheets.map(s=>{
+    const rows = s.kpis.length ? s.kpis.map((k,i)=>{
+      const typeTxt = k.type==='qa' ? 'งานประกันฯ' : 'งานแผนงานฯ';
+      const tool = (k.source||k.formula||'—').trim() || '—';
+      return `<tr>
+        <td class="c-kpi">${i+1}. ${esc(k.kpi)}</td>
+        <td class="c-type">${typeTxt}</td>
+        <td class="c-tool">${esc(tool)}</td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="3" class="c-empty">— ยังไม่มีตัวชี้วัดในโครงการนี้ —</td></tr>`;
+    return `<div class="sheet">
+      <div class="teacher">${ea(s.teacher)}</div>
+      <div class="proj"><span class="lbl">โครงการ</span> ${ea(s.project)}</div>
+
+      <div class="block">
+        <div class="h">ปัญหา / ความต้องการ / นโยบาย <span class="sub">(สำหรับเขียนหลักการและเหตุผล)</span></div>
+        <div class="body">${s.problem ? esc(s.problem) : '<span class="muted">— ยังไม่ได้ระบุ —</span>'}</div>
+      </div>
+
+      <div class="block">
+        <div class="h">ยุทธศาสตร์ / กลยุทธ์</div>
+        <div class="body">
+          <div><b>ยุทธศาสตร์${s.stratNo?(' ที่ '+s.stratNo):''}:</b> ${s.stratName?esc(s.stratName):'<span class="muted">— ยังไม่ได้ระบุ —</span>'}</div>
+          <div style="margin-top:4px"><b>กลยุทธ์:</b> ${s.tactic?esc(s.tactic):'<span class="muted">— ยังไม่ได้ระบุ —</span>'}</div>
+          ${s.goal?`<div style="margin-top:4px"><b>เป้าประสงค์:</b> ${esc(s.goal)}</div>`:''}
+        </div>
+      </div>
+
+      <div class="block">
+        <div class="h">ตารางตัวชี้วัดที่ต้องมีในโครงการ <span class="sub">(${s.kpis.length} ตัวชี้วัด)</span></div>
+        <table class="kpi-table">
+          <thead><tr><th style="width:54%">รายการตัวชี้วัด</th><th style="width:18%">ประเภทตัวชี้วัด</th><th style="width:28%">เครื่องมือ / วิธีการ</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  const html = `<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+    <title>${ea(filterTeacher ? ('ใบสรุป - '+filterTeacher) : 'ใบสรุปแจกครู (รวมทุกคน)')}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      @page { size: A4; margin: 16mm 14mm; }
+      * { box-sizing: border-box; }
+      body { font-family:'Sarabun',sans-serif; color:#1a1a1a; margin:0; font-size:14px; line-height:1.5; }
+      .sheet { page-break-after: always; padding:0; }
+      .sheet:last-child { page-break-after: auto; }
+      .teacher { font-size:30px; font-weight:700; letter-spacing:.5px; border-bottom:3px solid #1d4ed8; padding-bottom:8px; margin-bottom:10px; color:#0f172a; }
+      .proj { font-size:18px; font-weight:600; margin-bottom:16px; }
+      .proj .lbl { display:inline-block; background:#1d4ed8; color:#fff; font-size:13px; font-weight:600; padding:2px 10px; border-radius:5px; margin-right:6px; }
+      .block { margin-bottom:15px; }
+      .block .h { font-size:15px; font-weight:700; color:#1d4ed8; border-left:4px solid #1d4ed8; padding-left:9px; margin-bottom:6px; }
+      .block .h .sub { font-weight:400; font-size:12.5px; color:#64748b; }
+      .block .body { padding-left:13px; font-size:14px; text-align:justify; }
+      .muted { color:#94a3b8; }
+      .kpi-table { width:100%; border-collapse:collapse; margin-top:4px; }
+      .kpi-table th, .kpi-table td { border:1px solid #94a3b8; padding:7px 9px; vertical-align:top; font-size:13.5px; }
+      .kpi-table th { background:#eff6ff; color:#0f172a; font-weight:700; text-align:center; }
+      .c-kpi { text-align:left; }
+      .c-type { text-align:center; white-space:nowrap; }
+      .c-tool { text-align:left; }
+      .c-empty { text-align:center; color:#94a3b8; padding:14px; }
+      tr { page-break-inside: avoid; }
+    </style></head>
+    <body>${pages}
+    <script>window.onload=function(){ setTimeout(function(){ window.print(); }, 500); };<\/script>
+    </body></html>`;
+
+  const w = window.open('', '_blank');
+  if(!w){
+    Swal.fire({ icon:'warning', title:'เบราว์เซอร์บล็อกหน้าต่างใหม่', html:'กรุณาอนุญาต Pop-up ของเว็บนี้ แล้วลองอีกครั้ง<br><span style="font-size:0.82rem;color:#6b7280">เมื่อหน้าต่างพิมพ์เปิดขึ้น เลือกปลายทางเป็น "บันทึกเป็น PDF"</span>' });
+    return;
+  }
+  w.document.open(); w.document.write(html); w.document.close();
 }
 
 // ═══════════════════════════════════════════════
@@ -2956,14 +3115,18 @@ function vfCollectRows(){
 
 function renderVerify(){
   const goalOpts = STRATEGIES.map(s=>`<option value="${s.id}">เป้าประสงค์ที่ ${s.id}</option>`).join('');
+  const teacherOpts = projects.map(t=>`<option value="${ea(t.teacher)}">${ea(t.teacher)}</option>`).join('');
   document.getElementById('verifyContent').innerHTML = `
     <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:1.5px solid #fde68a;border-radius:12px;padding:14px 16px;margin-bottom:16px">
-      <div style="font-size:0.86rem;color:#92400e;line-height:1.6">ตรวจทานตัวชี้วัดทั้งหมดให้ครบถ้วนถูกต้อง แล้วจึงกดสร้างไฟล์ส่งออกด้านล่าง · ต้องการแก้ไข/ลบตัวชี้วัด ทำได้ที่ <b>ส่วนที่ 5</b> · ค่าที่แสดงคือค่าล่าสุดหลังการแก้ไข</div>
+      <div style="font-size:0.86rem;color:#92400e;line-height:1.6">ตรวจทานตัวชี้วัดทั้งหมดให้ครบถ้วนถูกต้อง แล้วจึงกดสร้างไฟล์ส่งออกด้านล่าง · แก้ไข/ลบ/เปลี่ยนประเภทตัวชี้วัดได้ที่ปุ่ม ⋮ ของแต่ละรายการ · ค่าที่แสดงคือค่าล่าสุดหลังการแก้ไข</div>
     </div>
 
     <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px;align-items:center">
       <input id="vfSearch" type="text" oninput="vfRender()" placeholder="🔎 ค้นหา: ตัวชี้วัด / โครงการ / ครู / เป้าประสงค์"
         style="flex:1;min-width:240px;padding:10px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:'Sarabun',sans-serif;font-size:0.88rem;background:var(--surface);color:var(--text)">
+      <select id="vfTeacher" onchange="vfRender()" class="form-select" style="width:auto;min-width:170px">
+        <option value="">ผู้รับผิดชอบ: ทั้งหมด</option>${teacherOpts}
+      </select>
       <select id="vfGoal" onchange="vfRender()" class="form-select" style="width:auto;min-width:170px">
         <option value="">เป้าประสงค์: ทั้งหมด</option>${goalOpts}
       </select>
@@ -2983,6 +3146,7 @@ function renderVerify(){
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:#2563eb" onclick="exportSummaryDocx()">📄 ตารางสรุป .docx</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 ใบปะหน้า .docx</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#059669,#34d399);border-color:#059669" onclick="exportExcel()">📊 ส่งออก Excel</button>
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#b45309,#f59e0b);border-color:#b45309" onclick="exportTeacherSheetsMenu()">🧾 ใบสรุปแจกครู (.pdf)</button>
     </div>`;
   vfRender();
 }
@@ -2990,9 +3154,11 @@ function renderVerify(){
 function vfRender(){
   const rows = vfCollectRows();
   const q  = (document.getElementById('vfSearch')?.value||'').trim().toLowerCase();
+  const tcf = document.getElementById('vfTeacher')?.value||'';
   const gf = document.getElementById('vfGoal')?.value||'';
   const tf = document.getElementById('vfType')?.value||'';
   const filtered = rows.filter(r=>{
+    if(tcf && r.teacher!==tcf) return false;
     if(gf && String(r.goalNo)!==gf) return false;
     if(tf && r.type!==tf) return false;
     if(q){
@@ -3036,6 +3202,8 @@ function vfRender(){
         : '<span style="background:#fed7aa;color:#9a3412;font-size:0.68rem;font-weight:700;padding:2px 8px;border-radius:20px;white-space:nowrap">แผนงานฯ</span>';
       const yrs=[71,72,73,74,75].map(n=>r.y['y'+n]||'-').join(' / ');
       const tEnc=encodeURIComponent(r.teacher), pEnc=encodeURIComponent(r.project), idx=r.kpiNo-1, mid='vfMenu_'+vi;
+      const flipType = r.type==='qa' ? 'plan' : 'qa';
+      const flipLabel = r.type==='qa' ? '🔄 เปลี่ยนเป็นงานแผนงานฯ' : '🔄 เปลี่ยนเป็นงานประกันฯ';
       html += `<div style="position:relative;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:9px">
         <div style="display:flex;gap:8px;align-items:flex-start;justify-content:space-between">
           <div style="font-size:0.86rem;color:var(--text);line-height:1.45;flex:1">${r.kpiNo}. ${ea(r.kpi)||'—'}</div>
@@ -3044,9 +3212,11 @@ function vfRender(){
             <button onclick="event.stopPropagation();kpiMenuToggle('${mid}')" title="ตัวเลือก"
               style="width:26px;height:26px;border:none;background:none;cursor:pointer;font-size:1.2rem;line-height:1;color:var(--text3);border-radius:6px;display:flex;align-items:center;justify-content:center">⋮</button>
           </div>
-          <div id="${mid}" class="vf-menu" style="display:none;position:absolute;top:36px;right:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.16);z-index:30;overflow:hidden;min-width:188px">
+          <div id="${mid}" class="vf-menu" style="display:none;position:absolute;top:36px;right:10px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;box-shadow:0 10px 28px rgba(0,0,0,0.16);z-index:30;overflow:hidden;min-width:200px">
             <button onclick="ttAskEditKpi('${tEnc}','${pEnc}',${idx})"
               style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:var(--text);text-align:left;border-bottom:1px solid var(--border)">✏️ แก้ไขตัวชี้วัด</button>
+            <button onclick="ttSetKpiType('${tEnc}','${pEnc}',${idx},'${flipType}')"
+              style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:var(--text);text-align:left;border-bottom:1px solid var(--border)">${flipLabel}</button>
             <button onclick="ttAskDelete('${tEnc}','${pEnc}',${idx})"
               style="display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;background:none;border:none;cursor:pointer;font-family:inherit;font-size:0.85rem;color:#dc2626;text-align:left">🗑 ลบตัวชี้วัดนี้</button>
           </div>
