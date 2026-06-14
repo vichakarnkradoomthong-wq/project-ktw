@@ -520,31 +520,12 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
         </div>
       </div>
 
-      <!-- Card 3 -->
-      <div class="landing-card" onclick="showSection('kpiSection')">
-        <div class="card-top-strip" style="background:linear-gradient(90deg,#4338ca,#818cf8)"></div>
-        <div class="card-body">
-          <div class="card-icon-wrap indigo">🎯</div>
-          <div class="card-chip">ส่วนที่ 3 · KPI Designer</div>
-          <div class="card-title">ตัวช่วยออกแบบ KPI<br>ตัวชี้วัดความสำเร็จโครงการ</div>
-          <div class="card-desc">เลือกครู → เลือกโครงการ → กรอกปัญหา กลุ่มเป้าหมาย ตัวชี้วัดงานประกัน และจำนวน KPI แล้วรับ Master Prompt ให้ AI ช่วยคิดตัวชี้วัด</div>
-          <div class="card-footer-strip">
-            <div class="card-features">
-              <span class="card-feat-tag">📈 KPI</span>
-              <span class="card-feat-tag">✅ ประกันคุณภาพ</span>
-              <span class="card-feat-tag">✨ Prompt</span>
-            </div>
-            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 4 -->
+      <!-- Card 3 (ฟอร์มครู) — ขั้นตอนแรกตามลำดับการทำงานจริง -->
       <div class="landing-card" onclick="openTeacherFormPreview()">
         <div class="card-top-strip" style="background:linear-gradient(90deg,#0f766e,#5eead4)"></div>
         <div class="card-body">
           <div class="card-icon-wrap teal">📝</div>
-          <div class="card-chip">ส่วนที่ 4 · ฟอร์มครู</div>
+          <div class="card-chip">ส่วนที่ 3 · ฟอร์มครู</div>
           <div class="card-title">ฟอร์มระบุโครงการ<br>รองรับงานประกันคุณภาพ</div>
           <div class="card-desc">เปิดฟอร์มสำหรับครู เลือกชื่อตนเอง แล้วเลือกโครงการที่รองรับค่าเป้าหมาย (KPI งานประกัน) ที่รับผิดชอบ · ตั้งค่าค่าเป้าหมายและคัดลอกลิงก์ได้ในเมนูตั้งค่า</div>
           <div class="card-footer-strip">
@@ -554,6 +535,25 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
               <span class="card-feat-tag">💾 บันทึก</span>
             </div>
             <div class="card-cta">เปิดฟอร์ม <span>→</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 4 (KPI Designer) -->
+      <div class="landing-card" onclick="showSection('kpiSection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#4338ca,#818cf8)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap indigo">🎯</div>
+          <div class="card-chip">ส่วนที่ 4 · KPI Designer</div>
+          <div class="card-title">ตัวช่วยออกแบบ KPI<br>ตัวชี้วัดความสำเร็จโครงการ</div>
+          <div class="card-desc">เลือกครู → เลือกโครงการ → กรอกปัญหา กลุ่มเป้าหมาย ตัวชี้วัดงานประกัน และจำนวน KPI แล้วรับ Master Prompt ให้ AI ช่วยคิดตัวชี้วัด</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">📈 KPI</span>
+              <span class="card-feat-tag">✅ ประกันคุณภาพ</span>
+              <span class="card-feat-tag">✨ Prompt</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
           </div>
         </div>
       </div>
@@ -696,7 +696,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       <div style="font-size:0.79rem;color:var(--text3);margin-top:4px;line-height:1.65">
         1) นำเข้า/พิมพ์ <b>ค่าเป้าหมาย (KPI งานประกัน)</b> และ <b>ผู้รับผิดชอบ</b> แล้วกด <b>บันทึก</b><br>
         2) คัดลอก <b>ลิงก์ฟอร์มสำหรับครู</b> ส่งเข้ากลุ่มไลน์ ให้ครูเปิดลิงก์ เลือกชื่อตนเอง แล้วเลือกโครงการที่รองรับค่าเป้าหมายของตน<br>
-        3) ข้อมูลที่ครูกรอกจะแสดงเป็นค่าเริ่มต้นใน modal ของส่วนที่ 3 โดยอัตโนมัติ
+        3) ข้อมูลที่ครูกรอกจะแสดงเป็นค่าเริ่มต้นใน modal ของส่วนที่ 4 โดยอัตโนมัติ
       </div>
     </div>
 
@@ -2394,7 +2394,7 @@ function renderStats() {
         <span style="font-size:0.78rem;font-weight:400;color:var(--text3)">รวมทั้งหมด <b style="color:var(--primary)">${totalKpiCount}</b> ตัวชี้วัด</span>
       </div>
       ${totalKpiCount === 0
-        ? `<div style="text-align:center;padding:18px;background:var(--surface2);border:1.5px dashed var(--border);border-radius:10px;font-size:0.84rem;color:var(--text3)">ยังไม่มีตัวชี้วัดที่บันทึก — ต้องส่งผลลัพธ์ KPI จาก AI ในส่วนที่ 3 ก่อน</div>`
+        ? `<div style="text-align:center;padding:18px;background:var(--surface2);border:1.5px dashed var(--border);border-radius:10px;font-size:0.84rem;color:var(--text3)">ยังไม่มีตัวชี้วัดที่บันทึก — ต้องส่งผลลัพธ์ KPI จาก AI ในส่วนที่ 4 ก่อน</div>`
         : kpiByGoalArr.map(g => `
         <div class="bar-item" style="padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;margin-bottom:10px">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;gap:8px;flex-wrap:wrap">
@@ -2604,7 +2604,7 @@ function exportExcel() {
 // รูปแบบตรงตามไฟล์แนบตัวอย่าง — ช่องค่าเป้าหมายเว้นว่าง
 // ═══════════════════════════════════════════════
 const DOCX_FONT = 'TH SarabunIT๙';
-const DOCX_COLS = [2836,3969,1843,1559,992,992,993,992,992];
+const DOCX_COLS = [2512,3516,1633,1381,879,879,879,879,878];
 
 function dxEsc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
@@ -2696,7 +2696,11 @@ function dxBuildTable(groups){
     '<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
     '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
     '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders>';
-  return '<w:tbl><w:tblPr><w:tblW w:w="15168" w:type="dxa"/><w:tblInd w:w="-856" w:type="dxa"/>'+borders+
+  const cellMar='<w:tblCellMar>'+
+    '<w:top w:w="40" w:type="dxa"/><w:left w:w="170" w:type="dxa"/>'+
+    '<w:bottom w:w="40" w:type="dxa"/><w:right w:w="170" w:type="dxa"/></w:tblCellMar>';
+  return '<w:tbl><w:tblPr><w:tblW w:w="13436" w:type="dxa"/><w:jc w:val="center"/>'+borders+
+    '<w:tblLayout w:type="fixed"/>'+cellMar+
     '<w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>'+
     '<w:tblGrid>'+grid+'</w:tblGrid>'+rows+'</w:tbl>';
 }
@@ -3279,7 +3283,7 @@ function openTrendProjects(td){
       <div class="section-title">📚 โครงการของ <span style="color:var(--primary)">${td.teacher}</span></div>
       <button class="back-btn" onclick="renderTrendTeachers()">← เลือกครูคนอื่น</button>
     </div>
-    <div style="font-size:0.8rem;color:var(--text3);margin:6px 0 14px">คลิกโครงการเพื่อกรอกค่าเป้าหมายรายปี · โครงการที่ยังไม่มีตัวชี้วัดต้องไปออกแบบ KPI (ส่วนที่ 3) และส่งผลก่อน</div>
+    <div style="font-size:0.8rem;color:var(--text3);margin:6px 0 14px">คลิกโครงการเพื่อกรอกค่าเป้าหมายรายปี · โครงการที่ยังไม่มีตัวชี้วัดต้องไปออกแบบ KPI (ส่วนที่ 4) และส่งผลก่อน</div>
     <div class="project-list">${rows}</div>`;
 }
 
@@ -4245,7 +4249,7 @@ function exportCoverDocx(){
   const all = cvCollectAll();
   if(!all.length){
     Swal.fire({icon:'info',title:'ยังไม่มีข้อมูล KPI',
-      html:'ต้องมีโครงการที่<br>1) บันทึกยุทธศาสตร์ (ส่วนที่ 2) <b>และ</b><br>2) ส่งผลลัพธ์ KPI จาก AI (ส่วนที่ 3) แล้ว<br><span style="font-size:0.82rem;color:#6b7280">จึงจะสร้างใบปะหน้าได้</span>',
+      html:'ต้องมีโครงการที่<br>1) บันทึกยุทธศาสตร์ (ส่วนที่ 2) <b>และ</b><br>2) ส่งผลลัพธ์ KPI จาก AI (ส่วนที่ 4) แล้ว<br><span style="font-size:0.82rem;color:#6b7280">จึงจะสร้างใบปะหน้าได้</span>',
       confirmButtonColor:'#7c3aed'});
     return;
   }
