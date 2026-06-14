@@ -820,12 +820,79 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
 
     <div class="divider"></div>
+    <div class="form-group">
+      <div class="detail-label">8. ฟอร์มโครงการ .docx — ผู้ลงนาม (ค่าเริ่มต้น)</div>
+      <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+        ตั้งค่า <b>ผู้เสนอ · ผู้เห็นชอบ · ผู้อนุมัติโครงการ</b> ที่จะเติมในฟอร์มโครงการ .docx (เมนูส่วนที่ 6)
+        ส่วน <b>ผู้จัดทำ/ผู้เขียนโครงการ</b> จะใช้ชื่อครูที่เลือกตอนดาวน์โหลด · ช่องอื่น ๆ ในฟอร์มจะเว้นว่าง (......) ไว้ให้กรอกเอง
+      </div>
+
+      <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px">
+        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px">๑๕. ผู้เสนอโครงการ</div>
+        <input type="text" id="sgProposerName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้เสนอ">
+        <input type="text" id="sgProposerPos" class="form-select" placeholder="ตำแหน่ง">
+
+        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">๑๖. ผู้เห็นชอบโครงการ</div>
+        <input type="text" id="sgApproverName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้เห็นชอบ">
+        <input type="text" id="sgApproverPos" class="form-select" placeholder="ตำแหน่ง">
+
+        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">๑๗. ผู้อนุมัติโครงการ</div>
+        <input type="text" id="sgAuthorizerName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้อนุมัติ">
+        <input type="text" id="sgAuthorizerPos" class="form-select" style="margin-bottom:6px" placeholder="ตำแหน่ง">
+        <input type="text" id="sgAuthorizerActing" class="form-select" placeholder="ปฏิบัติราชการแทน (เว้นว่างได้)">
+
+        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">ตำแหน่งผู้จัดทำ (ครูที่เลือก)</div>
+        <input type="text" id="sgTeacherPos" class="form-select" placeholder="ตำแหน่ง เช่น ครู">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="project-btn primary-btn" onclick="saveSignatories()">💾 บันทึกผู้ลงนาม</button>
+        <button class="project-btn" onclick="resetSignatories()">↩️ ค่าเริ่มต้นตาม template</button>
+      </div>
+    </div>
+
+    <div class="divider"></div>
     <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
       <button class="project-btn" style="color:var(--danger);border-color:#fca5a5"
         onclick="resetToDefault()">🔄 รีเซ็ตรายการโครงการ</button>
       <button class="project-btn" style="color:#fff;background:var(--danger);border-color:var(--danger);font-weight:700"
         onclick="clearAllData()">🗑️ ล้างข้อมูลทั้งหมด (Firestore)</button>
     </div>
+  </div>
+</div>
+
+<!-- PROJECT FORM MODAL (ดาวน์โหลดฟอร์มโครงการ .docx) -->
+<div class="modal-overlay" id="projectFormModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('projectFormModal')">✕</button>
+    <div class="modal-title">📄 ดาวน์โหลดฟอร์มโครงการ .docx</div>
+
+    <div style="background:linear-gradient(135deg,#fef2f2,#fff1f2);border:1.5px solid #fecaca;border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:16px">
+      <div style="font-size:0.82rem;color:#991b1b;line-height:1.65">
+        เลือก <b>ครูผู้จัดทำ</b> และ <b>โครงการ</b> ระบบจะเติม <b>ชื่อโครงการ · ผู้จัดทำ · ผู้ลงนาม</b> ที่มีในระบบให้อัตโนมัติ
+        ช่องอื่น ๆ ของฟอร์ม (หลักการ วัตถุประสงค์ งบประมาณ ฯลฯ) จะเว้นว่าง <b>......</b> ไว้ให้กรอกเอง
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ครูผู้จัดทำ / ผู้เขียนโครงการ</label>
+      <select class="form-select" id="pfTeacherSel" onchange="pfOnTeacherChange()">
+        <option value="">— เลือกชื่อครู —</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">โครงการ <span style="font-weight:400;color:var(--text3);font-size:0.72rem">(เติมในข้อ ๑ ชื่อโครงการ · เลือก "ไม่ระบุ" เพื่อเว้นว่าง)</span></label>
+      <select class="form-select" id="pfProjectSel">
+        <option value="">— ไม่ระบุ (เว้นว่าง) —</option>
+      </select>
+    </div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px">
+      <div style="font-size:0.74rem;color:var(--text3);line-height:1.7" id="pfSignPreview"></div>
+      <div style="font-size:0.72rem;color:var(--primary);margin-top:4px">* แก้ไขผู้ลงนามได้ที่ ⚙️ ตั้งค่า → ข้อ 8</div>
+    </div>
+
+    <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#dc2626,#f87171);box-shadow:0 4px 14px rgba(220,38,38,0.3)" onclick="downloadProjectForm()">⬇️ ดาวน์โหลดฟอร์มโครงการ.docx</button>
   </div>
 </div>
 
@@ -1079,6 +1146,9 @@ async function loadAllSavedData() {
       if (d.id === '_projects' && Array.isArray(d.data().items) && d.data().items.length) {
         projects = d.data().items;
         localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+      }
+      if (d.id === '_signatories' && d.data()) {
+        localStorage.setItem('ktw_signatories', JSON.stringify(d.data()));
       }
     });
   } catch(e) { console.warn('Firestore qaforms:', e); }
@@ -2251,6 +2321,7 @@ function openSettingsModal() {
   renderAiLinksEditor();
   document.getElementById('announceText').value = localStorage.getItem('ktw_announce')||'';
   document.getElementById('qaText').value = localStorage.getItem('ktw_qa_indicators')||'';
+  fillSignatoryInputs();
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -2496,6 +2567,336 @@ function dxBuildDocument(groups){
     '<w:cols w:space="708"/><w:docGrid w:linePitch="435"/></w:sectPr>';
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
     '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+intro+table+sect+'</w:body></w:document>';
+}
+
+// ═══════════════════════════════════════════════
+// ฟอร์มโครงการ .docx  (เมนูส่วนที่ 6)
+// เติมเฉพาะข้อมูลที่ระบบมี: ชื่อโครงการ · ผู้จัดทำ(ครู) · ผู้ลงนาม
+// ช่องอื่น ๆ เว้นว่างด้วยจุด ...... ตามรูปแบบ template
+// ═══════════════════════════════════════════════
+const DEFAULT_SIGNATORIES = {
+  proposer:  { name:'นางสาวสุพัฒตา ศรีเมือง', pos:'ครู / หัวหน้ากลุ่มบริหารงานวิชาการ' },
+  approver:  { name:'นางสุคันทร บาอินทร์',     pos:'รองผู้อำนวยการโรงเรียนกระดุมทองวิทยา' },
+  authorizer:{ name:'นางสุนิสา ใจใหญ่',        pos:'ผู้อำนวยการโรงเรียนกระดุมทองวิทยา', actingFor:'นายกองค์การบริหารส่วนจังหวัดศรีสะเกษ' },
+  teacherPos:'ครู'
+};
+function loadSignatories(){
+  try{ const s=JSON.parse(localStorage.getItem('ktw_signatories')||'null'); if(s) return Object.assign({},DEFAULT_SIGNATORIES,s,{proposer:Object.assign({},DEFAULT_SIGNATORIES.proposer,s.proposer||{}),approver:Object.assign({},DEFAULT_SIGNATORIES.approver,s.approver||{}),authorizer:Object.assign({},DEFAULT_SIGNATORIES.authorizer,s.authorizer||{})}); }catch(e){}
+  return JSON.parse(JSON.stringify(DEFAULT_SIGNATORIES));
+}
+function fillSignatoryInputs(){
+  const s=loadSignatories();
+  const set=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=v||''; };
+  set('sgProposerName',s.proposer.name); set('sgProposerPos',s.proposer.pos);
+  set('sgApproverName',s.approver.name); set('sgApproverPos',s.approver.pos);
+  set('sgAuthorizerName',s.authorizer.name); set('sgAuthorizerPos',s.authorizer.pos); set('sgAuthorizerActing',s.authorizer.actingFor);
+  set('sgTeacherPos',s.teacherPos);
+}
+function saveSignatories(){
+  const g=id=>(document.getElementById(id)?.value||'').trim();
+  const s={
+    proposer:{name:g('sgProposerName'),pos:g('sgProposerPos')},
+    approver:{name:g('sgApproverName'),pos:g('sgApproverPos')},
+    authorizer:{name:g('sgAuthorizerName'),pos:g('sgAuthorizerPos'),actingFor:g('sgAuthorizerActing')},
+    teacherPos:g('sgTeacherPos')||'ครู'
+  };
+  localStorage.setItem('ktw_signatories',JSON.stringify(s));
+  if(db){ try{ fsModules.setDoc(fsModules.doc(db,'qaforms','_signatories'),s); }catch(e){} }
+  Swal.fire({icon:'success',title:'บันทึกผู้ลงนามแล้ว',timer:1300,showConfirmButton:false});
+}
+function resetSignatories(){
+  localStorage.removeItem('ktw_signatories'); fillSignatoryInputs();
+  Swal.fire({icon:'success',title:'คืนค่าเริ่มต้นตาม template แล้ว',timer:1300,showConfirmButton:false});
+}
+
+// ── docx helpers สำหรับฟอร์มโครงการ (ใช้ร่วม dxRun/dxEsc/DOCX_FONT) ──
+function pfDot(n){ return '.'.repeat(n); }
+function pfPara(text,o){
+  o=o||{};
+  const jc=o.center?'<w:jc w:val="center"/>':(o.right?'<w:jc w:val="right"/>':'');
+  const sz=o.sz||32;
+  const ind=o.ind?('<w:ind w:firstLine="'+o.ind+'"/>'):'';
+  const spAfter=(o.after!=null)?o.after:0;
+  const spBefore=o.before?('w:before="'+o.before+'" '):'';
+  return '<w:p><w:pPr><w:spacing '+spBefore+'w:after="'+spAfter+'" w:line="276" w:lineRule="auto"/>'+ind+jc+
+    '<w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/>'+(o.b?'<w:b/><w:bCs/>':'')+'<w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/></w:rPr></w:pPr>'+
+    (text===''?'':dxRun(text,o))+'</w:p>';
+}
+function pfHeading(num,title){ return pfPara(num+'. '+title,{b:true,before:120,after:40}); }
+function pfBlank(lines,ind){ const i0=(ind!=null?ind:480); const n=i0>=720?70:76; let out=''; for(let i=0;i<(lines||1);i++){ out+=pfPara(pfDot(n),{ind:i0}); } return out; }
+function pfSign(name,pos,opts){
+  opts=opts||{};
+  const nameOpt=opts.nameColor?{center:true,color:opts.nameColor}:{center:true};
+  let out=pfPara('('+(name||pfDot(40))+')',nameOpt);
+  out+=pfPara('ตำแหน่ง '+(pos||pfDot(40)),{center:true});
+  if(opts.actingFor) out+=pfPara('ปฏิบัติราชการแทน  '+opts.actingFor,{center:true});
+  return out;
+}
+function pfTableWork(){
+  const C=[2204,3550,1800,1800], grid=C.map(c=>'<w:gridCol w:w="'+c+'"/>').join('');
+  const bd='<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders>';
+  const tc=(w,inner)=>'<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>'+(inner||pfPara(''))+'</w:tc>';
+  let rows='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+tc(C[0],pfPara('ขั้นตอน',{center:true,b:true}))+tc(C[1],pfPara('การดำเนินกิจกรรม',{center:true,b:true}))+tc(C[2],pfPara('ระยะเวลา',{center:true,b:true}))+tc(C[3],pfPara('สถานที่',{center:true,b:true}))+'</w:tr>';
+  ['ขั้นวางแผน (Plan)','ขั้นดำเนินการ (Do)','ขั้นกำกับ ติดตาม (Check)','ขั้นนำข้อมูลไปใช้ (Action)'].forEach(s=>{
+    rows+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+tc(C[0],pfPara(s,{}))+tc(C[1],pfPara(pfDot(28),{}))+tc(C[2],pfPara(pfDot(14),{center:true}))+tc(C[3],pfPara(pfDot(14),{center:true}))+'</w:tr>';
+  });
+  return '<w:tbl><w:tblPr><w:tblW w:w="9354" w:type="dxa"/><w:jc w:val="center"/>'+bd+'<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="170" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="170" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid>'+grid+'</w:tblGrid>'+rows+'</w:tbl>';
+}
+function pfTableEval(indicators){
+  const C=[3954,2700,2700], grid=C.map(c=>'<w:gridCol w:w="'+c+'"/>').join('');
+  const bd='<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders>';
+  const tc=(w,inner)=>'<w:tc><w:tcPr><w:tcW w:w="'+w+'" w:type="dxa"/><w:vAlign w:val="center"/></w:tcPr>'+(inner||pfPara(''))+'</w:tc>';
+  let rows='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+tc(C[0],pfPara('ตัวชี้วัดความสำเร็จ',{center:true,b:true}))+tc(C[1],pfPara('วิธีการประเมิน',{center:true,b:true}))+tc(C[2],pfPara('เครื่องมือที่ใช้',{center:true,b:true}))+'</w:tr>';
+  // ข้อความแนะนำสีแดง (แทนการดึงอัตโนมัติ)
+  const hintMethod=pfPara('(ระบุวิธีประเมิน เช่น สังเกต / ทดสอบ / สอบถาม / ตรวจผลงาน)',{color:'C00000',sz:26});
+  const hintTool=pfPara('(ระบุเครื่องมือ เช่น แบบสังเกต / แบบทดสอบ / แบบสอบถาม / แบบประเมิน)',{color:'C00000',sz:26});
+  const list=(indicators&&indicators.length)?indicators:null;
+  if(list){
+    list.forEach((ind,i)=>{
+      const kpi=(ind&&typeof ind==='object')?(ind.kpi||''):String(ind||'');
+      rows+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+
+        tc(C[0],pfPara(toThaiNum(String(i+1))+'. '+kpi,{}))+
+        tc(C[1],hintMethod)+tc(C[2],hintTool)+'</w:tr>';
+    });
+  } else {
+    for(let i=0;i<4;i++){ rows+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+tc(C[0],pfPara(pfDot(28),{}))+tc(C[1],hintMethod)+tc(C[2],hintTool)+'</w:tr>'; }
+  }
+  return '<w:tbl><w:tblPr><w:tblW w:w="9354" w:type="dxa"/><w:jc w:val="center"/>'+bd+'<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="170" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="170" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid>'+grid+'</w:tblGrid>'+rows+'</w:tbl>';
+}
+// แปลงเลขอารบิก → เลขไทย
+function toThaiNum(s){ const t='๐๑๒๓๔๕๖๗๘๙'; return String(s==null?'':s).replace(/[0-9]/g,d=>t[+d]); }
+// ดึงตัวชี้วัด (เต็มประโยค) + แหล่งข้อมูล/วิธีเก็บ จากข้อมูลที่บันทึก → [{kpi, source}]
+function pfGetIndicators(d){
+  if(!d) return [];
+  const out=[];
+  // 1) ผล KPI แบบมีโครงสร้าง → ได้ทั้งตัวชี้วัดและแหล่งข้อมูล (source)
+  if(d.kpiResult && typeof cvParseKpiResult==='function'){
+    cvParseKpiResult(d.kpiResult).forEach(b=>{
+      const kpi=String(b.kpi||'').replace(/^[๑๒๓๔๕๖๗๘๙๐0-9]+[).．。]\s*/,'').trim();
+      if(kpi) out.push({ kpi, source:String(b.source||'').trim() });
+    });
+  }
+  // 2) fallback: qaIndicators ทีละบรรทัด (ไม่มีแหล่งข้อมูล)
+  if(!out.length){
+    const qa=(d.qaIndicators||'').trim();
+    if(qa) qa.split('\n').forEach(l=>{ l=l.trim().replace(/^[๑๒๓๔๕๖๗๘๙๐0-9]+[).．。]\s*/,'').trim(); if(l) out.push({kpi:l,source:''}); });
+  }
+  return out;
+}
+// กล่องหัวกระดาษ — ลอยชิดมุมขวาบน ฟอนต์ 13 (sz 26) ข้อความชิดซ้ายในกรอบ ไม่ดันชื่อโครงการ
+function pfHeaderBox(){
+  const bd='<w:tblBorders><w:top w:val="single" w:sz="6" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="6" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="6" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="6" w:space="0" w:color="auto"/></w:tblBorders>';
+  const W=3600;
+  const inner=pfPara('โครงการลำดับที่ '+pfDot(16),{sz:26})+pfPara('ประเภทงบประมาณ '+pfDot(13),{sz:26});
+  const cell='<w:tc><w:tcPr><w:tcW w:w="'+W+'" w:type="dxa"/><w:tcMar><w:top w:w="30" w:type="dxa"/><w:left w:w="90" w:type="dxa"/><w:bottom w:w="30" w:type="dxa"/><w:right w:w="90" w:type="dxa"/></w:tcMar></w:tcPr>'+inner+'</w:tc>';
+  return '<w:tbl><w:tblPr>'+
+    '<w:tblpPr w:leftFromText="142" w:rightFromText="0" w:topFromText="0" w:bottomFromText="142" w:vertAnchor="page" w:horzAnchor="margin" w:tblpXSpec="right" w:tblpY="700"/>'+
+    '<w:tblW w:w="'+W+'" w:type="dxa"/>'+
+    bd+'<w:tblLook w:val="0000" w:firstRow="0" w:lastRow="0" w:firstColumn="0" w:lastColumn="0" w:noHBand="1" w:noVBand="1"/></w:tblPr><w:tblGrid><w:gridCol w:w="'+W+'"/></w:tblGrid><w:tr>'+cell+'</w:tr></w:tbl>';
+}
+// ข้อความแนะนำสีแดง (ค่าเริ่มต้นย่อหน้า + สีแดง)
+function pfRed(text,o){ return pfPara(text, Object.assign({ind:480,color:'C00000'}, o||{})); }
+// ข้อความแนะนำสีเขียว
+function pfGreen(text,o){ return pfPara(text, Object.assign({ind:480,color:'008000'}, o||{})); }
+
+// เซลล์ตารางที่รองรับ gridSpan / vMerge
+function pfTcM(w,inner,opts){
+  opts=opts||{};
+  let pr='<w:tcW w:w="'+w+'" w:type="dxa"/>';
+  if(opts.gridSpan) pr+='<w:gridSpan w:val="'+opts.gridSpan+'"/>';
+  if(opts.vMerge==='restart') pr+='<w:vMerge w:val="restart"/>';
+  else if(opts.vMerge==='continue') pr+='<w:vMerge/>';
+  pr+='<w:vAlign w:val="center"/>';
+  return '<w:tc><w:tcPr>'+pr+'</w:tcPr>'+(inner||pfPara(''))+'</w:tc>';
+}
+// ตารางประมาณการค่าใช้จ่าย (หน้าแนบท้าย)
+function pfBudgetTable(){
+  const C=[700,3404,1200,1000,1450,1600]; // รวม 9354
+  const grid=C.map(c=>'<w:gridCol w:w="'+c+'"/>').join('');
+  const bd='<w:tblBorders><w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/><w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders>';
+  // หัวตาราง 2 แถว
+  let rows='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+
+    pfTcM(C[0],pfPara('ที่',{center:true,b:true,sz:26}),{vMerge:'restart'})+
+    pfTcM(C[1],pfPara('รายการ',{center:true,b:true,sz:26}),{vMerge:'restart'})+
+    pfTcM(C[2]+C[3]+C[4]+C[5],pfPara('ประมาณการ',{center:true,b:true,sz:26}),{gridSpan:4})+'</w:tr>';
+  rows+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+
+    pfTcM(C[0],pfPara(''),{vMerge:'continue'})+
+    pfTcM(C[1],pfPara(''),{vMerge:'continue'})+
+    pfTcM(C[2],pfPara('จำนวน',{center:true,b:true,sz:26}))+
+    pfTcM(C[3],pfPara('หน่วย',{center:true,b:true,sz:26}))+
+    pfTcM(C[4],pfPara('ราคา/หน่วย',{center:true,b:true,sz:26}))+
+    pfTcM(C[5],pfPara('จำนวนเงิน',{center:true,b:true,sz:26}))+'</w:tr>';
+  // แถวข้อมูลว่าง
+  for(let i=0;i<6;i++){
+    rows+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+
+      pfTcM(C[0],pfPara(''))+pfTcM(C[1],pfPara(''))+pfTcM(C[2],pfPara(''))+
+      pfTcM(C[3],pfPara(''))+pfTcM(C[4],pfPara(''))+pfTcM(C[5],pfPara(''))+'</w:tr>';
+  }
+  // แถวรวม — "รวมทั้งสิ้นเป็นเงิน" ชิดซ้ายสุด (รวมคอลัมน์ ที่..ราคา/หน่วย)
+  rows+='<w:tr><w:trPr><w:cantSplit/></w:trPr>'+
+    pfTcM(C[0]+C[1]+C[2]+C[3]+C[4],pfPara('รวมทั้งสิ้นเป็นเงิน',{b:true}),{gridSpan:5})+
+    pfTcM(C[5],pfPara(''))+'</w:tr>';
+  return '<w:tbl><w:tblPr><w:tblW w:w="9354" w:type="dxa"/><w:jc w:val="center"/><w:tblBorders/>'.replace('<w:tblBorders/>',bd)+'<w:tblLayout w:type="fixed"/><w:tblCellMar><w:top w:w="40" w:type="dxa"/><w:left w:w="170" w:type="dxa"/><w:bottom w:w="40" w:type="dxa"/><w:right w:w="170" w:type="dxa"/></w:tblCellMar><w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr><w:tblGrid>'+grid+'</w:tblGrid>'+rows+'</w:tbl>';
+}
+// ลายเซ็นแบบหน้าแนบท้าย "(ลงชื่อ) ......... <label>" — จัดกึ่งกลางแบบข้อ ๑๔-๑๗
+function pfSignAtt(label,name,pos,opts){
+  opts=opts||{};
+  const nameOpt=opts.nameColor?{center:true,color:opts.nameColor}:{center:true};
+  let out=pfPara('(ลงชื่อ) '+pfDot(28)+'  '+label,{center:true,after:0});
+  out+=pfPara('('+(name||pfDot(30))+')',nameOpt);
+  out+=pfPara('ตำแหน่ง '+(pos||pfDot(30)),{center:true});
+  if(opts.actingFor) out+=pfPara('ปฏิบัติราชการแทน  '+opts.actingFor,{center:true});
+  return out;
+}
+// หน้ารายละเอียดแนบท้ายโครงการ (ตาม template)
+function pfBuildAppendix(d){
+  const pr=d.proposer||{}, ap=d.approver||{}, au=d.authorizer||{};
+  let b='<w:p><w:r><w:br w:type="page"/></w:r></w:p>';
+  b+=pfPara('รายละเอียดแนบท้ายโครงการ',{center:true,b:true,after:40});
+  const pname=String(d.projectName||'').trim();
+  const pdisp=pname?(/^โครงการ/.test(pname)?pname:('โครงการ'+pname)):('โครงการ'+pfDot(40));
+  b+=pfPara(pdisp,{center:true,b:true,after:120});
+  b+=pfPara('งบประมาณที่ได้รับ '+pfDot(16)+' บาท ('+pfDot(34)+') เพื่อจ่ายเป็น',{ind:480});
+  b+=pfPara('๑. ค่า'+pfDot(22)+' เป็นเงินจำนวน '+pfDot(14)+' บาท รายละเอียดดังนี้',{ind:720,after:80});
+  b+=pfBudgetTable();
+  b+=pfPara('',{after:120});
+  b+=pfSignAtt('ผู้จัดทำ/ผู้เขียนโครงการ', d.teacherName, d.teacherPos||'ครู', {nameColor:'C00000'});
+  b+=pfPara('',{});
+  b+=pfSignAtt('ผู้เสนอโครงการ', pr.name, pr.pos);
+  b+=pfPara('',{});
+  b+=pfSignAtt('ผู้เห็นชอบโครงการ', ap.name, ap.pos);
+  b+=pfPara('',{});
+  b+=pfSignAtt('ผู้อนุมัติโครงการ', au.name, au.pos, {actingFor:au.actingFor||''});
+  return b;
+}
+
+function pfBuildDocument(d){
+  d=d||{}; const pr=d.proposer||{}, ap=d.approver||{}, au=d.authorizer||{};
+  const inds=(d.indicators&&d.indicators.length)?d.indicators:null;
+  let b='';
+  // หัวกระดาษ: กล่องมุมขวาบน
+  b+=pfHeaderBox();
+  // ๑ ชื่อโครงการ (inline กับหัวข้อ)
+  b+=pfHeading('๑','ชื่อโครงการ  '+(d.projectName||pfDot(55)));
+  // ๒ มาตรฐาน — ข้อความแนะนำสีแดง
+  b+=pfHeading('๒','ความสอดคล้องกับมาตรฐานการศึกษา / ประเด็นพิจารณา');
+  b+=pfRed('(.... ตรวจสอบกับงานประกันคุณภาพ ....)');
+  b+=pfBlank(2);
+  // ๓ หลักการและเหตุผล — ดึงปัญหา/ความต้องการ/นโยบายจากระบบ (สีแดง) + แนะนำสีเขียว
+  b+=pfHeading('๓','หลักการและเหตุผล');
+  if(d.problem){ b+=pfRed('[ '+d.problem+' ]'); }
+  else { b+=pfRed('[ เขียนให้อยู่ในกรอบ — ดึงข้อมูลจากระบบส่วนของปัญหา/ความต้องการ/นโยบาย ]'); }
+  b+=pfGreen('เขียนหลักการและเหตุผลให้ครอบคลุมอยู่ในประเด็นดังกล่าว และสอดคล้องกับวัตถุประสงค์ เป้าหมาย พร้อมอ้างระเบียบกฎหมาย (ถ้ามี)');
+  b+=pfBlank(2);
+  // ๔ วัตถุประสงค์ — ข้อความแนะนำสีแดง
+  b+=pfHeading('๔','วัตถุประสงค์');
+  b+=pfRed('(ควรเขียนเป็นรายข้อ ขึ้นต้นว่า "เพื่อ..." โดยเขียนให้สอดคล้องกับหลักการและเหตุผล/เป้าหมาย)');
+  b+=pfBlank(2);
+  // ๕ เป้าหมาย — ๕.๑ เชิงปริมาณ = ตัวชี้วัดของโครงการ
+  b+=pfHeading('๕','เป้าหมาย');
+  b+=pfPara('๕.๑ เป้าหมายเชิงปริมาณ',{ind:480});
+  if(inds){ inds.forEach((it,i)=>{ const kpi=(it&&typeof it==='object')?(it.kpi||''):String(it||''); b+=pfPara(toThaiNum(String(i+1))+') '+kpi,{ind:720}); }); }
+  else { b+=pfBlank(2,720); }
+  b+=pfPara('๕.๒ เป้าหมายเชิงคุณภาพ',{ind:480}); b+=pfBlank(2,720);
+  // ๖ ความสอดคล้องกับแผนพัฒนา — ๖.๒ = ยุทธศาสตร์/กลยุทธ์จากระบบ
+  b+=pfHeading('๖','ความสอดคล้องกับแผนพัฒนาท้องถิ่น (พ.ศ. ๒๕๗๑ - ๒๕๗๕) / แผนพัฒนาการศึกษา (พ.ศ. ๒๕๗๑ - ๒๕๗๕) ของโรงเรียน');
+  b+=pfPara('๖.๑ สอดคล้องกับแผนพัฒนาการศึกษา (พ.ศ. ๒๕๗๑ - ๒๕๗๕) ขององค์การบริหารส่วนจังหวัดศรีสะเกษ',{ind:480});
+  b+=pfBlank(2,720);
+  b+=pfPara('๖.๒ สอดคล้องกับแผนพัฒนาการศึกษา (พ.ศ. ๒๕๗๑ - ๒๕๗๕) ของโรงเรียนกระดุมทองวิทยา',{ind:480});
+  if(d.strategyName){ b+=pfPara('สอดคล้องกับยุทธศาสตร์ที่ '+toThaiNum(String(d.strategyId||''))+' '+d.strategyName,{ind:720}); }
+  else { b+=pfPara('สอดคล้องกับยุทธศาสตร์ที่ '+pfDot(55),{ind:720}); }
+  if(d.tacticText){ b+=pfPara('กลยุทธ์ที่ '+toThaiNum(d.tacticText),{ind:960}); }
+  else { b+=pfPara('กลยุทธ์ที่ '+pfDot(50),{ind:960}); }
+  // ๗
+  b+=pfHeading('๗','วิธีดำเนินการ'); b+=pfTableWork(); b+=pfPara('',{});
+  // ๘ ระยะเวลาดำเนินการ — สีแดง
+  b+=pfHeading('๘','ระยะเวลาดำเนินการ');
+  b+=pfRed('๑ ตุลาคม ๒๕๖.. - ๓๐ กันยายน ๒๕๖..');
+  // ๙ สถานที่ดำเนินการ — สีแดง
+  b+=pfHeading('๙','สถานที่ดำเนินการ');
+  b+=pfRed(pfDot(10)+' โรงเรียนกระดุมทองวิทยา');
+  b+=pfHeading('๑๐','หน่วยงานผู้รับผิดชอบ'); b+=pfBlank(1);
+  b+=pfHeading('๑๑','งบประมาณดำเนินการ');
+  b+=pfPara('งบประมาณดำเนินการ ทั้งสิ้น '+pfDot(18)+' บาท ('+pfDot(40)+') รายละเอียด ดังนี้',{ind:480}); b+=pfBlank(3,720);
+  b+=pfPara('*ทุกรายการถัวจ่ายได้ตามความเป็นจริง',{ind:480});
+  // ๑๒ การติดตามประเมินผล — ตัวชี้วัดจากระบบ + ข้อความแนะนำ
+  b+=pfHeading('๑๒','การติดตามประเมินผล'); b+=pfTableEval(inds); b+=pfPara('',{});
+  b+=pfHeading('๑๓','ผลที่คาดว่าจะได้รับ'); b+=pfBlank(4);
+  b+=pfHeading('๑๔','ผู้จัดทำ / ผู้เขียนโครงการ'); b+=pfSign(d.teacherName, d.teacherPos||'ครู', {nameColor:'C00000'});
+  b+=pfHeading('๑๕','ผู้เสนอโครงการ'); b+=pfSign(pr.name, pr.pos);
+  b+=pfHeading('๑๖','ผู้เห็นชอบโครงการ'); b+=pfSign(ap.name, ap.pos);
+  b+=pfHeading('๑๗','ผู้อนุมัติโครงการ'); b+=pfPara(pfDot(85),{center:true}); b+=pfSign(au.name, au.pos, {actingFor:au.actingFor||''});
+  // บรรทัดอ้างอิงกระทรวง — อยู่ใต้ "ปฏิบัติราชการแทน" ของข้อ ๑๗
+  b+=pfPara('แนบท้ายหนังสือกระทรวงมหาดไทย ด่วนที่สุด ที่ มท ๐๘๑๖.๒/ว ๕๒๓๒ ลงวันที่ ๒ กันยายน ๒๕๖๒ หน้า ๒๖',{sz:26,before:200});
+  // หน้ารายละเอียดแนบท้ายโครงการ
+  b+=pfBuildAppendix(d);
+  const sect='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1418" w:right="1134" w:bottom="1418" w:left="1418" w:header="709" w:footer="709" w:gutter="0"/><w:cols w:space="708"/><w:docGrid w:linePitch="360"/></w:sectPr>';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+b+sect+'</w:body></w:document>';
+}
+function pfDownload(d){
+  if(typeof JSZip==='undefined'){ Swal.fire({icon:'error',title:'ไลบรารีสร้างไฟล์ยังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่',confirmButtonColor:'#dc2626'}); return; }
+  const doc=pfBuildDocument(d);
+  const CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+  const RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+  const zip=new JSZip();
+  zip.file('[Content_Types].xml',CT);
+  zip.folder('_rels').file('.rels',RELS);
+  const word=zip.folder('word');
+  word.file('document.xml',doc); word.file('styles.xml',STYLES);
+  word.folder('_rels').file('document.xml.rels',DRELS);
+  zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
+    const url=URL.createObjectURL(blob), a=document.createElement('a');
+    const safe=(d.projectName||'โครงการ').replace(/[\\/:*?"<>|]/g,'').slice(0,40);
+    a.href=url; a.download='ฟอร์มโครงการ_'+safe+'.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    Swal.fire({icon:'success',title:'สร้างฟอร์มสำเร็จ!',html:'ดาวน์โหลดฟอร์มโครงการแล้ว<br><span style="font-size:0.84rem;color:#6b7280">เติมชื่อโครงการ · ผู้จัดทำ · ผู้ลงนามให้แล้ว · ช่องอื่นเว้นว่างไว้กรอกเอง</span>',confirmButtonColor:'#dc2626'});
+  }).catch(e=>{ Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message}); });
+}
+
+// ── modal: ดาวน์โหลดฟอร์มโครงการ ──
+function openProjectFormModal(){
+  const tsel=document.getElementById('pfTeacherSel');
+  const teachers=[...new Set(projects.map(t=>t.teacher).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
+  tsel.innerHTML='<option value="">— เลือกชื่อครู —</option>'+teachers.map(t=>`<option value="${dxEsc(t)}">${dxEsc(t)}</option>`).join('');
+  document.getElementById('pfProjectSel').innerHTML='<option value="">— ไม่ระบุ (เว้นว่าง) —</option>';
+  pfRenderSignPreview();
+  document.getElementById('projectFormModal').classList.add('open');
+}
+function pfOnTeacherChange(){
+  const t=document.getElementById('pfTeacherSel').value;
+  const sel=document.getElementById('pfProjectSel');
+  const rec=projects.find(x=>x.teacher===t);
+  const list=(rec&&rec.projects)?rec.projects:[];
+  sel.innerHTML='<option value="">— ไม่ระบุ (เว้นว่าง) —</option>'+list.map(p=>`<option value="${dxEsc(p)}">${dxEsc(p)}</option>`).join('');
+}
+function pfRenderSignPreview(){
+  const s=loadSignatories();
+  const el=document.getElementById('pfSignPreview'); if(!el) return;
+  const line=(label,o)=>`<div><b>${label}:</b> ${o.name||'—'}${o.pos?(' · '+o.pos):''}</div>`;
+  el.innerHTML='<div style="font-weight:700;color:var(--text2);margin-bottom:3px">ผู้ลงนามที่จะเติมในฟอร์ม</div>'+
+    line('๑๕ ผู้เสนอ',s.proposer)+line('๑๖ ผู้เห็นชอบ',s.approver)+line('๑๗ ผู้อนุมัติ',s.authorizer);
+}
+function downloadProjectForm(){
+  const teacher=document.getElementById('pfTeacherSel').value;
+  if(!teacher){ Swal.fire({icon:'question',title:'กรุณาเลือกชื่อครู',confirmButtonColor:'#dc2626'}); return; }
+  const project=document.getElementById('pfProjectSel').value;
+  const s=loadSignatories();
+  // ดึงข้อมูลที่บันทึกไว้ของโครงการนี้ (ยุทธศาสตร์ · กลยุทธ์ · ตัวชี้วัด)
+  const d = (project ? (savedData[projectKey(teacher,project)]||null) : null);
+  const data={
+    projectName:project, teacherName:teacher, teacherPos:s.teacherPos||'ครู',
+    proposer:s.proposer, approver:s.approver, authorizer:s.authorizer,
+    strategyId: d && d.strategyId ? d.strategyId : '',
+    strategyName: d ? (d.strategyName || (d.strategyId?(STRATEGIES.find(x=>x.id===d.strategyId)||{}).name:'') || '') : '',
+    tacticText: d ? (d.tacticText||'') : '',
+    problem: d ? (d.problem||'') : '',
+    indicators: pfGetIndicators(d)
+  };
+  pfDownload(data);
+  closeModal('projectFormModal');
 }
 
 // ดึงตัวชี้วัด + ข้อมูลปัจจุบัน จากข้อมูลที่บันทึก (kpiResult จาก AI → qaIndicators)
@@ -3147,6 +3548,7 @@ function renderVerify(){
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 ใบปะหน้า .docx</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#059669,#34d399);border-color:#059669" onclick="exportExcel()">📊 ส่งออก Excel</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#b45309,#f59e0b);border-color:#b45309" onclick="exportTeacherSheetsMenu()">🧾 ใบสรุปแจกครู (.pdf)</button>
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#dc2626,#f87171);border-color:#dc2626" onclick="openProjectFormModal()">📄 ดาวน์โหลดฟอร์มโครงการ.docx</button>
     </div>`;
   vfRender();
 }
