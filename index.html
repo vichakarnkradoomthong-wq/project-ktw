@@ -400,6 +400,39 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 }
 .modal-close:hover{background:var(--border);color:var(--text)}
 .divider{height:1px;background:var(--border);margin:18px 0}
+
+/* SETTINGS ACCORDION */
+.settings-group{
+  border:1.5px solid var(--border);border-radius:var(--radius-sm);
+  margin-bottom:11px;overflow:hidden;background:var(--surface);
+}
+.settings-group-head{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--surface2);border:none;cursor:pointer;
+  padding:13px 15px;font-family:'Kanit',sans-serif;font-weight:600;
+  font-size:0.92rem;color:var(--primary-dark);text-align:left;transition:background 0.18s;
+}
+.settings-group-head:hover{background:var(--surface3)}
+.settings-group-head .sg-label{display:flex;align-items:center;gap:9px}
+.settings-group-head .sg-ico{
+  width:30px;height:30px;flex-shrink:0;border-radius:9px;
+  display:flex;align-items:center;justify-content:center;font-size:1rem;
+  background:var(--surface3);
+}
+.settings-group-head .sg-arrow{transition:transform 0.25s;color:var(--primary);font-size:0.7rem;flex-shrink:0}
+.settings-group.collapsed .sg-arrow{transform:rotate(-90deg)}
+.settings-group-body{padding:15px 15px 4px}
+.settings-group.collapsed .settings-group-body{display:none}
+.settings-group-body .form-group:last-child{margin-bottom:11px}
+.settings-subdivider{height:1px;background:var(--border);margin:14px 0}
+.settings-danger{
+  border:1.5px solid #fca5a5;border-radius:var(--radius-sm);
+  background:linear-gradient(135deg,#fef2f2,#fff1f2);padding:14px 15px;margin-top:4px;
+}
+.settings-danger-title{
+  font-family:'Kanit',sans-serif;font-weight:600;font-size:0.9rem;color:var(--danger);
+  margin-bottom:10px;display:flex;align-items:center;gap:8px;
+}
 .announce-banner{
   background:linear-gradient(135deg,#fef3c7,#fde68a);
   border:1.5px solid #fbbf24;border-radius:var(--radius-sm);
@@ -736,126 +769,219 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
   </div>
 </div>
 
-<!-- SETTINGS MODAL -->
+<!-- DOWNLOAD FORM VIEW (เปิดผ่านลิงก์ #download) -->
+<div id="downloadFormView" style="display:none;min-height:100vh;background:#f0ecff">
+  <div class="hero" style="padding:34px 24px 40px">
+    <div class="hero-inner">
+      <div class="hero-school-logo">
+        <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" alt="Logo KTW"
+             onerror="this.style.display='none';this.parentElement.innerHTML='🏫'">
+      </div>
+      <div class="hero-subtitle">โรงเรียนกระดุมทองวิทยา · สังกัด อบจ.ศรีสะเกษ</div>
+      <h1 class="hero-title" style="font-size:1.5rem">ดาวน์โหลด<br>แบบฟอร์มโครงการ</h1>
+      <div class="hero-desc">เลือกชื่อของท่าน และโครงการ แล้วกดดาวน์โหลดไฟล์</div>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:620px;padding-top:24px">
+    <div id="dlLoading" style="text-align:center;color:var(--text3);padding:30px">⏳ กำลังโหลดข้อมูล...</div>
+
+    <div id="dlBody" style="display:none">
+      <div class="detail-section" style="background:var(--surface);box-shadow:var(--shadow)">
+        <div class="form-group">
+          <label class="form-label">เลือกชื่อของท่าน (ผู้จัดทำ / ผู้เขียนโครงการ)</label>
+          <select class="form-select" id="dlTeacher" onchange="dlOnTeacherChange()">
+            <option value="">— เลือกชื่อครู —</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">เลือกโครงการ</label>
+          <select class="form-select" id="dlProject">
+            <option value="">— เลือกโครงการ —</option>
+          </select>
+        </div>
+
+        <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#dc2626,#f87171);box-shadow:0 4px 14px rgba(220,38,38,0.3)" onclick="downloadFormFile()">⬇️ ดาวน์โหลดไฟล์</button>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:0.72rem;color:var(--text3);margin-top:26px;padding-bottom:30px">
+      ระบบจัดโครงการลงยุทธศาสตร์ · พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
     <div class="modal-title">⚙️ การตั้งค่า</div>
 
-    <div class="form-group">
-      <div class="detail-label">ฟอร์มงานประกันคุณภาพ</div>
-      <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#0f766e,#14b8a6);box-shadow:0 4px 14px rgba(20,184,166,0.3)" onclick="openQaAdminModal()">📝 ตั้งค่าฟอร์ม / คัดลอกลิงก์สำหรับครู</button>
-    </div>
-    <div class="divider"></div>
-
-    <div class="form-group">
-      <div class="detail-label">1. นำเข้าชื่อโครงการและผู้รับผิดชอบ (CSV / Excel)</div>
-      <input type="file" id="importFile" accept=".csv,.xlsx,.xls"
-        style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
-      <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
-        รูปแบบ: คอลัมน์ A = ชื่อโครงการ, คอลัมน์ B = ชื่อครูผู้รับผิดชอบ<br>
-        (ระบบจะข้ามแถวหัวตาราง และแถวที่ข้อมูลไม่สมบูรณ์โดยอัตโนมัติ)
-      </div>
-      <button class="project-btn primary-btn" style="margin-top:9px" onclick="importProjects()">📥 นำเข้าข้อมูล</button>
-    </div>
-
-    <div class="divider"></div>
-    <div class="form-group">
-      <div class="detail-label">2. ส่งออกข้อมูลยุทธศาสตร์เป็น .xlsx</div>
-      <button class="project-btn primary-btn" onclick="exportExcel()">📤 ส่งออก Excel</button>
-    </div>
-
-    <div class="divider"></div>
-    <div class="form-group">
-      <div class="detail-label">3. สร้างตารางสรุปข้อมูล .docx (ตามแบบฟอร์มเป้าประสงค์และตัวชี้วัด)</div>
-      <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
-        รวบรวมข้อมูลที่บันทึกไว้ จัดลงตาราง <b>เป้าประสงค์ (Goals) · ตัวชี้วัด (KPIs) · ข้อมูลปัจจุบัน · ค่าเป้าหมาย (Targets)</b>
-        ตามรูปแบบไฟล์แนบ (ช่อง <b>ค่าเป้าหมาย</b> เว้นว่างไว้ให้กรอกเอง) แล้วดาวน์โหลดเป็นไฟล์ Word
-      </div>
-      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:#2563eb" onclick="exportSummaryDocx()">📄 สร้าง &amp; ดาวน์โหลด .docx</button>
-    </div>
-
-    <div class="divider"></div>
-    <div class="form-group">
-      <div class="detail-label">4. สร้างใบปะหน้าอธิบายตัวชี้วัด .docx (รายละเอียด 8 หัวข้อ · 1 หน้า/ตัวชี้วัด)</div>
-      <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
-        ดึงข้อมูลจาก KPI ที่ส่งผลจาก AI แล้ว สร้างเอกสาร Word <b>1 หน้าต่อตัวชี้วัด</b> ประกอบด้วยหัวกระดาษ (เป้าประสงค์ที่) และกล่องรายละเอียด 8 หัวข้อ ฟอนต์ TH SarabunPSK · กระดาษ A4 แนวตั้ง
-      </div>
-      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 สร้างใบปะหน้า &amp; ดาวน์โหลด .docx</button>
-    </div>
-
-    <div class="divider"></div>
-    <div class="form-group">
-      <div class="detail-label">5. จัดการลิงก์ AI (เพิ่ม/แก้ไข)</div>
-      <div id="aiLinksEditor"></div>
-      <button class="project-btn" style="margin-top:7px" onclick="addAiLink()">+ เพิ่มลิงก์</button>
-    </div>
-
-    <div class="divider"></div>
-    <div class="form-group">
-      <div class="detail-label">6. ประกาศแสดงเมื่อเปิดเว็บ</div>
-      <textarea id="announceText" class="problem-textarea" placeholder="พิมพ์ข้อความประกาศที่นี่..."></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="project-btn primary-btn" onclick="saveAnnounce()">💾 บันทึกประกาศ</button>
-        <button class="project-btn" onclick="clearAnnounce()">🗑 ล้างประกาศ</button>
+    <!-- ───── กลุ่ม 1 · ลิงก์และฟอร์มสำหรับครู ───── -->
+    <div class="settings-group">
+      <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
+        <span class="sg-label"><span class="sg-ico">🔗</span> ลิงก์และฟอร์มสำหรับครู</span>
+        <span class="sg-arrow">▾</span>
+      </button>
+      <div class="settings-group-body">
+        <div class="form-group">
+          <div class="detail-label">ฟอร์มงานประกันคุณภาพ</div>
+          <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#0f766e,#14b8a6);box-shadow:0 4px 14px rgba(20,184,166,0.3)" onclick="openQaAdminModal()">📝 ตั้งค่าฟอร์ม / คัดลอกลิงก์สำหรับครู</button>
+        </div>
+        <div class="form-group">
+          <div class="detail-label">ระบบดาวน์โหลดแบบฟอร์มโครงการ</div>
+          <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#dc2626,#f87171);box-shadow:0 4px 14px rgba(220,38,38,0.3)" onclick="openDownloadFormHub()">⬇️ ระบบดาวน์โหลดแบบฟอร์มโครงการ</button>
+        </div>
       </div>
     </div>
 
-    <div class="divider"></div>
-    <div class="form-group">
-      <div class="detail-label">7. ตัวชี้วัดงานประกันคุณภาพ (ค่าเริ่มต้นสำหรับตัวช่วยออกแบบ KPI)</div>
-      <input type="file" id="qaFile" accept=".csv,.xlsx,.xls,.txt"
-        style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
-      <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
-        นำเข้าไฟล์รายการตัวชี้วัดงานประกัน (อ่านคอลัมน์แรก ทีละบรรทัด) หรือพิมพ์/แก้ไขด้านล่างได้โดยตรง<br>
-        ค่านี้จะแสดงเป็นค่าเริ่มต้นในช่อง "ตัวชี้วัดงานประกันคุณภาพ" ของทุกโครงการในตัวช่วย KPI
-      </div>
-      <button class="project-btn primary-btn" style="margin-top:9px" onclick="importQA()">📥 นำเข้าจากไฟล์</button>
-      <textarea id="qaText" class="problem-textarea" style="margin-top:9px;min-height:120px"
-        placeholder="พิมพ์ตัวชี้วัดงานประกันคุณภาพ ทีละบรรทัด เช่น&#10;ผู้เรียนมีผลสัมฤทธิ์ทางวิชาการตามที่สถานศึกษากำหนด&#10;ผู้เรียนมีคุณลักษณะอันพึงประสงค์ตามหลักสูตร&#10;..."></textarea>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="project-btn primary-btn" onclick="saveQA()">💾 บันทึกค่าเริ่มต้น</button>
-        <button class="project-btn" onclick="clearQA()">🗑 ล้าง</button>
-      </div>
-    </div>
-
-    <div class="divider"></div>
-    <div class="form-group">
-      <div class="detail-label">8. ฟอร์มโครงการ .docx — ผู้ลงนาม (ค่าเริ่มต้น)</div>
-      <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
-        ตั้งค่า <b>ผู้เสนอ · ผู้เห็นชอบ · ผู้อนุมัติโครงการ</b> ที่จะเติมในฟอร์มโครงการ .docx (เมนูส่วนที่ 6)
-        ส่วน <b>ผู้จัดทำ/ผู้เขียนโครงการ</b> จะใช้ชื่อครูที่เลือกตอนดาวน์โหลด · ช่องอื่น ๆ ในฟอร์มจะเว้นว่าง (......) ไว้ให้กรอกเอง
-      </div>
-
-      <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px">
-        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px">๑๕. ผู้เสนอโครงการ</div>
-        <input type="text" id="sgProposerName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้เสนอ">
-        <input type="text" id="sgProposerPos" class="form-select" placeholder="ตำแหน่ง">
-
-        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">๑๖. ผู้เห็นชอบโครงการ</div>
-        <input type="text" id="sgApproverName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้เห็นชอบ">
-        <input type="text" id="sgApproverPos" class="form-select" placeholder="ตำแหน่ง">
-
-        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">๑๗. ผู้อนุมัติโครงการ</div>
-        <input type="text" id="sgAuthorizerName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้อนุมัติ">
-        <input type="text" id="sgAuthorizerPos" class="form-select" style="margin-bottom:6px" placeholder="ตำแหน่ง">
-        <input type="text" id="sgAuthorizerActing" class="form-select" placeholder="ปฏิบัติราชการแทน (เว้นว่างได้)">
-
-        <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">ตำแหน่งผู้จัดทำ (ครูที่เลือก)</div>
-        <input type="text" id="sgTeacherPos" class="form-select" placeholder="ตำแหน่ง เช่น ครู">
-      </div>
-      <div style="display:flex;gap:8px;margin-top:8px">
-        <button class="project-btn primary-btn" onclick="saveSignatories()">💾 บันทึกผู้ลงนาม</button>
-        <button class="project-btn" onclick="resetSignatories()">↩️ ค่าเริ่มต้นตาม template</button>
+    <!-- ───── กลุ่ม 2 · นำเข้าข้อมูล ───── -->
+    <div class="settings-group collapsed">
+      <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
+        <span class="sg-label"><span class="sg-ico">📁</span> นำเข้าข้อมูล</span>
+        <span class="sg-arrow">▾</span>
+      </button>
+      <div class="settings-group-body">
+        <div class="form-group">
+          <div class="detail-label">นำเข้าชื่อโครงการและผู้รับผิดชอบ (CSV / Excel)</div>
+          <input type="file" id="importFile" accept=".csv,.xlsx,.xls"
+            style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
+          <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
+            รูปแบบ: คอลัมน์ A = ชื่อโครงการ, คอลัมน์ B = ชื่อครูผู้รับผิดชอบ<br>
+            (ระบบจะข้ามแถวหัวตาราง และแถวที่ข้อมูลไม่สมบูรณ์โดยอัตโนมัติ)
+          </div>
+          <button class="project-btn primary-btn" style="margin-top:9px" onclick="importProjects()">📥 นำเข้าข้อมูล</button>
+        </div>
       </div>
     </div>
 
-    <div class="divider"></div>
-    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-      <button class="project-btn" style="color:var(--danger);border-color:#fca5a5"
-        onclick="resetToDefault()">🔄 รีเซ็ตรายการโครงการ</button>
-      <button class="project-btn" style="color:#fff;background:var(--danger);border-color:var(--danger);font-weight:700"
-        onclick="clearAllData()">🗑️ ล้างข้อมูลทั้งหมด (Firestore)</button>
+    <!-- ───── กลุ่ม 3 · สร้างเอกสาร / ส่งออก ───── -->
+    <div class="settings-group collapsed">
+      <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
+        <span class="sg-label"><span class="sg-ico">📄</span> สร้างเอกสาร Word/PDF/Excel</span>
+        <span class="sg-arrow">▾</span>
+      </button>
+      <div class="settings-group-body">
+        <div class="form-group">
+          <div class="detail-label">ตารางสรุปข้อมูล (เป้าประสงค์ · ตัวชี้วัด · ค่าเป้าหมาย)</div>
+          <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+            รวบรวมข้อมูลที่บันทึกไว้ จัดลงตาราง <b>เป้าประสงค์ (Goals) · ตัวชี้วัด (KPIs) · ข้อมูลปัจจุบัน · ค่าเป้าหมาย (Targets)</b>
+            (ช่อง <b>ค่าเป้าหมาย</b> เว้นว่างไว้ให้กรอกเอง)
+          </div>
+          <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:#2563eb" onclick="exportSummaryDocx()">📄 สร้าง &amp; ดาวน์โหลด .docx</button>
+        </div>
+        <div class="settings-subdivider"></div>
+        <div class="form-group">
+          <div class="detail-label">ใบปะหน้าอธิบายตัวชี้วัด (1 หน้า/ตัวชี้วัด)</div>
+          <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+            ดึงข้อมูลจาก KPI ที่ส่งผลจาก AI แล้ว สร้างเอกสาร Word <b>1 หน้าต่อตัวชี้วัด</b> · กล่องรายละเอียด 8 หัวข้อ · ฟอนต์ TH SarabunPSK · กระดาษ A4 แนวตั้ง
+          </div>
+          <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 สร้างใบปะหน้า &amp; ดาวน์โหลด .docx</button>
+        </div>
+        <div class="settings-subdivider"></div>
+        <div class="form-group">
+          <div class="detail-label">ส่งออก / ดาวน์โหลดอื่น ๆ</div>
+          <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+            ชุดปุ่มส่งออกเดียวกับเมนู <b>ส่วนที่ 6 · Verify &amp; Export</b>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:9px">
+            <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#059669,#34d399);border-color:#059669" onclick="exportExcel()">📊 ส่งออก Excel</button>
+            <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#b45309,#f59e0b);border-color:#b45309" onclick="exportTeacherSheetsMenu()">🧾 ใบสรุปแจกครู (.pdf)</button>
+            <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#dc2626,#f87171);border-color:#dc2626" onclick="openProjectFormModal()">📄 ฟอร์มโครงการ .docx</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── กลุ่ม 4 · ค่าเริ่มต้นของระบบ ───── -->
+    <div class="settings-group collapsed">
+      <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
+        <span class="sg-label"><span class="sg-ico">⚙️</span> ค่าเริ่มต้นของระบบ</span>
+        <span class="sg-arrow">▾</span>
+      </button>
+      <div class="settings-group-body">
+        <div class="form-group">
+          <div class="detail-label">ตัวชี้วัดงานประกันคุณภาพ (ค่าเริ่มต้นสำหรับตัวช่วย KPI)</div>
+          <input type="file" id="qaFile" accept=".csv,.xlsx,.xls,.txt"
+            style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
+          <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
+            นำเข้าไฟล์รายการตัวชี้วัดงานประกัน (อ่านคอลัมน์แรก ทีละบรรทัด) หรือพิมพ์/แก้ไขด้านล่างได้โดยตรง<br>
+            ค่านี้จะแสดงเป็นค่าเริ่มต้นในช่อง "ตัวชี้วัดงานประกันคุณภาพ" ของทุกโครงการในตัวช่วย KPI
+          </div>
+          <button class="project-btn primary-btn" style="margin-top:9px" onclick="importQA()">📥 นำเข้าจากไฟล์</button>
+          <textarea id="qaText" class="problem-textarea" style="margin-top:9px;min-height:120px"
+            placeholder="พิมพ์ตัวชี้วัดงานประกันคุณภาพ ทีละบรรทัด เช่น&#10;ผู้เรียนมีผลสัมฤทธิ์ทางวิชาการตามที่สถานศึกษากำหนด&#10;ผู้เรียนมีคุณลักษณะอันพึงประสงค์ตามหลักสูตร&#10;..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="project-btn primary-btn" onclick="saveQA()">💾 บันทึกค่าเริ่มต้น</button>
+            <button class="project-btn" onclick="clearQA()">🗑 ล้าง</button>
+          </div>
+        </div>
+
+        <div class="settings-subdivider"></div>
+        <div class="form-group">
+          <div class="detail-label">ฟอร์มโครงการ .docx — ผู้ลงนาม (ค่าเริ่มต้น)</div>
+          <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+            ตั้งค่า <b>ผู้เสนอ · ผู้เห็นชอบ · ผู้อนุมัติโครงการ</b> ที่จะเติมในฟอร์มโครงการ .docx
+            ส่วน <b>ผู้จัดทำ/ผู้เขียนโครงการ</b> จะใช้ชื่อครูที่เลือกตอนดาวน์โหลด · ช่องอื่น ๆ เว้นว่าง (......) ไว้ให้กรอกเอง
+          </div>
+          <div style="background:var(--surface2);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin-bottom:4px">๑๕. ผู้เสนอโครงการ</div>
+            <input type="text" id="sgProposerName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้เสนอ">
+            <input type="text" id="sgProposerPos" class="form-select" placeholder="ตำแหน่ง">
+
+            <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">๑๖. ผู้เห็นชอบโครงการ</div>
+            <input type="text" id="sgApproverName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้เห็นชอบ">
+            <input type="text" id="sgApproverPos" class="form-select" placeholder="ตำแหน่ง">
+
+            <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">๑๗. ผู้อนุมัติโครงการ</div>
+            <input type="text" id="sgAuthorizerName" class="form-select" style="margin-bottom:6px" placeholder="ชื่อ-สกุล ผู้อนุมัติ">
+            <input type="text" id="sgAuthorizerPos" class="form-select" style="margin-bottom:6px" placeholder="ตำแหน่ง">
+            <input type="text" id="sgAuthorizerActing" class="form-select" placeholder="ปฏิบัติราชการแทน (เว้นว่างได้)">
+
+            <div style="font-size:0.8rem;font-weight:700;color:var(--primary-dark);margin:12px 0 4px">ตำแหน่งผู้จัดทำ (ครูที่เลือก)</div>
+            <input type="text" id="sgTeacherPos" class="form-select" placeholder="ตำแหน่ง เช่น ครู">
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="project-btn primary-btn" onclick="saveSignatories()">💾 บันทึกผู้ลงนาม</button>
+            <button class="project-btn" onclick="resetSignatories()">↩️ ค่าเริ่มต้นตาม template</button>
+          </div>
+        </div>
+
+        <div class="settings-subdivider"></div>
+        <div class="form-group">
+          <div class="detail-label">จัดการลิงก์ AI (เพิ่ม/แก้ไข)</div>
+          <div id="aiLinksEditor"></div>
+          <button class="project-btn" style="margin-top:7px" onclick="addAiLink()">+ เพิ่มลิงก์</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── กลุ่ม 5 · ประกาศหน้าเว็บ ───── -->
+    <div class="settings-group collapsed">
+      <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
+        <span class="sg-label"><span class="sg-ico">📢</span> ประกาศหน้าเว็บ</span>
+        <span class="sg-arrow">▾</span>
+      </button>
+      <div class="settings-group-body">
+        <div class="form-group">
+          <div class="detail-label">ประกาศแสดงเมื่อเปิดเว็บ</div>
+          <textarea id="announceText" class="problem-textarea" placeholder="พิมพ์ข้อความประกาศที่นี่..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px">
+            <button class="project-btn primary-btn" onclick="saveAnnounce()">💾 บันทึกประกาศ</button>
+            <button class="project-btn" onclick="clearAnnounce()">🗑 ล้างประกาศ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── โซนอันตราย ───── -->
+    <div class="settings-danger">
+      <div class="settings-danger-title">⚠️ โซนอันตราย</div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <button class="project-btn" style="color:var(--danger);border-color:#fca5a5"
+          onclick="resetToDefault()">🔄 รีเซ็ตรายการโครงการ</button>
+        <button class="project-btn" style="color:#fff;background:var(--danger);border-color:var(--danger);font-weight:700"
+          onclick="clearAllData()">🗑️ ล้างข้อมูลทั้งหมด (Firestore)</button>
+      </div>
     </div>
   </div>
 </div>
@@ -893,6 +1019,24 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
 
     <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#dc2626,#f87171);box-shadow:0 4px 14px rgba(220,38,38,0.3)" onclick="downloadProjectForm()">⬇️ ดาวน์โหลดฟอร์มโครงการ.docx</button>
+  </div>
+</div>
+
+<!-- DOWNLOAD FORM HUB MODAL (ระบบดาวน์โหลดแบบฟอร์มโครงการ) -->
+<div class="modal-overlay" id="downloadFormHubModal">
+  <div class="modal" style="max-width:460px">
+    <button class="modal-close" onclick="closeModal('downloadFormHubModal')">✕</button>
+    <div class="modal-title">⬇️ ระบบดาวน์โหลดแบบฟอร์มโครงการ</div>
+
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:18px">
+      <div style="font-size:0.82rem;color:var(--text3);line-height:1.65">
+        เปิดหน้าฟอร์มสำหรับให้ครูเลือก <b>ชื่อของตน</b> และ <b>โครงการ</b> แล้วดาวน์โหลดแบบฟอร์มโครงการได้เอง
+        หรือคัดลอกลิงก์ไปส่งให้ครูในกลุ่มไลน์
+      </div>
+    </div>
+
+    <button class="save-btn" style="width:100%;justify-content:center;margin-bottom:10px;background:linear-gradient(135deg,#dc2626,#f87171);box-shadow:0 4px 14px rgba(220,38,38,0.3)" onclick="openDownloadFormPage()">📄 เปิดฟอร์มดาวน์โหลด</button>
+    <button class="project-btn primary-btn" style="width:100%;justify-content:center" onclick="copyDownloadFormLink()">🔗 คัดลอกลิงก์ฟอร์ม</button>
   </div>
 </div>
 
@@ -1153,6 +1297,7 @@ async function loadAllSavedData() {
     });
   } catch(e) { console.warn('Firestore qaforms:', e); }
   if (window.__formMode) renderTeacherForm();
+  if (window.__downloadMode) renderDownloadForm();
 }
 
 async function persistProjectsCloud() {
@@ -2000,8 +2145,10 @@ function exitTeacherFormMode() {
 function openTeacherFormPreview() { location.hash = '#form'; }
 
 function routeHash() {
-  if ((location.hash||'').toLowerCase() === '#form') enterTeacherFormMode();
-  else exitTeacherFormMode();
+  const h = (location.hash||'').toLowerCase();
+  if (h === '#form') { exitDownloadFormMode(); enterTeacherFormMode(); }
+  else if (h === '#download') { exitTeacherFormMode(); enterDownloadFormMode(); }
+  else { exitTeacherFormMode(); exitDownloadFormMode(); }
 }
 
 function renderTeacherForm() {
@@ -2323,6 +2470,9 @@ function openSettingsModal() {
   document.getElementById('qaText').value = localStorage.getItem('ktw_qa_indicators')||'';
   fillSignatoryInputs();
   document.getElementById('settingsModal').classList.add('open');
+}
+function toggleSettingsGroup(head){
+  head.parentElement.classList.toggle('collapsed');
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 
@@ -2852,7 +3002,11 @@ function pfDownload(d){
     a.href=url; a.download='ฟอร์มโครงการ_'+safe+'.docx';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),1500);
-    Swal.fire({icon:'success',title:'สร้างฟอร์มสำเร็จ!',html:'ดาวน์โหลดฟอร์มโครงการแล้ว<br><span style="font-size:0.84rem;color:#6b7280">เติมชื่อโครงการ · ผู้จัดทำ · ผู้ลงนามให้แล้ว · ช่องอื่นเว้นว่างไว้กรอกเอง</span>',confirmButtonColor:'#dc2626'});
+    if(d._afterMsg){
+      Swal.fire({icon:'success',title:'ดาวน์โหลดไฟล์สำเร็จ!',html:'<span style="font-size:0.92rem;color:#991b1b;font-weight:600">'+d._afterMsg+'</span>',confirmButtonColor:'#dc2626'});
+    } else {
+      Swal.fire({icon:'success',title:'สร้างฟอร์มสำเร็จ!',html:'ดาวน์โหลดฟอร์มโครงการแล้ว<br><span style="font-size:0.84rem;color:#6b7280">เติมชื่อโครงการ · ผู้จัดทำ · ผู้ลงนามให้แล้ว · ช่องอื่นเว้นว่างไว้กรอกเอง</span>',confirmButtonColor:'#dc2626'});
+    }
   }).catch(e=>{ Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message}); });
 }
 
@@ -2897,6 +3051,94 @@ function downloadProjectForm(){
   };
   pfDownload(data);
   closeModal('projectFormModal');
+}
+
+// ── ระบบดาวน์โหลดแบบฟอร์มโครงการ (hub + หน้า public #download) ──
+function openDownloadFormHub(){
+  closeModal('settingsModal');
+  document.getElementById('downloadFormHubModal').classList.add('open');
+}
+function buildDownloadLink(){
+  return location.origin + location.pathname + '#download';
+}
+function openDownloadFormPage(){
+  closeModal('downloadFormHubModal');
+  location.hash = '#download';
+}
+function copyDownloadFormLink(){
+  const link = buildDownloadLink();
+  navigator.clipboard.writeText(link).then(()=>{
+    Swal.fire({icon:'success',title:'คัดลอกลิงก์แล้ว!',html:'นำลิงก์ไปส่งให้ครูดาวน์โหลดแบบฟอร์มโครงการได้เลย',confirmButtonColor:'#dc2626'});
+  }).catch(()=>{
+    Swal.fire({ title:'ลิงก์ฟอร์มดาวน์โหลด', input:'text', inputValue:link, confirmButtonText:'ปิด', confirmButtonColor:'#dc2626' });
+  });
+}
+
+function enterDownloadFormMode(){
+  window.__downloadMode = true;
+  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  const nav = document.querySelector('.navbar'); if (nav) nav.style.display = 'none';
+  const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = 'none';
+  const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = 'none';
+  document.getElementById('downloadFormView').style.display = 'block';
+  window.scrollTo(0,0);
+  renderDownloadForm();
+}
+function exitDownloadFormMode(){
+  window.__downloadMode = false;
+  const view = document.getElementById('downloadFormView'); if (view) view.style.display = 'none';
+  if (!window.__formMode) {
+    const nav = document.querySelector('.navbar'); if (nav) nav.style.display = '';
+    const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = '';
+    const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = '';
+  }
+}
+
+function renderDownloadForm(){
+  const loading = document.getElementById('dlLoading');
+  const body = document.getElementById('dlBody');
+  if (!loading || !body) return;
+  const teachers = [...new Set(projects.map(t=>t.teacher).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
+  if (!teachers.length) {
+    loading.innerHTML = (db ? 'ยังไม่มีข้อมูลโครงการ กรุณาติดต่อผู้ดูแลระบบ' : '⏳ กำลังโหลดข้อมูล...');
+    loading.style.display = 'block'; body.style.display = 'none';
+    return;
+  }
+  loading.style.display = 'none';
+  body.style.display = 'block';
+  const sel = document.getElementById('dlTeacher');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— เลือกชื่อครู —</option>' +
+    teachers.map(t=>`<option value="${dxEsc(t)}"${cur===t?' selected':''}>${dxEsc(t)}</option>`).join('');
+  if (cur && teachers.includes(cur)) dlOnTeacherChange();
+  else document.getElementById('dlProject').innerHTML = '<option value="">— เลือกโครงการ —</option>';
+}
+function dlOnTeacherChange(){
+  const t = document.getElementById('dlTeacher').value;
+  const sel = document.getElementById('dlProject');
+  const rec = projects.find(x=>x.teacher===t);
+  const list = (rec && rec.projects) ? rec.projects : [];
+  sel.innerHTML = '<option value="">— เลือกโครงการ —</option>' +
+    list.map(p=>`<option value="${dxEsc(p)}">${dxEsc(p)}</option>`).join('');
+}
+function downloadFormFile(){
+  const teacher = document.getElementById('dlTeacher').value;
+  if (!teacher){ Swal.fire({icon:'question',title:'กรุณาเลือกชื่อครู',confirmButtonColor:'#dc2626'}); return; }
+  const project = document.getElementById('dlProject').value;
+  if (!project){ Swal.fire({icon:'question',title:'กรุณาเลือกโครงการ',confirmButtonColor:'#dc2626'}); return; }
+  const s = loadSignatories();
+  const d = savedData[projectKey(teacher,project)] || null;
+  const data = {
+    projectName:project, teacherName:teacher, teacherPos:s.teacherPos||'ครู',
+    proposer:s.proposer, approver:s.approver, authorizer:s.authorizer,
+    strategyId: d && d.strategyId ? d.strategyId : '',
+    strategyName: d ? (d.strategyName || (d.strategyId?(STRATEGIES.find(x=>x.id===d.strategyId)||{}).name:'') || '') : '',
+    tacticText: d ? (d.tacticText||'') : '',
+    problem: d ? (d.problem||'') : '',
+    indicators: pfGetIndicators(d),
+    _afterMsg: 'โปรดแก้ไขไฟล์ให้สมบูรณ์และนำส่งงานแผนงานฯ'
+  };
+  pfDownload(data);
 }
 
 // ดึงตัวชี้วัด + ข้อมูลปัจจุบัน จากข้อมูลที่บันทึก (kpiResult จาก AI → qaIndicators)
