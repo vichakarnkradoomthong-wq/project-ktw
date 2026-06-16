@@ -596,6 +596,25 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
         </div>
       </div>
 
+      <!-- Card 7 (บัญชีโครงการ) -->
+      <div class="landing-card" onclick="showSection('accountSection')">
+        <div class="card-top-strip" style="background:linear-gradient(90deg,#9d174d,#fb7185)"></div>
+        <div class="card-body">
+          <div class="card-icon-wrap" style="background:linear-gradient(135deg,#9d174d,#f472b6);color:#fff">📒</div>
+          <div class="card-chip">ส่วนที่ 7 · บัญชีโครงการ</div>
+          <div class="card-title">กรอกข้อมูลจัดทำ<br>บัญชีโครงการ</div>
+          <div class="card-desc">เลือกครู → เลือกโครงการ → ระบุยุทธศาสตร์/กลยุทธ์ วัตถุประสงค์ เป้าหมาย งบประมาณรายปี ผลที่คาดว่าจะได้รับ และหน่วยงานที่รับผิดชอบ · สร้างไฟล์ตาราง ๔.๒ รายละเอียดโครงการ .docx ได้ในเมนูตั้งค่า</div>
+          <div class="card-footer-strip">
+            <div class="card-features">
+              <span class="card-feat-tag">💰 งบรายปี</span>
+              <span class="card-feat-tag">🎯 วัตถุประสงค์</span>
+              <span class="card-feat-tag">📄 ตาราง ๔.๒</span>
+            </div>
+            <div class="card-cta">เริ่มใช้งาน <span>→</span></div>
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="stats-preview">
       <div class="stats-preview-title">📊 สรุปภาพรวม</div>
@@ -682,6 +701,50 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
     </div>
     <div id="verifyContent"></div>
+  </div>
+
+  <!-- SECTION 7: PROJECT ACCOUNT (บัญชีโครงการ) -->
+  <div id="accountSection" class="section">
+    <div class="section-header">
+      <div class="section-title">📒 กรอกข้อมูลจัดทำบัญชีโครงการ</div>
+      <button class="back-btn" onclick="goBack()">← กลับหน้าหลัก</button>
+    </div>
+    <div id="accountTeacherGrid" class="teacher-grid"></div>
+    <div id="accountProjectPanel" style="display:none"></div>
+  </div>
+</div>
+
+<!-- AI ASSIST MODAL (ร่างวัตถุประสงค์ & ผลที่คาดว่าจะได้รับ — ส่วนที่ 7) -->
+<div class="modal-overlay" id="acAiModal">
+  <div class="modal" style="max-width:660px">
+    <button class="modal-close" onclick="closeModal('acAiModal')">✕</button>
+    <div class="modal-title">🤖 AI ช่วยร่างวัตถุประสงค์ &amp; ผลที่คาดว่าจะได้รับ</div>
+    <div id="acAiCtxBox" style="background:linear-gradient(135deg,#fdf2f8,#fff1f2);border:1.5px solid #fbcfe8;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:0.82rem;color:#9d174d"></div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px">
+      <div>
+        <label class="form-label" style="display:block;margin-bottom:6px;font-weight:600">จำนวนวัตถุประสงค์</label>
+        <select id="acAiNObj" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.9rem;font-family:inherit"></select>
+      </div>
+      <div>
+        <label class="form-label" style="display:block;margin-bottom:6px;font-weight:600">จำนวนผลที่คาดว่าจะได้รับ</label>
+        <select id="acAiNOut" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.9rem;font-family:inherit"></select>
+      </div>
+    </div>
+
+    <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#9d174d,#fb7185)" onclick="acGenPrompt()">✨ Generate Master Prompt</button>
+
+    <div id="acAiResult" style="display:none;margin-top:18px">
+      <div class="detail-label" style="margin-bottom:8px">📋 Master Prompt (ส่งให้ AI ช่วยร่าง)</div>
+      <div style="position:relative">
+        <textarea id="acAiPromptBox" readonly
+          style="width:100%;height:280px;white-space:pre;overflow:auto;background:var(--surface2);border:1.5px solid var(--border);border-radius:10px;padding:14px;font-size:0.78rem;line-height:1.6;font-family:'Sarabun',monospace;color:var(--text);resize:vertical;cursor:text;user-select:text;-webkit-user-select:text"></textarea>
+        <div style="position:absolute;bottom:10px;right:10px;font-size:0.7rem;color:var(--text3);pointer-events:none;background:var(--surface2);padding:2px 6px;border-radius:5px">ลากคลุมเพื่อเลือกข้อความ ✎</div>
+      </div>
+      <button class="project-btn primary-btn" style="margin-top:10px;background:linear-gradient(135deg,#9d174d,#fb7185);border-color:#9d174d" onclick="copyAcPrompt()">📋 คัดลอก Prompt</button>
+      <div style="font-size:0.78rem;color:var(--text3);margin:14px 0 7px">เปิด AI เพื่อวางและรับผลลัพธ์ แล้วนำมากรอกในฟอร์ม:</div>
+      <div id="acAiLinks" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+    </div>
   </div>
 </div>
 
@@ -876,6 +939,15 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
             ดึงข้อมูลจาก KPI ที่ส่งผลจาก AI แล้ว สร้างเอกสาร Word <b>1 หน้าต่อตัวชี้วัด</b> · กล่องรายละเอียด 8 หัวข้อ · ฟอนต์ TH SarabunPSK · กระดาษ A4 แนวตั้ง
           </div>
           <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 สร้างใบปะหน้า &amp; ดาวน์โหลด .docx</button>
+        </div>
+        <div class="settings-subdivider"></div>
+        <div class="form-group">
+          <div class="detail-label">ตาราง ๔.๒ รายละเอียดโครงการ / กิจกรรม</div>
+          <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+            ดึงข้อมูลที่กรอกใน <b>ส่วนที่ 7 · บัญชีโครงการ</b> (วัตถุประสงค์ · เป้าหมาย · งบประมาณรายปี · ผลที่คาดว่าจะได้รับ · หน่วยงาน)
+            จัดกลุ่มตาม <b>ยุทธศาสตร์ → กลยุทธ์</b> ลงตารางตามรูปแบบเอกสารต้นฉบับ · กระดาษ A4 แนวนอน · ฟอนต์ TH SarabunIT๙
+          </div>
+          <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#9d174d,#fb7185);border-color:#9d174d" onclick="exportProjectDetailDocx()">📒 สร้างตาราง ๔.๒ รายละเอียดโครงการ / กิจกรรม.docx</button>
         </div>
         <div class="settings-subdivider"></div>
         <div class="form-group">
@@ -1345,7 +1417,7 @@ function clearProjectPanels() {
 
 function showSection(id) {
   document.getElementById('landingSection').style.display = 'none';
-  ['aiSection','manualSection','kpiSection','statsSection','trendSection','verifySection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection','trendSection','verifySection','accountSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById(id).classList.add('active');
   if (id==='aiSection') renderTeacherGrid('ai');
@@ -1354,10 +1426,11 @@ function showSection(id) {
   if (id==='statsSection') renderStats();
   if (id==='trendSection') renderTrendTeachers();
   if (id==='verifySection') renderVerify();
+  if (id==='accountSection') renderAccountTeachers();
 }
 
 function goBack() {
-  ['aiSection','manualSection','kpiSection','statsSection','trendSection','verifySection'].forEach(s => document.getElementById(s).classList.remove('active'));
+  ['aiSection','manualSection','kpiSection','statsSection','trendSection','verifySection','accountSection'].forEach(s => document.getElementById(s).classList.remove('active'));
   clearProjectPanels();
   document.getElementById('landingSection').style.display = 'block';
 }
@@ -3736,6 +3809,557 @@ function exportTeacherSheets(filterTeacher){
 }
 
 // ═══════════════════════════════════════════════
+// ส่วนที่ 7 · บัญชีโครงการ (กรอกรายละเอียดโครงการ/กิจกรรม)
+// ═══════════════════════════════════════════════
+const ACCOUNT_DEPTS = [
+  { group:'กลุ่มงาน', items:['กลุ่มงานบริหารงานวิชาการ','กลุ่มงานบริหารงานบุคคล','กลุ่มงานบริหารงานทั่วไป','กลุ่มงานบริหารงานงบประมาณ'] },
+  { group:'กลุ่มสาระการเรียนรู้', items:['ภาษาไทย','คณิตศาสตร์','วิทยาศาสตร์และเทคโนโลยี','สังคมศึกษา ศาสนา และวัฒนธรรม','สุขศึกษาและพลศึกษา','ศิลปะ','การงานอาชีพ','ภาษาต่างประเทศ'] }
+];
+const ACCOUNT_YEARS = [
+  { key:'y61', label:'๒๕๖๑' },
+  { key:'y72', label:'๒๕๗๒' },
+  { key:'y73', label:'๒๕๗๓' },
+  { key:'y74', label:'๒๕๗๔' },
+  { key:'y75', label:'๒๕๗๕' }
+];
+
+// ค่าเริ่มต้นของ "เป้าหมาย (ผลผลิตของโครงการ)" ดึงจาก KPIs ของโครงการที่บันทึกในระบบ
+function acDefaultGoalOutput(teacher, project){
+  const kpis = ttGetProjectKpis(teacher, project);
+  if(!kpis.length) return '';
+  return kpis.map((k,i)=>(i+1)+'. '+(k.kpi||'')).join('\n');
+}
+
+function renderAccountTeachers(){
+  const grid = document.getElementById('accountTeacherGrid');
+  document.getElementById('accountProjectPanel').style.display = 'none';
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+  projects.forEach(t => {
+    const done = t.projects.filter(p => savedData[projectKey(t.teacher,p)]?.projectAccount?.savedAt).length;
+    const pct = t.projects.length > 0 ? Math.round(done/t.projects.length*100) : 0;
+    const initials = t.teacher.replace(/ครู|อาจารย์/g,'').charAt(0) || t.teacher.charAt(0);
+    const card = document.createElement('div');
+    card.className = 'teacher-card';
+    card.innerHTML = `
+      <div class="teacher-avatar" style="background:linear-gradient(135deg,#9d174d,#f472b6)">${initials}</div>
+      <div class="teacher-name">${t.teacher}</div>
+      <div class="teacher-count">${done}/${t.projects.length} โครงการ</div>
+      <div class="teacher-progress"><div class="teacher-progress-fill" style="width:${pct}%;background:linear-gradient(90deg,#9d174d,#fb7185)"></div></div>`;
+    card.onclick = () => openAccountProjects(t);
+    grid.appendChild(card);
+  });
+}
+
+function openAccountProjects(td){
+  document.getElementById('accountTeacherGrid').style.display = 'none';
+  const panel = document.getElementById('accountProjectPanel');
+  panel.style.display = 'block';
+  let rows = '';
+  td.projects.forEach(project => {
+    const d = savedData[projectKey(td.teacher, project)];
+    const saved = d?.projectAccount?.savedAt;
+    const badge = saved
+      ? `<span class="badge badge-done">✓ บันทึกแล้ว</span>`
+      : `<span class="badge badge-pending">รอกรอกข้อมูล</span>`;
+    rows += `
+      <div class="project-row" onclick="openAccountEditor('${encodeURIComponent(td.teacher)}','${encodeURIComponent(project)}')">
+        <div class="project-row-header">
+          <div class="project-name">${project}</div>
+          <div class="project-badges">${badge}</div>
+        </div>
+      </div>`;
+  });
+  panel.innerHTML = `
+    <div class="section-header">
+      <div class="section-title">📒 โครงการของ <span style="color:var(--primary)">${td.teacher}</span></div>
+      <button class="back-btn" onclick="renderAccountTeachers()">← เลือกครูคนอื่น</button>
+    </div>
+    <div style="font-size:0.8rem;color:var(--text3);margin:6px 0 14px">คลิกโครงการเพื่อกรอกรายละเอียดบัญชีโครงการ (ยุทธศาสตร์ · กลยุทธ์ · วัตถุประสงค์ · เป้าหมาย · งบประมาณรายปี · ผลที่คาดว่าจะได้รับ · หน่วยงาน)</div>
+    <div class="project-list">${rows}</div>`;
+}
+
+function openAccountEditor(teacherEnc, projectEnc){
+  const teacher = decodeURIComponent(teacherEnc);
+  const project = decodeURIComponent(projectEnc);
+  const key = projectKey(teacher, project);
+  const d = savedData[key] || {};
+  const pa = d.projectAccount || {};
+  const tEnc = encodeURIComponent(teacher), pEnc = encodeURIComponent(project);
+
+  // ค่าเริ่มต้น: ดึงยุทธศาสตร์/กลยุทธ์จากที่บันทึกในระบบ (ส่วนที่ 2) ถ้ายังไม่เคยกรอกในบัญชีโครงการ
+  const curStrat  = (pa.strategyId != null && pa.strategyId !== '') ? pa.strategyId : (d.strategyId || '');
+  const curTactic = (pa.tacticText != null) ? pa.tacticText : (d.tacticText || '');
+  const goalDefault = (pa.goalOutput != null && pa.goalOutput !== '') ? pa.goalOutput : acDefaultGoalOutput(teacher, project);
+  const kpiCount = ttGetProjectKpis(teacher, project).length;
+
+  // หน่วยงาน — เช็คว่าเป็นค่าในรายการหรือ "อื่น ๆ"
+  const allDepts = ACCOUNT_DEPTS.reduce((a,g)=>a.concat(g.items),[]);
+  const deptIsOther = pa.dept && !allDepts.includes(pa.dept);
+  const deptSelVal = deptIsOther ? '__other__' : (pa.dept || '');
+
+  const stratOptions = '<option value="">— เลือกยุทธศาสตร์ —</option>' +
+    STRATEGIES.map(st=>`<option value="${st.id}"${String(curStrat)===String(st.id)?' selected':''}>${st.id}. ${st.name}</option>`).join('');
+
+  const deptOptions = '<option value="">— เลือกหน่วยงาน —</option>' +
+    ACCOUNT_DEPTS.map(g=>`<optgroup label="${g.group}">`+
+      g.items.map(it=>`<option value="${it}"${deptSelVal===it?' selected':''}>${it}</option>`).join('')+
+      `</optgroup>`).join('') +
+    `<option value="__other__"${deptSelVal==='__other__'?' selected':''}>อื่น ๆ (ระบุเอง)</option>`;
+
+  const yearInputs = ACCOUNT_YEARS.map(y=>{
+    const v = pa.budget && pa.budget[y.key]!=null ? pa.budget[y.key] : '';
+    return `<div style="text-align:center">
+        <div style="font-size:0.74rem;color:var(--text3);margin-bottom:3px">ปี ${y.label}</div>
+        <input type="text" inputmode="decimal" class="ac-budget" data-yr="${y.key}" value="${v}" placeholder="0"
+          style="width:100%;padding:9px 6px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:0.9rem;text-align:center">
+      </div>`;
+  }).join('');
+
+  const fieldLabel = (t,sub)=>`<label class="form-label" style="display:block;margin-bottom:6px;font-weight:600;color:var(--primary-dark)">${t}${sub?`<span style="font-weight:400;color:var(--text3);font-size:0.74rem"> ${sub}</span>`:''}</label>`;
+  const taStyle = 'width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.9rem;font-family:inherit;line-height:1.6;resize:vertical';
+
+  const panel = document.getElementById('accountProjectPanel');
+  panel.innerHTML = `
+    <div class="section-header">
+      <div class="section-title">📒 บัญชีโครงการ</div>
+      <button class="back-btn" onclick="openAccountProjects(projects.find(t=>t.teacher===decodeURIComponent('${tEnc}')))">← กลับรายการโครงการ</button>
+    </div>
+    <div style="background:linear-gradient(135deg,#fdf2f8,#fff1f2);border:1.5px solid #fbcfe8;border-radius:10px;padding:11px 15px;margin:8px 0 18px">
+      <div style="font-size:0.95rem;font-weight:700;color:#9d174d;margin-bottom:2px">${project}</div>
+      <div style="font-size:0.78rem;color:var(--text3)">ผู้รับผิดชอบ: ${teacher} · ตัวชี้วัดในระบบ ${kpiCount} รายการ</div>
+    </div>
+
+    <div class="detail-card" style="background:var(--surface);border:1.5px solid var(--border);border-radius:14px;padding:18px 20px">
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:18px">
+        <div>
+          ${fieldLabel('ประเด็น: ยุทธศาสตร์')}
+          <select id="ac_strat" onchange="acUpdateTactics('')" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit">${stratOptions}</select>
+        </div>
+        <div>
+          ${fieldLabel('ประเด็น: กลยุทธ์')}
+          <select id="ac_tactic" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit"><option value="">— เลือกยุทธศาสตร์ก่อน —</option></select>
+        </div>
+      </div>
+
+      <div style="margin-bottom:18px">
+        ${fieldLabel('ประเด็น: วัตถุประสงค์')}
+        <textarea id="ac_objective" rows="4" placeholder="โปรดเขียนเป็นรายข้อให้สอดคล้องกับเป้าหมาย (KPI)" style="${taStyle}">${pa.objective||''}</textarea>
+      </div>
+
+      <div style="margin-bottom:18px">
+        ${fieldLabel('ประเด็น: เป้าหมาย (ผลผลิตของโครงการ)','· ดึงค่าเริ่มต้นจาก KPIs ของโครงการ — แก้ไขได้')}
+        <textarea id="ac_goal" rows="4" placeholder="เป้าหมาย/ผลผลิตของโครงการ" style="${taStyle}">${goalDefault}</textarea>
+        ${kpiCount?`<button type="button" onclick="acFillGoalFromKpi('${tEnc}','${pEnc}')" style="margin-top:7px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--primary);font-size:0.78rem;cursor:pointer;font-family:inherit">↻ ดึงเป้าหมายจาก KPI อีกครั้ง</button>`:''}
+      </div>
+
+      <div style="margin-bottom:18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px">
+        ${fieldLabel('ข้อมูลปีงบประมาณและแหล่งที่มา','· งบประมาณแยกตามปี พ.ศ. (บาท)')}
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px">${yearInputs}</div>
+      </div>
+
+      <div style="margin-bottom:18px">
+        ${fieldLabel('ประเด็น: ผลที่คาดว่าจะได้รับ')}
+        <textarea id="ac_expected" rows="3" placeholder="ผลที่คาดว่าจะได้รับจากโครงการ" style="${taStyle}">${pa.expected||''}</textarea>
+      </div>
+
+      <div style="margin-bottom:6px">
+        ${fieldLabel('ประเด็น: หน่วยงานที่รับผิดชอบ')}
+        <select id="ac_dept" onchange="acToggleDeptOther()" style="width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit">${deptOptions}</select>
+        <input type="text" id="ac_dept_other" placeholder="ระบุหน่วยงาน/กลุ่มงาน" value="${deptIsOther?(pa.dept||''):''}"
+          style="margin-top:9px;width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit;display:${deptSelVal==='__other__'?'block':'none'}">
+      </div>
+
+    </div>
+
+    <button class="project-btn primary-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#9d174d,#fb7185);border-color:#9d174d;margin-top:16px"
+      onclick="saveAccount('${tEnc}','${pEnc}')">💾 บันทึกบัญชีโครงการ</button>
+
+    <button id="acAiFab" onclick="openAcAiModal()" title="ให้ AI ช่วยร่างวัตถุประสงค์ และผลที่คาดว่าจะได้รับ"
+      style="position:fixed;right:22px;bottom:24px;z-index:120;display:inline-flex;align-items:center;gap:9px;padding:13px 20px;border:none;border-radius:999px;cursor:pointer;font-family:inherit;font-size:0.92rem;font-weight:700;color:#fff;background:linear-gradient(135deg,#9d174d,#f472b6);box-shadow:0 8px 26px rgba(157,23,77,0.42)">🤖 AI ช่วย gen</button>`;
+
+  window.__acCtx = { teacher, project };
+
+  // เติม dropdown กลยุทธ์ตามยุทธศาสตร์ที่บันทึกไว้
+  acUpdateTactics(curTactic);
+}
+
+// Dependent dropdown: เปลี่ยนกลยุทธ์ตามยุทธศาสตร์ที่เลือก
+function acUpdateTactics(selectedTactic){
+  const stratSel = document.getElementById('ac_strat');
+  const tacticSel = document.getElementById('ac_tactic');
+  if(!stratSel || !tacticSel) return;
+  const sid = parseInt(stratSel.value);
+  const strat = STRATEGIES.find(s=>s.id===sid);
+  if(!strat){
+    tacticSel.innerHTML = '<option value="">— เลือกยุทธศาสตร์ก่อน —</option>';
+    return;
+  }
+  tacticSel.innerHTML = '<option value="">— เลือกกลยุทธ์ —</option>' +
+    strat.tactics.map(t=>`<option value="${t.replace(/"/g,'&quot;')}"${selectedTactic===t?' selected':''}>${t}</option>`).join('');
+}
+
+function acToggleDeptOther(){
+  const sel = document.getElementById('ac_dept');
+  const other = document.getElementById('ac_dept_other');
+  if(sel && other) other.style.display = (sel.value==='__other__') ? 'block' : 'none';
+}
+
+function acFillGoalFromKpi(tEnc, pEnc){
+  const teacher = decodeURIComponent(tEnc), project = decodeURIComponent(pEnc);
+  const ta = document.getElementById('ac_goal');
+  if(!ta) return;
+  const txt = acDefaultGoalOutput(teacher, project);
+  if(!txt){ Swal.fire({icon:'info',title:'ยังไม่มีตัวชี้วัดในระบบ',text:'ไปออกแบบ KPI (ส่วนที่ 4) แล้วส่งผลก่อน',confirmButtonColor:'#9d174d'}); return; }
+  if(ta.value.trim() && ta.value.trim()!==txt.trim()){
+    Swal.fire({icon:'warning',title:'เขียนทับเป้าหมายเดิม?',text:'จะแทนที่ข้อความปัจจุบันด้วยรายการ KPI',showCancelButton:true,confirmButtonText:'แทนที่',cancelButtonText:'ยกเลิก',confirmButtonColor:'#9d174d'})
+      .then(r=>{ if(r.isConfirmed) ta.value = txt; });
+  } else { ta.value = txt; }
+}
+
+async function saveAccount(tEnc, pEnc){
+  const teacher = decodeURIComponent(tEnc), project = decodeURIComponent(pEnc);
+  const key = projectKey(teacher, project);
+  const stratSel = document.getElementById('ac_strat');
+  const stratId = parseInt(stratSel.value) || '';
+  const tacticText = document.getElementById('ac_tactic').value || '';
+  const objective = document.getElementById('ac_objective').value.trim();
+  const goalOutput = document.getElementById('ac_goal').value.trim();
+  const expected = document.getElementById('ac_expected').value.trim();
+
+  let dept = document.getElementById('ac_dept').value;
+  if(dept==='__other__') dept = (document.getElementById('ac_dept_other').value||'').trim();
+
+  const budget = {};
+  document.querySelectorAll('#accountProjectPanel .ac-budget').forEach(inp=>{
+    budget[inp.dataset.yr] = inp.value.trim();
+  });
+
+  if(!stratId){ Swal.fire({icon:'warning',title:'กรุณาเลือกยุทธศาสตร์',confirmButtonColor:'#9d174d'}); return; }
+  if(!tacticText){ Swal.fire({icon:'warning',title:'กรุณาเลือกกลยุทธ์',confirmButtonColor:'#9d174d'}); return; }
+
+  const strat = STRATEGIES.find(s=>s.id===stratId);
+  const projectAccount = {
+    strategyId: stratId,
+    strategyName: strat ? strat.name : '',
+    tacticText, objective, goalOutput, budget, expected, dept,
+    savedAt: new Date().toISOString()
+  };
+  const payload = { ...(savedData[key]||{}), teacher, project, projectAccount };
+
+  try { await saveAssignment(key, payload); } catch(e){ savedData[key] = payload; }
+
+  Swal.fire({
+    icon:'success', title:'บันทึกบัญชีโครงการแล้ว!', confirmButtonColor:'#9d174d',
+    html:`<div style="font-size:0.86rem;text-align:left;line-height:1.9">
+      <b>โครงการ:</b> ${project}<br>
+      <b>ยุทธศาสตร์ที่ ${stratId}:</b> ${strat?strat.name:''}<br>
+      <b>กลยุทธ์:</b> ${tacticText}<br>
+      <span style="font-size:0.8rem;color:#6b7280">สร้างไฟล์ตาราง ๔.๒ รายละเอียดโครงการได้ในเมนูตั้งค่า</span></div>`
+  });
+  openAccountProjects(projects.find(t=>t.teacher===teacher));
+}
+
+// ── AI ช่วยร่าง วัตถุประสงค์ & ผลที่คาดว่าจะได้รับ (ส่วนที่ 7) ──
+function openAcAiModal(){
+  const ctx = window.__acCtx;
+  if(!ctx){ Swal.fire({icon:'warning',title:'เปิดโครงการก่อน',confirmButtonColor:'#9d174d'}); return; }
+  // เติมตัวเลือกจำนวน 1–8 (default: วัตถุประสงค์ 3, ผลที่คาด 4)
+  const opts = (sel)=>[1,2,3,4,5,6,7,8].map(n=>`<option value="${n}"${n===sel?' selected':''}>${n} ข้อ</option>`).join('');
+  document.getElementById('acAiNObj').innerHTML = opts(3);
+  document.getElementById('acAiNOut').innerHTML = opts(4);
+  document.getElementById('acAiCtxBox').innerHTML =
+    `<b>โครงการ:</b> ${ctx.project}<br><b>ผู้รับผิดชอบ:</b> ${ctx.teacher}`;
+  document.getElementById('acAiResult').style.display = 'none';
+  document.getElementById('acAiModal').classList.add('open');
+}
+
+function acGenPrompt(){
+  const ctx = window.__acCtx || {};
+  const teacher = ctx.teacher, project = ctx.project;
+  const nObj = parseInt(document.getElementById('acAiNObj').value) || 3;
+  const nOut = parseInt(document.getElementById('acAiNOut').value) || 4;
+
+  // ดึงบริบทจากที่กรอก/บันทึกไว้
+  const stratSel = document.getElementById('ac_strat');
+  const tacticSel = document.getElementById('ac_tactic');
+  const sid = stratSel ? parseInt(stratSel.value) : 0;
+  const strat = sid ? STRATEGIES.find(s=>s.id===sid) : null;
+  const tactic = tacticSel ? tacticSel.value : '';
+  const goalNow = (document.getElementById('ac_goal')?.value || acDefaultGoalOutput(teacher, project) || '').trim();
+  const objNow = (document.getElementById('ac_objective')?.value || '').trim();
+
+  const ctxLines = [
+    'ชื่อโครงการ/กิจกรรม : '+project,
+    'ผู้รับผิดชอบ        : '+teacher,
+    strat ? ('ยุทธศาสตร์          : '+strat.id+'. '+strat.name) : '',
+    strat ? ('เป้าประสงค์         : '+strat.goal) : '',
+    tactic ? ('กลยุทธ์             : '+tactic) : '',
+    goalNow ? ('เป้าหมาย/ตัวชี้วัด (KPI) ของโครงการ :\n'+goalNow) : '',
+    objNow ? ('ร่างวัตถุประสงค์เดิม (ถ้ามี) :\n'+objNow) : ''
+  ].filter(Boolean).join('\n');
+
+  const objTemplate = Array.from({length:nObj},(_,i)=>(i+1)+'. [เขียนวัตถุประสงค์ข้อที่ '+(i+1)+' ที่นี่]').join('\n');
+  const outTemplate = Array.from({length:nOut},(_,i)=>(i+1)+'. [เขียนผลที่คาดว่าจะได้รับข้อที่ '+(i+1)+' ที่นี่]').join('\n');
+
+  const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการเขียนโครงการของสถานศึกษา
+
+ภารกิจ: ร่าง "วัตถุประสงค์" จำนวน ${nObj} ข้อ และ "ผลที่คาดว่าจะได้รับ" จำนวน ${nOut} ข้อ ของโครงการต่อไปนี้ ให้สอดคล้องกับเป้าหมาย/ตัวชี้วัด (KPI) ยุทธศาสตร์ และกลยุทธ์ที่กำหนด
+
+═══════════════════════════════════════════════
+ข้อมูลโครงการ
+═══════════════════════════════════════════════
+${ctxLines}
+
+═══════════════════════════════════════════════
+ข้อกำหนดสำคัญ (ห้ามละเมิด)
+═══════════════════════════════════════════════
+1. "วัตถุประสงค์" ทุกข้อต้องขึ้นต้นด้วย "ตัวเลขข้อ. " เช่น "1. เพื่อ..." "2. เพื่อ..." และต้องขึ้นต้นด้วยคำกริยาแสดงเจตนา (เพื่อพัฒนา / เพื่อส่งเสริม / เพื่อยกระดับ / เพื่อสร้าง ฯลฯ) สอดคล้องกับเป้าหมาย (KPI) ของโครงการ
+2. "ผลที่คาดว่าจะได้รับ" ทุกข้อต้องขึ้นต้นด้วย "ตัวเลขข้อ. " เช่น "1. ..." "2. ..." เป็นผลลัพธ์/ผลกระทบเชิงรูปธรรมที่จะเกิดขึ้นเมื่อโครงการสำเร็จ อาจระบุค่าร้อยละ จำนวน หรือกลุ่มเป้าหมายที่ชัดเจน
+3. ใช้ภาษาไทยทางการ กระชับ ชัดเจน ใช้งานได้จริงในบริบทของโรงเรียน
+4. ห้ามใช้ bullet (-, •, *) ห้ามใช้ markdown (#, **) ห้ามใช้ตาราง
+5. ห้ามมีคำอธิบาย คำนำ หรือบทสรุปใดๆ นอกจากรูปแบบที่กำหนดด้านล่างนี้เท่านั้น
+
+═══════════════════════════════════════════════
+รูปแบบผลลัพธ์ที่ต้องการ — ตอบตามโครงสร้างนี้เป๊ะ ๆ ทุกตัวอักษร
+═══════════════════════════════════════════════
+วัตถุประสงค์
+${objTemplate}
+
+ผลที่คาดว่าจะได้รับ
+${outTemplate}
+
+📌 สำคัญมาก: ก่อนเริ่มตอบ ให้พิมพ์บรรทัดต่อไปนี้ออกมาก่อนทุกตัวอักษร แล้วตามด้วยผลลัพธ์ทันที ห้ามมีข้อความใดๆ ก่อนหรือหลัง marker:
+
+⬇️ ─────────────────────────────────────────── ⬇️
+เริ่มคัดลอก (copy) จากตรงนี้
+⬇️ ─────────────────────────────────────────── ⬇️`;
+
+  document.getElementById('acAiPromptBox').value = prompt;
+  window.__acPrompt = prompt;
+  document.getElementById('acAiResult').style.display = 'block';
+  document.getElementById('acAiLinks').innerHTML =
+    aiLinks.map(l=>`<a href="${l.url}" target="_blank" class="ai-link-btn ${l.color}">${l.icon} ${l.name}</a>`).join('');
+}
+
+function copyAcPrompt(){
+  const p = window.__acPrompt;
+  if(!p){ Swal.fire({icon:'warning',title:'กรุณา Generate ก่อน',timer:1400,showConfirmButton:false}); return; }
+  navigator.clipboard.writeText(p).then(()=>{
+    Swal.fire({icon:'success',title:'คัดลอก Master Prompt แล้ว!',timer:1400,showConfirmButton:false,toast:true,position:'top-end'});
+  }).catch(()=>{
+    Swal.fire({ title:'คัดลอก Master Prompt', input:'textarea', inputValue:p,
+      inputAttributes:{ style:'height:300px;font-size:0.78rem;font-family:monospace' },
+      confirmButtonText:'ปิด', confirmButtonColor:'#9d174d' });
+  });
+}
+
+// ═══════════════════════════════════════════════
+// EXPORT: ตาราง ๔.๒ รายละเอียดโครงการ / กิจกรรม .docx
+// โครงสร้าง/รูปแบบตาม template: A4 แนวนอน · ฟอนต์ TH SarabunIT๙ · ตาราง 11 คอลัมน์
+// จัดกลุ่ม ยุทธศาสตร์ → กลยุทธ์ → ตารางโครงการ
+// ═══════════════════════════════════════════════
+const PA_COLS = [425,2694,1984,2693,851,850,822,850,851,2014,1985]; // รวม 16019 (ตาม template)
+
+// จัดรูปแบบตัวเลขงบประมาณ (คั่นหลักพัน) — เว้นว่างถ้าไม่มีค่า
+function paBudgetFmt(v){
+  if(v==null) return '';
+  const s = String(v).trim();
+  if(s==='') return '';
+  const n = Number(s.replace(/[,\s]/g,''));
+  if(!isNaN(n) && /^[0-9.,\s]+$/.test(s)) return n.toLocaleString('en-US');
+  return s;
+}
+
+// cell ของตาราง ๔.๒ — รองรับ gridSpan / vMerge / vAlign
+function paTc(w, inner, o){
+  o = o || {};
+  let pr = '<w:tcW w:w="'+w+'" w:type="dxa"/>';
+  if(o.gridSpan) pr += '<w:gridSpan w:val="'+o.gridSpan+'"/>';
+  if(o.vMerge==='restart') pr += '<w:vMerge w:val="restart"/>';
+  else if(o.vMerge==='continue') pr += '<w:vMerge/>';
+  pr += '<w:vAlign w:val="'+(o.valign||'center')+'"/>';
+  return '<w:tc><w:tcPr>'+pr+'</w:tcPr>'+(inner||dxPara(''))+'</w:tc>';
+}
+
+// รวบรวมข้อมูลบัญชีโครงการ จัดกลุ่ม ยุทธศาสตร์ → กลยุทธ์
+function paCollect(){
+  const byStrat = {};
+  projects.forEach(t=>{
+    t.projects.forEach(p=>{
+      const d = savedData[projectKey(t.teacher,p)];
+      const pa = d && d.projectAccount;
+      if(!pa || !pa.savedAt) return;
+      const sid = pa.strategyId || d.strategyId || 0;
+      if(!sid) return;
+      const strat = STRATEGIES.find(s=>s.id===sid);
+      const stratName = strat ? strat.name : (pa.strategyName || d.strategyName || '');
+      const tactic = pa.tacticText || d.tacticText || '(ไม่ระบุกลยุทธ์)';
+      if(!byStrat[sid]) byStrat[sid] = { id:sid, name:stratName, tactics:{} };
+      if(!byStrat[sid].tactics[tactic]) byStrat[sid].tactics[tactic] = [];
+      byStrat[sid].tactics[tactic].push({
+        teacher:t.teacher, project:p,
+        objective: pa.objective||'',
+        goalOutput: pa.goalOutput||'',
+        budget: pa.budget||{},
+        expected: pa.expected||'',
+        dept: pa.dept||''
+      });
+    });
+  });
+  return Object.values(byStrat).sort((a,b)=>a.id-b.id).map(s=>{
+    const strat = STRATEGIES.find(x=>x.id===s.id);
+    const order = strat ? strat.tactics : [];
+    const keys = Object.keys(s.tactics).sort((a,b)=>{
+      const ia=order.indexOf(a), ib=order.indexOf(b);
+      return (ia<0?999:ia)-(ib<0?999:ib);
+    });
+    return { name:s.name, tactics: keys.map(k=>({ name:k, projects:s.tactics[k] })) };
+  });
+}
+
+// บรรทัดหัวข้อ ยุทธศาสตร์ / กลยุทธ์ (เยื้องซ้าย) — keepNext: ยึดให้อยู่หน้าเดียวกับตารางถัดไป
+function paIndentPara(text, indent, keepNext){
+  return '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/>'+
+    (keepNext?'<w:keepNext/>':'')+
+    (indent?'<w:ind w:left="'+indent+'"/>':'')+
+    '<w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:b/><w:bCs/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:pPr>'+
+    dxRun(text,{b:true,sz:32})+'</w:p>';
+}
+
+// ตารางหนึ่งกลยุทธ์
+function paBuildTable(rows){
+  const C = PA_COLS;
+  const h0 =
+    paTc(C[0], dxPara('ที่',{center:true,b:true}), {vMerge:'restart'})+
+    paTc(C[1], dxPara('โครงการ/กิจกรรม',{center:true,b:true}), {vMerge:'restart'})+
+    paTc(C[2], dxPara('วัตถุประสงค์',{center:true,b:true}), {vMerge:'restart'})+
+    paTc(C[3], dxPara('เป้าหมาย\n(ผลผลิตของโครงการ)',{center:true,b:true}), {vMerge:'restart'})+
+    paTc(C[4]+C[5]+C[6]+C[7]+C[8], dxPara('งบประมาณและแหล่งที่มา',{center:true,b:true}), {gridSpan:5})+
+    paTc(C[9], dxPara('ผลที่คาดว่าจะได้รับ',{center:true,b:true}), {vMerge:'restart'})+
+    paTc(C[10], dxPara('หน่วยงานที่รับผิดชอบ',{center:true,b:true}), {vMerge:'restart'});
+  const h1 =
+    paTc(C[0],'',{vMerge:'continue'})+
+    paTc(C[1],'',{vMerge:'continue'})+
+    paTc(C[2],'',{vMerge:'continue'})+
+    paTc(C[3],'',{vMerge:'continue'})+
+    paTc(C[4], dxPara('๒๕๖๑',{center:true,b:true}))+
+    paTc(C[5], dxPara('๒๕๗๒',{center:true,b:true}))+
+    paTc(C[6], dxPara('๒๕๗๓',{center:true,b:true}))+
+    paTc(C[7], dxPara('๒๕๗๔',{center:true,b:true}))+
+    paTc(C[8], dxPara('๒๕๗๕',{center:true,b:true}))+
+    paTc(C[9],'',{vMerge:'continue'})+
+    paTc(C[10],'',{vMerge:'continue'});
+  let trs = '<w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr>'+h0+'</w:tr>'+
+            '<w:tr><w:trPr><w:cantSplit/><w:tblHeader/></w:trPr>'+h1+'</w:tr>';
+
+  rows.forEach((r,i)=>{
+    const b = r.budget || {};
+    trs += '<w:tr><w:trPr></w:trPr>'+
+      paTc(C[0], dxPara(String(i+1),{center:true}), {valign:'center'})+
+      paTc(C[1], dxPara(r.project,{}), {valign:'top'})+
+      paTc(C[2], dxPara(r.objective,{}), {valign:'top'})+
+      paTc(C[3], dxPara(r.goalOutput,{}), {valign:'top'})+
+      paTc(C[4], dxPara(paBudgetFmt(b.y61),{center:true}), {valign:'center'})+
+      paTc(C[5], dxPara(paBudgetFmt(b.y72),{center:true}), {valign:'center'})+
+      paTc(C[6], dxPara(paBudgetFmt(b.y73),{center:true}), {valign:'center'})+
+      paTc(C[7], dxPara(paBudgetFmt(b.y74),{center:true}), {valign:'center'})+
+      paTc(C[8], dxPara(paBudgetFmt(b.y75),{center:true}), {valign:'center'})+
+      paTc(C[9], dxPara(r.expected,{}), {valign:'top'})+
+      paTc(C[10], dxPara(r.dept,{}), {valign:'top'})+
+    '</w:tr>';
+  });
+
+  const grid = C.map(c=>'<w:gridCol w:w="'+c+'"/>').join('');
+  const borders='<w:tblBorders>'+
+    '<w:top w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:left w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:bottom w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:right w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:insideH w:val="single" w:sz="4" w:space="0" w:color="auto"/>'+
+    '<w:insideV w:val="single" w:sz="4" w:space="0" w:color="auto"/></w:tblBorders>';
+  const cellMar='<w:tblCellMar>'+
+    '<w:top w:w="30" w:type="dxa"/><w:left w:w="90" w:type="dxa"/>'+
+    '<w:bottom w:w="30" w:type="dxa"/><w:right w:w="90" w:type="dxa"/></w:tblCellMar>';
+  return '<w:tbl><w:tblPr><w:tblW w:w="16019" w:type="dxa"/><w:tblInd w:w="-856" w:type="dxa"/>'+borders+
+    '<w:tblLayout w:type="fixed"/>'+cellMar+
+    '<w:tblLook w:val="04A0" w:firstRow="1" w:lastRow="0" w:firstColumn="1" w:lastColumn="0" w:noHBand="0" w:noVBand="1"/></w:tblPr>'+
+    '<w:tblGrid>'+grid+'</w:tblGrid>'+trs+'</w:tbl>';
+}
+
+function paBuildDocument(strategies){
+  let body = dxPara('4.๒ รายละเอียดโครงการ / กิจกรรม',{b:true});
+  strategies.forEach((s, si)=>{
+    body += paIndentPara((si+1)+') ยุทธศาสตร์  '+s.name, 360, true);
+    s.tactics.forEach(t=>{
+      // กลยุทธ์ — แยกหมายเลขนำหน้า (เช่น "1.1") ออกจากชื่อ เพื่อให้ขึ้นต้นด้วย "เลข  กลยุทธ์ ..."
+      const m = (t.name||'').match(/^\s*(\d+\.\d+)\s*(.*)$/);
+      const tacticLine = m ? (m[1]+'  กลยุทธ์ '+m[2]) : ('กลยุทธ์ '+(t.name||''));
+      body += paIndentPara(tacticLine, 720, true);
+      body += paBuildTable(t.projects);
+      body += dxPara('',{});
+    });
+  });
+  const sect='<w:sectPr><w:pgSz w:w="16838" w:h="11906" w:orient="landscape"/>'+
+    '<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440" w:header="709" w:footer="709" w:gutter="0"/>'+
+    '<w:cols w:space="708"/><w:docGrid w:linePitch="360"/></w:sectPr>';
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+sect+'</w:body></w:document>';
+}
+
+function exportProjectDetailDocx(){
+  if(typeof JSZip==='undefined'){
+    Swal.fire({icon:'error',title:'ไลบรารีสร้างไฟล์ยังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่อีกครั้ง',confirmButtonColor:'#9d174d'}); return;
+  }
+  const strategies = paCollect();
+  if(!strategies.length){
+    Swal.fire({icon:'question',title:'ยังไม่มีข้อมูลบัญชีโครงการ',
+      html:'ยังไม่มีโครงการที่กรอกรายละเอียดใน <b>ส่วนที่ 7 · บัญชีโครงการ</b><br><span style="font-size:0.82rem;color:#6b7280">เลือกครู → เลือกโครงการ → กรอกข้อมูล แล้วกดบันทึกก่อน</span>',
+      confirmButtonColor:'#9d174d'});
+    return;
+  }
+  const doc = paBuildDocument(strategies);
+  const CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'+
+    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'+
+    '<Default Extension="xml" ContentType="application/xml"/>'+
+    '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'+
+    '<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
+  const RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
+  const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
+    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
+  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
+    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>'+
+    '<w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:rPrDefault></w:docDefaults>'+
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+
+  const zip=new JSZip();
+  zip.file('[Content_Types].xml',CT);
+  zip.folder('_rels').file('.rels',RELS);
+  const word=zip.folder('word');
+  word.file('document.xml',doc);
+  word.file('styles.xml',STYLES);
+  word.folder('_rels').file('document.xml.rels',DRELS);
+  zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download='ตาราง 4.2 รายละเอียดโครงการ_'+new Date().toISOString().slice(0,10)+'.docx';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+    const totalProj = strategies.reduce((a,s)=>a+s.tactics.reduce((x,t)=>x+t.projects.length,0),0);
+    Swal.fire({icon:'success',title:'สร้างไฟล์สำเร็จ!',
+      html:'ดาวน์โหลดตาราง ๔.๒ รายละเอียดโครงการแล้ว<br><span style="font-size:0.84rem;color:#6b7280">ยุทธศาสตร์ <b>'+strategies.length+'</b> · โครงการ <b>'+totalProj+'</b> รายการ</span>',
+      confirmButtonColor:'#9d174d'});
+  }).catch(e=>{
+    Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message});
+  });
+}
+
+// ═══════════════════════════════════════════════
 // ส่วนที่ 6 · ตรวจสอบตัวชี้วัดทั้งหมดก่อนส่งออก (ค้นหา + กรอง + ปุ่ม export)
 // ═══════════════════════════════════════════════
 function vfCollectRows(){
@@ -3792,6 +4416,7 @@ function renderVerify(){
     <div style="display:flex;flex-wrap:wrap;gap:10px">
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#2563eb,#60a5fa);border-color:#2563eb" onclick="exportSummaryDocx()">📄 ตารางสรุป .docx</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 ใบปะหน้า .docx</button>
+      <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#9d174d,#fb7185);border-color:#9d174d" onclick="exportProjectDetailDocx()">📒 ตาราง ๔.๒ รายละเอียดโครงการ .docx</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#059669,#34d399);border-color:#059669" onclick="exportExcel()">📊 ส่งออก Excel</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#b45309,#f59e0b);border-color:#b45309" onclick="exportTeacherSheetsMenu()">🧾 ใบสรุปแจกครู (.pdf)</button>
       <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#dc2626,#f87171);border-color:#dc2626" onclick="openProjectFormModal()">📄 ดาวน์โหลดฟอร์มโครงการ.docx</button>
