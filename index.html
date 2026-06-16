@@ -3822,7 +3822,6 @@ const ACCOUNT_YEARS = [
   { key:'y74', label:'๒๕๗๔' },
   { key:'y75', label:'๒๕๗๕' }
 ];
-const ACCOUNT_BUDGET_SRCS = ['รายหัว','พัฒนาผู้เรียน','อบจ.'];
 
 // ค่าเริ่มต้นของ "เป้าหมาย (ผลผลิตของโครงการ)" ดึงจาก KPIs ของโครงการที่บันทึกในระบบ
 function acDefaultGoalOutput(teacher, project){
@@ -3917,12 +3916,7 @@ function openAccountEditor(teacherEnc, projectEnc){
       </div>`;
   }).join('');
 
-  // ที่มางบ — เช็คว่าเป็นค่าในรายการหรือ "อื่น ๆ"
-  const srcIsOther = pa.budgetSrc && !ACCOUNT_BUDGET_SRCS.includes(pa.budgetSrc);
-  const srcSelVal  = srcIsOther ? '__other__' : (pa.budgetSrc || '');
-  const srcOptions = '<option value="">— เลือกที่มางบ —</option>' +
-    ACCOUNT_BUDGET_SRCS.map(s=>`<option value="${s}"${srcSelVal===s?' selected':''}>${s}</option>`).join('') +
-    `<option value="__other__"${srcIsOther?' selected':''}>อื่น ๆ (ระบุเอง)</option>`;
+  const fieldLabel = (t,sub)=>`<label class="form-label" style="display:block;margin-bottom:6px;font-weight:600;color:var(--primary-dark)">${t}${sub?`<span style="font-weight:400;color:var(--text3);font-size:0.74rem"> ${sub}</span>`:''}</label>`;
   const taStyle = 'width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.9rem;font-family:inherit;line-height:1.6;resize:vertical';
 
   const panel = document.getElementById('accountProjectPanel');
@@ -3963,18 +3957,6 @@ function openAccountEditor(teacherEnc, projectEnc){
       <div style="margin-bottom:18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px">
         ${fieldLabel('ข้อมูลปีงบประมาณและแหล่งที่มา','· งบประมาณแยกตามปี พ.ศ. (บาท)')}
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px">${yearInputs}</div>
-        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end">
-          <div>
-            <div style="font-size:0.76rem;color:var(--text3);margin-bottom:4px;font-weight:600">ที่มางบประมาณ</div>
-            <select id="ac_budget_src" onchange="acToggleBudgetSrcOther()"
-              style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit">${srcOptions}</select>
-          </div>
-          <div id="ac_budget_src_other_wrap" style="display:${srcIsOther?'block':'none'}">
-            <div style="font-size:0.76rem;color:var(--text3);margin-bottom:4px;font-weight:600">ระบุที่มางบ (อื่น ๆ)</div>
-            <input type="text" id="ac_budget_src_other" placeholder="ระบุที่มางบประมาณ" value="${srcIsOther?(pa.budgetSrc||''):''}"
-              style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit">
-          </div>
-        </div>
       </div>
 
       <div style="margin-bottom:18px">
@@ -4024,12 +4006,6 @@ function acToggleDeptOther(){
   if(sel && other) other.style.display = (sel.value==='__other__') ? 'block' : 'none';
 }
 
-function acToggleBudgetSrcOther(){
-  const sel = document.getElementById('ac_budget_src');
-  const wrap = document.getElementById('ac_budget_src_other_wrap');
-  if(sel && wrap) wrap.style.display = (sel.value==='__other__') ? 'block' : 'none';
-}
-
 function acFillGoalFromKpi(tEnc, pEnc){
   const teacher = decodeURIComponent(tEnc), project = decodeURIComponent(pEnc);
   const ta = document.getElementById('ac_goal');
@@ -4055,9 +4031,6 @@ async function saveAccount(tEnc, pEnc){
   let dept = document.getElementById('ac_dept').value;
   if(dept==='__other__') dept = (document.getElementById('ac_dept_other').value||'').trim();
 
-  let budgetSrc = document.getElementById('ac_budget_src').value;
-  if(budgetSrc==='__other__') budgetSrc = (document.getElementById('ac_budget_src_other').value||'').trim();
-
   const budget = {};
   document.querySelectorAll('#accountProjectPanel .ac-budget').forEach(inp=>{
     budget[inp.dataset.yr] = inp.value.trim();
@@ -4070,7 +4043,7 @@ async function saveAccount(tEnc, pEnc){
   const projectAccount = {
     strategyId: stratId,
     strategyName: strat ? strat.name : '',
-    tacticText, objective, goalOutput, budget, budgetSrc, expected, dept,
+    tacticText, objective, goalOutput, budget, expected, dept,
     savedAt: new Date().toISOString()
   };
   const payload = { ...(savedData[key]||{}), teacher, project, projectAccount };
@@ -4230,7 +4203,6 @@ function paCollect(){
         objective: pa.objective||'',
         goalOutput: pa.goalOutput||'',
         budget: pa.budget||{},
-        budgetSrc: pa.budgetSrc||'',
         expected: pa.expected||'',
         dept: pa.dept||''
       });
@@ -4284,29 +4256,16 @@ function paBuildTable(rows){
 
   rows.forEach((r,i)=>{
     const b = r.budget || {};
-    const src = r.budgetSrc ? '('+r.budgetSrc+')' : '';
-    // ฟังก์ชันสร้างเนื้อหาช่องงบ — ตัวเลข บรรทัดแรก, (ที่มางบ) บรรทัดสองขนาดเล็กสีเทา
-    const budgetCell = (val)=>{
-      const fmt = paBudgetFmt(val);
-      if(!fmt && !src) return dxPara('',{center:true});
-      if(!fmt) return dxPara(src,{center:true,sz:22,color:'888888'});
-      if(!src) return dxPara(fmt,{center:true});
-      return '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>'+
-        dxRun(fmt,{sz:32,color:'000000'})+
-        '<w:r><w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/></w:rPr><w:br/></w:r>'+
-        dxRun(src,{sz:22,color:'888888'})+
-      '</w:p>';
-    };
     trs += '<w:tr><w:trPr></w:trPr>'+
       paTc(C[0], dxPara(String(i+1),{center:true}), {valign:'center'})+
       paTc(C[1], dxPara(r.project,{}), {valign:'top'})+
       paTc(C[2], dxPara(r.objective,{}), {valign:'top'})+
       paTc(C[3], dxPara(r.goalOutput,{}), {valign:'top'})+
-      paTc(C[4], budgetCell(b.y61), {valign:'center'})+
-      paTc(C[5], budgetCell(b.y72), {valign:'center'})+
-      paTc(C[6], budgetCell(b.y73), {valign:'center'})+
-      paTc(C[7], budgetCell(b.y74), {valign:'center'})+
-      paTc(C[8], budgetCell(b.y75), {valign:'center'})+
+      paTc(C[4], dxPara(paBudgetFmt(b.y61),{center:true}), {valign:'center'})+
+      paTc(C[5], dxPara(paBudgetFmt(b.y72),{center:true}), {valign:'center'})+
+      paTc(C[6], dxPara(paBudgetFmt(b.y73),{center:true}), {valign:'center'})+
+      paTc(C[7], dxPara(paBudgetFmt(b.y74),{center:true}), {valign:'center'})+
+      paTc(C[8], dxPara(paBudgetFmt(b.y75),{center:true}), {valign:'center'})+
       paTc(C[9], dxPara(r.expected,{}), {valign:'top'})+
       paTc(C[10], dxPara(r.dept,{}), {valign:'top'})+
     '</w:tr>';
