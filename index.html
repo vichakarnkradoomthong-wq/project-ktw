@@ -3816,7 +3816,7 @@ const ACCOUNT_DEPTS = [
   { group:'กลุ่มสาระการเรียนรู้', items:['กลุ่มสาระการเรียนรู้ภาษาไทย','กลุ่มสาระการเรียนรู้คณิตศาสตร์','กลุ่มสาระการเรียนรู้วิทยาศาสตร์และเทคโนโลยี','กลุ่มสาระการเรียนรู้สังคมศึกษา ศาสนา และวัฒนธรรม','กลุ่มสาระการเรียนรู้สุขศึกษาและพลศึกษา','กลุ่มสาระการเรียนรู้ศิลปะ','กลุ่มสาระการเรียนรู้การงานอาชีพ','กลุ่มสาระการเรียนรู้ภาษาต่างประเทศ'] }
 ];
 const ACCOUNT_YEARS = [
-  { key:'y61', label:'๒๕๖๑' },
+  { key:'y61', label:'๒๕๗๑' },
   { key:'y72', label:'๒๕๗๒' },
   { key:'y73', label:'๒๕๗๓' },
   { key:'y74', label:'๒๕๗๔' },
@@ -3891,7 +3891,14 @@ function openAccountEditor(teacherEnc, projectEnc){
   // ค่าเริ่มต้น: ดึงยุทธศาสตร์/กลยุทธ์จากที่บันทึกในระบบ (ส่วนที่ 2) ถ้ายังไม่เคยกรอกในบัญชีโครงการ
   const curStrat  = (pa.strategyId != null && pa.strategyId !== '') ? pa.strategyId : (d.strategyId || '');
   const curTactic = (pa.tacticText != null) ? pa.tacticText : (d.tacticText || '');
-  const goalDefault = (pa.goalOutput != null) ? pa.goalOutput : '';
+  // เป้าหมาย: แยกเชิงปริมาณ/เชิงคุณภาพ — รองรับข้อมูลเดิมที่เคยเก็บรวมใน goalOutput
+  let goalQuant = (pa.goalQuant != null) ? pa.goalQuant : '';
+  let goalQual  = (pa.goalQual  != null) ? pa.goalQual  : 'เชิงคุณภาพ ';
+  if(pa.goalQuant==null && pa.goalQual==null && pa.goalOutput){
+    const lines = String(pa.goalOutput).split('\n');
+    goalQuant = lines[0] || '';
+    goalQual  = lines.slice(1).join('\n') || 'เชิงคุณภาพ ';
+  }
   const kpiCount = ttGetProjectKpis(teacher, project).length;
 
   // หน่วยงาน — เช็คว่าเป็นค่าในรายการหรือ "อื่น ๆ"
@@ -3955,9 +3962,18 @@ function openAccountEditor(teacherEnc, projectEnc){
         <textarea id="ac_objective" rows="4" placeholder="โปรดเขียนเป็นรายข้อให้สอดคล้องกับเป้าหมาย (KPI)" style="${taStyle}">${pa.objective||''}</textarea>
       </div>
 
-      <div style="margin-bottom:18px">
-        ${fieldLabel('ประเด็น: เป้าหมาย (ผลผลิตของโครงการ)','· ประโยคย่อหน้าเดียวกระชับ — หรือใช้ปุ่ม 🤖 AI ช่วย gen')}
-        <textarea id="ac_goal" rows="3" placeholder="ประโยคสรุปว่า ใคร ได้อะไร/เกิดประโยชน์อะไร (พิจารณาจากปัญหา/ความต้องการ/นโยบาย)" style="${taStyle}">${goalDefault}</textarea>
+      <div style="margin-bottom:18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px">
+        ${fieldLabel('ประเด็น: เป้าหมาย (ผลผลิตของโครงการ)','· แยกเชิงปริมาณ / เชิงคุณภาพ (ในเอกสารจะรวมอยู่ในเซลล์เดียว แยกบรรทัด)')}
+
+        <div style="margin-bottom:6px;font-size:0.8rem;font-weight:600;color:var(--text2)">1) เชิงปริมาณ</div>
+        <textarea id="ac_goal_quant" rows="2" placeholder="เชิงปริมาณ ..." style="${taStyle}">${goalQuant}</textarea>
+        <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:7px">
+          <button type="button" onclick="acFillGoalTpl('student')" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--primary);font-size:0.76rem;cursor:pointer;font-family:inherit">📋 ดึงเป้าหมายนักเรียน</button>
+          <button type="button" onclick="acFillGoalTpl('teacher')" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--primary);font-size:0.76rem;cursor:pointer;font-family:inherit">📋 ดึงเป้าหมายครู</button>
+        </div>
+
+        <div style="margin:14px 0 6px;font-size:0.8rem;font-weight:600;color:var(--text2)">2) เชิงคุณภาพ</div>
+        <textarea id="ac_goal_qual" rows="2" placeholder="เชิงคุณภาพ ..." style="${taStyle}">${goalQual}</textarea>
       </div>
 
       <div style="margin-bottom:18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px">
@@ -4030,16 +4046,17 @@ function acToggleBudgetSrcOther(){
   if(sel && wrap) wrap.style.display = (sel.value==='__other__') ? 'block' : 'none';
 }
 
-function acFillGoalFromKpi(tEnc, pEnc){
-  const teacher = decodeURIComponent(tEnc), project = decodeURIComponent(pEnc);
-  const ta = document.getElementById('ac_goal');
+// ดึง template เป้าหมายเชิงปริมาณ (นักเรียน / ครู) ใส่ช่อง ac_goal_quant
+function acFillGoalTpl(which){
+  const ta = document.getElementById('ac_goal_quant');
   if(!ta) return;
-  const txt = acDefaultGoalOutput(teacher, project);
-  if(!txt){ Swal.fire({icon:'info',title:'ยังไม่มีตัวชี้วัดในระบบ',text:'ไปออกแบบ KPI (ส่วนที่ 4) แล้วส่งผลก่อน',confirmButtonColor:'#9d174d'}); return; }
-  if(ta.value.trim() && ta.value.trim()!==txt.trim()){
-    Swal.fire({icon:'warning',title:'เขียนทับเป้าหมายเดิม?',text:'จะแทนที่ข้อความปัจจุบันด้วยรายการ KPI',showCancelButton:true,confirmButtonText:'แทนที่',cancelButtonText:'ยกเลิก',confirmButtonColor:'#9d174d'})
-      .then(r=>{ if(r.isConfirmed) ta.value = txt; });
-  } else { ta.value = txt; }
+  const tpl = which==='teacher'
+    ? 'เชิงปริมาณ  ครูและบุคลากรทางการศึกษา จำนวน...คน'
+    : 'เชิงปริมาณ  ผู้เรียนระดับชั้นมัธยมศึกษาปีที่ 1-6 จำนวน 210 คน';
+  if(ta.value.trim()){
+    Swal.fire({icon:'warning',title:'เขียนทับข้อความเดิม?',text:'จะแทนที่เป้าหมายเชิงปริมาณด้วย template',showCancelButton:true,confirmButtonText:'แทนที่',cancelButtonText:'ยกเลิก',confirmButtonColor:'#9d174d'})
+      .then(r=>{ if(r.isConfirmed) ta.value = tpl; });
+  } else { ta.value = tpl; }
 }
 
 async function saveAccount(tEnc, pEnc){
@@ -4049,7 +4066,9 @@ async function saveAccount(tEnc, pEnc){
   const stratId = parseInt(stratSel.value) || '';
   const tacticText = document.getElementById('ac_tactic').value || '';
   const objective = document.getElementById('ac_objective').value.trim();
-  const goalOutput = document.getElementById('ac_goal').value.trim();
+  const goalQuant = document.getElementById('ac_goal_quant').value.trim();
+  const goalQual = document.getElementById('ac_goal_qual').value.trim();
+  const goalOutput = [goalQuant, goalQual].filter(Boolean).join('\n');
   const expected = document.getElementById('ac_expected').value.trim();
 
   let dept = document.getElementById('ac_dept').value;
@@ -4070,7 +4089,7 @@ async function saveAccount(tEnc, pEnc){
   const projectAccount = {
     strategyId: stratId,
     strategyName: strat ? strat.name : '',
-    tacticText, objective, goalOutput, budget, budgetSrc, expected, dept,
+    tacticText, objective, goalOutput, goalQuant, goalQual, budget, budgetSrc, expected, dept,
     savedAt: new Date().toISOString()
   };
   const payload = { ...(savedData[key]||{}), teacher, project, projectAccount };
@@ -4283,7 +4302,7 @@ function paBuildTable(rows){
     paTc(C[1],'',{vMerge:'continue'})+
     paTc(C[2],'',{vMerge:'continue'})+
     paTc(C[3],'',{vMerge:'continue'})+
-    paTc(C[4], dxPara('๒๕๖๑',{center:true,b:true}))+
+    paTc(C[4], dxPara('๒๕๗๑',{center:true,b:true}))+
     paTc(C[5], dxPara('๒๕๗๒',{center:true,b:true}))+
     paTc(C[6], dxPara('๒๕๗๓',{center:true,b:true}))+
     paTc(C[7], dxPara('๒๕๗๔',{center:true,b:true}))+
