@@ -3822,6 +3822,7 @@ const ACCOUNT_YEARS = [
   { key:'y74', label:'๒๕๗๔' },
   { key:'y75', label:'๒๕๗๕' }
 ];
+const ACCOUNT_BUDGET_SRCS = ['รายหัว','พัฒนาผู้เรียน','อบจ.'];
 
 // ค่าเริ่มต้นของ "เป้าหมาย (ผลผลิตของโครงการ)" ดึงจาก KPIs ของโครงการที่บันทึกในระบบ
 function acDefaultGoalOutput(teacher, project){
@@ -3890,7 +3891,7 @@ function openAccountEditor(teacherEnc, projectEnc){
   // ค่าเริ่มต้น: ดึงยุทธศาสตร์/กลยุทธ์จากที่บันทึกในระบบ (ส่วนที่ 2) ถ้ายังไม่เคยกรอกในบัญชีโครงการ
   const curStrat  = (pa.strategyId != null && pa.strategyId !== '') ? pa.strategyId : (d.strategyId || '');
   const curTactic = (pa.tacticText != null) ? pa.tacticText : (d.tacticText || '');
-  const goalDefault = (pa.goalOutput != null && pa.goalOutput !== '') ? pa.goalOutput : acDefaultGoalOutput(teacher, project);
+  const goalDefault = (pa.goalOutput != null) ? pa.goalOutput : '';
   const kpiCount = ttGetProjectKpis(teacher, project).length;
 
   // หน่วยงาน — เช็คว่าเป็นค่าในรายการหรือ "อื่น ๆ"
@@ -3916,6 +3917,12 @@ function openAccountEditor(teacherEnc, projectEnc){
       </div>`;
   }).join('');
 
+  // ที่มางบ — เช็คว่าเป็นค่าในรายการหรือ "อื่น ๆ"
+  const srcIsOther = pa.budgetSrc && !ACCOUNT_BUDGET_SRCS.includes(pa.budgetSrc);
+  const srcSelVal  = srcIsOther ? '__other__' : (pa.budgetSrc || '');
+  const srcOptions = '<option value="">— เลือกที่มางบ —</option>' +
+    ACCOUNT_BUDGET_SRCS.map(s=>`<option value="${s}"${srcSelVal===s?' selected':''}>${s}</option>`).join('') +
+    `<option value="__other__"${srcIsOther?' selected':''}>อื่น ๆ (ระบุเอง)</option>`;
   const fieldLabel = (t,sub)=>`<label class="form-label" style="display:block;margin-bottom:6px;font-weight:600;color:var(--primary-dark)">${t}${sub?`<span style="font-weight:400;color:var(--text3);font-size:0.74rem"> ${sub}</span>`:''}</label>`;
   const taStyle = 'width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font-size:0.9rem;font-family:inherit;line-height:1.6;resize:vertical';
 
@@ -3949,14 +3956,25 @@ function openAccountEditor(teacherEnc, projectEnc){
       </div>
 
       <div style="margin-bottom:18px">
-        ${fieldLabel('ประเด็น: เป้าหมาย (ผลผลิตของโครงการ)','· ดึงค่าเริ่มต้นจาก KPIs ของโครงการ — แก้ไขได้')}
-        <textarea id="ac_goal" rows="4" placeholder="เป้าหมาย/ผลผลิตของโครงการ" style="${taStyle}">${goalDefault}</textarea>
-        ${kpiCount?`<button type="button" onclick="acFillGoalFromKpi('${tEnc}','${pEnc}')" style="margin-top:7px;padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--primary);font-size:0.78rem;cursor:pointer;font-family:inherit">↻ ดึงเป้าหมายจาก KPI อีกครั้ง</button>`:''}
+        ${fieldLabel('ประเด็น: เป้าหมาย (ผลผลิตของโครงการ)','· ประโยคย่อหน้าเดียวกระชับ — หรือใช้ปุ่ม 🤖 AI ช่วย gen')}
+        <textarea id="ac_goal" rows="3" placeholder="ประโยคสรุปว่า ใคร ได้อะไร/เกิดประโยชน์อะไร (พิจารณาจากปัญหา/ความต้องการ/นโยบาย)" style="${taStyle}">${goalDefault}</textarea>
       </div>
 
       <div style="margin-bottom:18px;background:var(--surface2);border:1.5px solid var(--border);border-radius:12px;padding:14px 16px">
         ${fieldLabel('ข้อมูลปีงบประมาณและแหล่งที่มา','· งบประมาณแยกตามปี พ.ศ. (บาท)')}
         <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:9px">${yearInputs}</div>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:end">
+          <div>
+            <div style="font-size:0.76rem;color:var(--text3);margin-bottom:4px;font-weight:600">ที่มางบประมาณ</div>
+            <select id="ac_budget_src" onchange="acToggleBudgetSrcOther()"
+              style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit">${srcOptions}</select>
+          </div>
+          <div id="ac_budget_src_other_wrap" style="display:${srcIsOther?'block':'none'}">
+            <div style="font-size:0.76rem;color:var(--text3);margin-bottom:4px;font-weight:600">ระบุที่มางบ (อื่น ๆ)</div>
+            <input type="text" id="ac_budget_src_other" placeholder="ระบุที่มางบประมาณ" value="${srcIsOther?(pa.budgetSrc||''):''}"
+              style="width:100%;padding:9px 11px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text);font-size:0.88rem;font-family:inherit">
+          </div>
+        </div>
       </div>
 
       <div style="margin-bottom:18px">
@@ -4006,6 +4024,12 @@ function acToggleDeptOther(){
   if(sel && other) other.style.display = (sel.value==='__other__') ? 'block' : 'none';
 }
 
+function acToggleBudgetSrcOther(){
+  const sel = document.getElementById('ac_budget_src');
+  const wrap = document.getElementById('ac_budget_src_other_wrap');
+  if(sel && wrap) wrap.style.display = (sel.value==='__other__') ? 'block' : 'none';
+}
+
 function acFillGoalFromKpi(tEnc, pEnc){
   const teacher = decodeURIComponent(tEnc), project = decodeURIComponent(pEnc);
   const ta = document.getElementById('ac_goal');
@@ -4031,6 +4055,9 @@ async function saveAccount(tEnc, pEnc){
   let dept = document.getElementById('ac_dept').value;
   if(dept==='__other__') dept = (document.getElementById('ac_dept_other').value||'').trim();
 
+  let budgetSrc = document.getElementById('ac_budget_src').value;
+  if(budgetSrc==='__other__') budgetSrc = (document.getElementById('ac_budget_src_other').value||'').trim();
+
   const budget = {};
   document.querySelectorAll('#accountProjectPanel .ac-budget').forEach(inp=>{
     budget[inp.dataset.yr] = inp.value.trim();
@@ -4043,7 +4070,7 @@ async function saveAccount(tEnc, pEnc){
   const projectAccount = {
     strategyId: stratId,
     strategyName: strat ? strat.name : '',
-    tacticText, objective, goalOutput, budget, expected, dept,
+    tacticText, objective, goalOutput, budget, budgetSrc, expected, dept,
     savedAt: new Date().toISOString()
   };
   const payload = { ...(savedData[key]||{}), teacher, project, projectAccount };
@@ -4082,12 +4109,15 @@ function acGenPrompt(){
   const nOut = parseInt(document.getElementById('acAiNOut').value) || 4;
 
   // ดึงบริบทจากที่กรอก/บันทึกไว้
+  const key = projectKey(teacher, project);
+  const d = savedData[key] || {};
   const stratSel = document.getElementById('ac_strat');
   const tacticSel = document.getElementById('ac_tactic');
   const sid = stratSel ? parseInt(stratSel.value) : 0;
   const strat = sid ? STRATEGIES.find(s=>s.id===sid) : null;
   const tactic = tacticSel ? tacticSel.value : '';
-  const goalNow = (document.getElementById('ac_goal')?.value || acDefaultGoalOutput(teacher, project) || '').trim();
+  const problem = (d.problem || '').trim();
+  const kpiList = (ttGetProjectKpis(teacher, project)||[]).map((k,i)=>(i+1)+'. '+(k.kpi||'')).join('\n').trim();
   const objNow = (document.getElementById('ac_objective')?.value || '').trim();
 
   const ctxLines = [
@@ -4096,7 +4126,8 @@ function acGenPrompt(){
     strat ? ('ยุทธศาสตร์          : '+strat.id+'. '+strat.name) : '',
     strat ? ('เป้าประสงค์         : '+strat.goal) : '',
     tactic ? ('กลยุทธ์             : '+tactic) : '',
-    goalNow ? ('เป้าหมาย/ตัวชี้วัด (KPI) ของโครงการ :\n'+goalNow) : '',
+    problem ? ('ปัญหา/ความต้องการ/นโยบาย (ใช้เป็นฐานคิดเป้าหมาย) :\n'+problem) : '',
+    kpiList ? ('ตัวชี้วัด (KPI) ของโครงการ :\n'+kpiList) : '',
     objNow ? ('ร่างวัตถุประสงค์เดิม (ถ้ามี) :\n'+objNow) : ''
   ].filter(Boolean).join('\n');
 
@@ -4105,7 +4136,10 @@ function acGenPrompt(){
 
   const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการเขียนโครงการของสถานศึกษา
 
-ภารกิจ: ร่าง "วัตถุประสงค์" จำนวน ${nObj} ข้อ และ "ผลที่คาดว่าจะได้รับ" จำนวน ${nOut} ข้อ ของโครงการต่อไปนี้ ให้สอดคล้องกับเป้าหมาย/ตัวชี้วัด (KPI) ยุทธศาสตร์ และกลยุทธ์ที่กำหนด
+ภารกิจ: ร่างเนื้อหา 3 ส่วนของโครงการต่อไปนี้ ให้สอดคล้องกับปัญหา/ความต้องการ/นโยบาย ตัวชี้วัด (KPI) ยุทธศาสตร์ และกลยุทธ์ที่กำหนด
+  (1) "เป้าหมาย (ผลผลิตของโครงการ)" จำนวน 1 ย่อหน้า
+  (2) "วัตถุประสงค์" จำนวน ${nObj} ข้อ
+  (3) "ผลที่คาดว่าจะได้รับ" จำนวน ${nOut} ข้อ
 
 ═══════════════════════════════════════════════
 ข้อมูลโครงการ
@@ -4115,15 +4149,19 @@ ${ctxLines}
 ═══════════════════════════════════════════════
 ข้อกำหนดสำคัญ (ห้ามละเมิด)
 ═══════════════════════════════════════════════
-1. "วัตถุประสงค์" ทุกข้อต้องขึ้นต้นด้วย "ตัวเลขข้อ. " เช่น "1. เพื่อ..." "2. เพื่อ..." และต้องขึ้นต้นด้วยคำกริยาแสดงเจตนา (เพื่อพัฒนา / เพื่อส่งเสริม / เพื่อยกระดับ / เพื่อสร้าง ฯลฯ) สอดคล้องกับเป้าหมาย (KPI) ของโครงการ
-2. "ผลที่คาดว่าจะได้รับ" ทุกข้อต้องขึ้นต้นด้วย "ตัวเลขข้อ. " เช่น "1. ..." "2. ..." เป็นผลลัพธ์/ผลกระทบเชิงรูปธรรมที่จะเกิดขึ้นเมื่อโครงการสำเร็จ อาจระบุค่าร้อยละ จำนวน หรือกลุ่มเป้าหมายที่ชัดเจน
-3. ใช้ภาษาไทยทางการ กระชับ ชัดเจน ใช้งานได้จริงในบริบทของโรงเรียน
-4. ห้ามใช้ bullet (-, •, *) ห้ามใช้ markdown (#, **) ห้ามใช้ตาราง
-5. ห้ามมีคำอธิบาย คำนำ หรือบทสรุปใดๆ นอกจากรูปแบบที่กำหนดด้านล่างนี้เท่านั้น
+1. "เป้าหมาย (ผลผลิตของโครงการ)" ให้เขียนเป็น "ประโยคย่อหน้าเดียว กระชับ" ไม่ใส่เลขข้อ ไม่แตกเป็นรายข้อ — ระบุให้ชัดว่า "ใคร" (กลุ่มเป้าหมาย) "ได้อะไร/เกิดประโยชน์อะไร" โดยพิจารณาจากข้อมูล "ปัญหา/ความต้องการ/นโยบาย" เป็นฐานคิดหลัก
+2. "วัตถุประสงค์" ทุกข้อต้องขึ้นต้นด้วย "ตัวเลขข้อ. " เช่น "1. เพื่อ..." "2. เพื่อ..." และขึ้นต้นด้วยคำกริยาแสดงเจตนา (เพื่อพัฒนา / เพื่อส่งเสริม / เพื่อยกระดับ / เพื่อสร้าง ฯลฯ) สอดคล้องกับเป้าหมายและ KPI ของโครงการ
+3. "ผลที่คาดว่าจะได้รับ" ทุกข้อต้องขึ้นต้นด้วย "ตัวเลขข้อ. " เช่น "1. ..." "2. ..." เป็นผลลัพธ์/ผลกระทบเชิงรูปธรรมที่จะเกิดขึ้นเมื่อโครงการสำเร็จ อาจระบุค่าร้อยละ จำนวน หรือกลุ่มเป้าหมายที่ชัดเจน
+4. ใช้ภาษาไทยทางการ กระชับ ชัดเจน ใช้งานได้จริงในบริบทของโรงเรียน
+5. ห้ามใช้ bullet (-, •, *) ห้ามใช้ markdown (#, **) ห้ามใช้ตาราง
+6. ห้ามมีคำอธิบาย คำนำ หรือบทสรุปใดๆ นอกจากรูปแบบที่กำหนดด้านล่างนี้เท่านั้น
 
 ═══════════════════════════════════════════════
 รูปแบบผลลัพธ์ที่ต้องการ — ตอบตามโครงสร้างนี้เป๊ะ ๆ ทุกตัวอักษร
 ═══════════════════════════════════════════════
+เป้าหมาย (ผลผลิตของโครงการ)
+[เขียนประโยคย่อหน้าเดียว กระชับ บอกว่าใครได้อะไร/เกิดประโยชน์อะไร]
+
 วัตถุประสงค์
 ${objTemplate}
 
@@ -4203,6 +4241,7 @@ function paCollect(){
         objective: pa.objective||'',
         goalOutput: pa.goalOutput||'',
         budget: pa.budget||{},
+        budgetSrc: pa.budgetSrc||'',
         expected: pa.expected||'',
         dept: pa.dept||''
       });
@@ -4256,16 +4295,29 @@ function paBuildTable(rows){
 
   rows.forEach((r,i)=>{
     const b = r.budget || {};
+    const src = r.budgetSrc ? '('+r.budgetSrc+')' : '';
+    // ฟังก์ชันสร้างเนื้อหาช่องงบ — ตัวเลข บรรทัดแรก, (ที่มางบ) บรรทัดสอง สีดำขนาดปกติ
+    const budgetCell = (val)=>{
+      const fmt = paBudgetFmt(val);
+      if(!fmt && !src) return dxPara('',{center:true});
+      if(!fmt) return dxPara(src,{center:true});
+      if(!src) return dxPara(fmt,{center:true});
+      return '<w:p><w:pPr><w:spacing w:after="0" w:line="240" w:lineRule="auto"/><w:jc w:val="center"/></w:pPr>'+
+        dxRun(fmt,{})+
+        '<w:r><w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/></w:rPr><w:br/></w:r>'+
+        dxRun(src,{})+
+      '</w:p>';
+    };
     trs += '<w:tr><w:trPr></w:trPr>'+
-      paTc(C[0], dxPara(String(i+1),{center:true}), {valign:'center'})+
+      paTc(C[0], dxPara(String(i+1),{center:true}), {valign:'top'})+
       paTc(C[1], dxPara(r.project,{}), {valign:'top'})+
       paTc(C[2], dxPara(r.objective,{}), {valign:'top'})+
       paTc(C[3], dxPara(r.goalOutput,{}), {valign:'top'})+
-      paTc(C[4], dxPara(paBudgetFmt(b.y61),{center:true}), {valign:'center'})+
-      paTc(C[5], dxPara(paBudgetFmt(b.y72),{center:true}), {valign:'center'})+
-      paTc(C[6], dxPara(paBudgetFmt(b.y73),{center:true}), {valign:'center'})+
-      paTc(C[7], dxPara(paBudgetFmt(b.y74),{center:true}), {valign:'center'})+
-      paTc(C[8], dxPara(paBudgetFmt(b.y75),{center:true}), {valign:'center'})+
+      paTc(C[4], budgetCell(b.y61), {valign:'top'})+
+      paTc(C[5], budgetCell(b.y72), {valign:'top'})+
+      paTc(C[6], budgetCell(b.y73), {valign:'top'})+
+      paTc(C[7], budgetCell(b.y74), {valign:'top'})+
+      paTc(C[8], budgetCell(b.y75), {valign:'top'})+
       paTc(C[9], dxPara(r.expected,{}), {valign:'top'})+
       paTc(C[10], dxPara(r.dept,{}), {valign:'top'})+
     '</w:tr>';
