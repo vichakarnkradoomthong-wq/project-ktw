@@ -3970,6 +3970,7 @@ function openAccountEditor(teacherEnc, projectEnc){
         <div style="margin-top:7px;display:flex;flex-wrap:wrap;gap:7px">
           <button type="button" onclick="acFillGoalTpl('student')" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--primary);font-size:0.76rem;cursor:pointer;font-family:inherit">📋 ดึงเป้าหมายนักเรียน</button>
           <button type="button" onclick="acFillGoalTpl('teacher')" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--primary);font-size:0.76rem;cursor:pointer;font-family:inherit">📋 ดึงเป้าหมายครู</button>
+          <button type="button" onclick="acFillGoalTpl('both')" style="padding:6px 12px;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);color:var(--primary);font-size:0.76rem;cursor:pointer;font-family:inherit">📋 ดึงนักเรียน+ครู</button>
         </div>
 
         <div style="margin:14px 0 6px;font-size:0.8rem;font-weight:600;color:var(--text2)">2) เชิงคุณภาพ</div>
@@ -4050,9 +4051,12 @@ function acToggleBudgetSrcOther(){
 function acFillGoalTpl(which){
   const ta = document.getElementById('ac_goal_quant');
   if(!ta) return;
-  const tpl = which==='teacher'
-    ? 'เชิงปริมาณ  ครูและบุคลากรทางการศึกษา จำนวน...คน'
-    : 'เชิงปริมาณ  ผู้เรียนระดับชั้นมัธยมศึกษาปีที่ 1-6 จำนวน 210 คน';
+  const TPL = {
+    student: 'เชิงปริมาณ  ผู้เรียนระดับชั้นมัธยมศึกษาปีที่ 1-6 จำนวน 210 คน',
+    teacher: 'เชิงปริมาณ  ครูและบุคลากรทางการศึกษา จำนวน...คน',
+    both:    'เชิงปริมาณ  ผู้เรียนระดับชั้นมัธยมศึกษาปีที่ 1-6 จำนวน 210 คน\nครูและบุคลากรทางการศึกษา จำนวน...คน'
+  };
+  const tpl = TPL[which] || TPL.student;
   if(ta.value.trim()){
     Swal.fire({icon:'warning',title:'เขียนทับข้อความเดิม?',text:'จะแทนที่เป้าหมายเชิงปริมาณด้วย template',showCancelButton:true,confirmButtonText:'แทนที่',cancelButtonText:'ยกเลิก',confirmButtonColor:'#9d174d'})
       .then(r=>{ if(r.isConfirmed) ta.value = tpl; });
@@ -4158,8 +4162,8 @@ function acGenPrompt(){
   const prompt = `คุณเป็นผู้เชี่ยวชาญด้านการเขียนโครงการของสถานศึกษา
 
 ภารกิจ: ร่างเนื้อหา 3 ส่วนของโครงการต่อไปนี้ ให้สอดคล้องกับปัญหา/ความต้องการ/นโยบาย ตัวชี้วัด (KPI) ยุทธศาสตร์ และกลยุทธ์ที่กำหนด
-  (1) "เป้าหมาย (ผลผลิตของโครงการ)" จำนวน 1 ย่อหน้า
-  (2) "วัตถุประสงค์" จำนวน ${nObj} ข้อ
+  (1) "วัตถุประสงค์" จำนวน ${nObj} ข้อ
+  (2) "เป้าหมาย (ผลผลิตของโครงการ)" แยกเชิงปริมาณ/เชิงคุณภาพ
   (3) "ผลที่คาดว่าจะได้รับ" จำนวน ${nOut} ข้อ
 
 ═══════════════════════════════════════════════
@@ -4183,14 +4187,14 @@ ${ctxLines}
 ═══════════════════════════════════════════════
 รูปแบบผลลัพธ์ที่ต้องการ — ตอบตามโครงสร้างนี้เป๊ะ ๆ ทุกตัวอักษร
 ═══════════════════════════════════════════════
+วัตถุประสงค์
+${objTemplate}
+
 เป้าหมาย (ผลผลิตของโครงการ)
 เชิงปริมาณ
 1. [กลุ่มเป้าหมาย + จำนวน...คน]
 เชิงคุณภาพ
 1. เป้าหมายเชิงคุณภาพ [ประโยคสั้น กระชับ บอกว่าใครได้อะไร/เกิดประโยชน์อะไร]
-
-วัตถุประสงค์
-${objTemplate}
 
 ผลที่คาดว่าจะได้รับ
 ${outTemplate}
