@@ -918,6 +918,26 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       </div>
     </div>
 
+    <!-- ───── กลุ่ม 2.5 · ลบโครงการ ───── -->
+    <div class="settings-group collapsed">
+      <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
+        <span class="sg-label"><span class="sg-ico">🗑️</span> ลบโครงการ</span>
+        <span class="sg-arrow">▾</span>
+      </button>
+      <div class="settings-group-body">
+        <div class="form-group">
+          <div class="detail-label">เลือกผู้รับผิดชอบ เพื่อดูรายการโครงการที่ลบได้</div>
+          <select id="delTeacherSelect" class="form-select" onchange="renderDeleteProjectList()">
+            <option value="">— เลือกผู้รับผิดชอบ —</option>
+          </select>
+          <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
+            การลบโครงการจะลบข้อมูลที่กรอกไว้ทั้งหมดของโครงการนั้น (เป้าประสงค์ · ตัวชี้วัด · ค่าเป้าหมาย · บัญชีโครงการ) ถาวร แนะนำให้กด "💾 สำรองข้อมูล" ก่อนลบ
+          </div>
+          <div id="deleteProjectList" style="margin-top:10px"></div>
+        </div>
+      </div>
+    </div>
+
     <!-- ───── กลุ่ม 3 · สร้างเอกสาร / ส่งออก ───── -->
     <div class="settings-group collapsed">
       <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
@@ -2561,6 +2581,7 @@ function openSettingsModal() {
   document.getElementById('announceText').value = localStorage.getItem('ktw_announce')||'';
   document.getElementById('qaText').value = localStorage.getItem('ktw_qa_indicators')||'';
   fillSignatoryInputs();
+  populateDeleteTeacherSelect();
   document.getElementById('settingsModal').classList.add('open');
 }
 function toggleSettingsGroup(head){
@@ -2761,6 +2782,81 @@ function backupDataJSON() {
   } catch(err) {
     Swal.fire({icon:'error',title:'สำรองข้อมูลไม่สำเร็จ',text:err.message});
   }
+}
+
+// ─── ลบโครงการ (รายโครงการ) ───
+function populateDeleteTeacherSelect() {
+  const sel = document.getElementById('delTeacherSelect');
+  if (!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— เลือกผู้รับผิดชอบ —</option>' +
+    projects.map(t => `<option value="${ea(t.teacher)}">${ea(t.teacher)} (${t.projects.length})</option>`).join('');
+  if (cur && projects.some(t => t.teacher === cur)) sel.value = cur;
+  renderDeleteProjectList();
+}
+
+function renderDeleteProjectList() {
+  const wrap = document.getElementById('deleteProjectList');
+  const teacher = document.getElementById('delTeacherSelect')?.value || '';
+  if (!wrap) return;
+  if (!teacher) { wrap.innerHTML = ''; return; }
+  const entry = projects.find(t => t.teacher === teacher);
+  if (!entry || !entry.projects.length) {
+    wrap.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text3);background:var(--surface2);border:1.5px dashed var(--border);border-radius:10px">ไม่มีโครงการของผู้รับผิดชอบนี้</div>`;
+    return;
+  }
+  const tEnc = encodeURIComponent(teacher);
+  wrap.innerHTML = entry.projects.map((p, i) => `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 12px;background:var(--surface);border:1.5px solid var(--border);border-radius:9px;margin-bottom:7px">
+      <div style="font-size:0.85rem;color:var(--text);flex:1">${ea(p)}</div>
+      <button class="project-btn" style="color:var(--danger);border-color:#fca5a5;flex-shrink:0" onclick="confirmDeleteProject('${tEnc}',${i})">🗑 ลบ</button>
+    </div>`).join('');
+}
+
+function confirmDeleteProject(teacherEnc, idx) {
+  const teacher = decodeURIComponent(teacherEnc);
+  const entry = projects.find(t => t.teacher === teacher);
+  if (!entry || !entry.projects[idx]) return;
+  const project = entry.projects[idx];
+  Swal.fire({
+    icon: 'warning',
+    title: 'ยืนยันการลบโครงการ?',
+    html: `จะลบโครงการ <b>${ea(project)}</b> ของ <b>${ea(teacher)}</b><br><span style="color:var(--danger)">ข้อมูลที่กรอกไว้ทั้งหมดของโครงการนี้ (เป้าประสงค์ · ตัวชี้วัด · ค่าเป้าหมาย · บัญชีโครงการ) จะถูกลบถาวรและกู้คืนไม่ได้</span>`,
+    showCancelButton: true,
+    confirmButtonText: 'ลบถาวร',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#dc2626'
+  }).then(res => {
+    if (!res.isConfirmed) return;
+    deleteProjectNow(teacher, idx);
+  });
+}
+
+async function deleteProjectNow(teacher, idx) {
+  const entry = projects.find(t => t.teacher === teacher);
+  if (!entry) return;
+  const project = entry.projects[idx];
+  if (project === undefined) return;
+  const key = projectKey(teacher, project);
+
+  // ลบชื่อโครงการออกจากรายชื่อของครูคนนี้
+  entry.projects.splice(idx, 1);
+
+  // ลบข้อมูลที่กรอกไว้ทั้งหมดของโครงการนี้ (เป้าประสงค์/ตัวชี้วัด/ค่าเป้าหมาย/บัญชีโครงการ อยู่ในเอกสารเดียวกัน)
+  delete savedData[key];
+  if (db && fsModules?.deleteDoc) {
+    try { await fsModules.deleteDoc(fsModules.doc(db, 'assignments', key)); } catch(e) { console.warn('deleteDoc:', e); }
+  }
+
+  localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+  persistProjectsCloud();
+  renderLandingStats();
+
+  populateDeleteTeacherSelect();
+  document.getElementById('delTeacherSelect').value = teacher;
+  renderDeleteProjectList();
+
+  Swal.fire({icon:'success',title:'ลบโครงการสำเร็จ',timer:1400,showConfirmButton:false,toast:true,position:'top-end'});
 }
 
 // ─── EXPORT ───
