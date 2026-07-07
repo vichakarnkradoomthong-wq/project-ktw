@@ -906,6 +906,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       <div class="settings-group-body">
         <div class="form-group">
           <div class="detail-label">นำเข้าชื่อโครงการและผู้รับผิดชอบ (CSV / Excel)</div>
+          <button class="project-btn" style="margin-bottom:9px;border-color:#0f766e;color:#0f766e" onclick="downloadProjectTemplate()">⬇️ ดาวน์โหลด Template (เพิ่มโครงการ.xlsx)</button>
           <input type="file" id="importFile" accept=".csv,.xlsx,.xls"
             style="padding:8px;border:1.5px dashed var(--border);border-radius:8px;width:100%;font-family:'Sarabun',sans-serif;font-size:0.84rem;">
           <div style="font-size:0.74rem;color:var(--text3);margin-top:5px;">
@@ -1041,6 +1042,24 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
             <button class="project-btn primary-btn" onclick="saveAnnounce()">💾 บันทึกประกาศ</button>
             <button class="project-btn" onclick="clearAnnounce()">🗑 ล้างประกาศ</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ───── กลุ่ม 6 · สำรองข้อมูล ───── -->
+    <div class="settings-group collapsed">
+      <button class="settings-group-head" onclick="toggleSettingsGroup(this)">
+        <span class="sg-label"><span class="sg-ico">💾</span> สำรองข้อมูล</span>
+        <span class="sg-arrow">▾</span>
+      </button>
+      <div class="settings-group-body">
+        <div class="form-group">
+          <div class="detail-label">ดาวน์โหลดไฟล์สำรองข้อมูลทั้งหมด (.json)</div>
+          <div style="font-size:0.74rem;color:var(--text3);margin-bottom:8px;line-height:1.6">
+            รวมข้อมูลโครงการ, ข้อมูลที่ครูกรอกทุกโครงการ, ฟอร์ม QA, ลิงก์ AI และผู้ลงนาม ไว้ในไฟล์เดียว
+            แนะนำให้สำรองก่อนนำเข้าข้อมูลก้อนใหญ่ หรือก่อนล้างข้อมูลทุกครั้ง
+          </div>
+          <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#0f766e,#14b8a6);border-color:#0f766e" onclick="backupDataJSON()">💾 ดาวน์โหลดไฟล์สำรอง (.json)</button>
         </div>
       </div>
     </div>
@@ -2582,9 +2601,7 @@ function clearAnnounce() {
   document.getElementById('announceText').value='';
 }
 
-// ─── IMPORT (แก้ไขให้เลือกได้ว่าจะ "แทนที่" หรือ "เพิ่มโครงการใหม่" ───
-// แทนที่ฟังก์ชัน importProjects() เดิมทั้งหมด (บรรทัด ~2586-2626 ใน index.html) ด้วยโค้ดนี้
-
+// ─── IMPORT (แก้ไขการ parse + เลือกแทนที่/เพิ่ม) ───
 function importProjects() {
   const file = document.getElementById('importFile').files[0];
   if (!file) { Swal.fire({icon:'warning',title:'กรุณาเลือกไฟล์',confirmButtonColor:'#6c3fc5'}); return; }
@@ -2702,18 +2719,48 @@ function importProjects() {
   if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file,'UTF-8');
   else reader.readAsBinaryString(file);
 }
-      projects = Object.entries(map).map(([teacher,ps])=>({teacher,projects:ps}));
-      localStorage.setItem('ktw_projects2', JSON.stringify(projects));
-      persistProjectsCloud();
-      closeModal('settingsModal');
-      renderLandingStats();
-      Swal.fire({icon:'success',title:`นำเข้าสำเร็จ!`,html:`พบ <b>${count}</b> ผู้รับผิดชอบ <b>${projects.reduce((a,t)=>a+t.projects.length,0)}</b> โครงการ`,confirmButtonColor:'#6c3fc5'});
-    } catch(err) {
-      Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:err.message});
-    }
-  };
-  if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file,'UTF-8');
-  else reader.readAsBinaryString(file);
+
+// ─── TEMPLATE ดาวน์โหลดไฟล์ตัวอย่างสำหรับนำเข้าโครงการ ───
+function downloadProjectTemplate() {
+  const rows = [
+    ['ชื่อโครงการ', 'ชื่อครูผู้รับผิดชอบ'],
+    ['ตัวอย่าง: โครงการส่งเสริมการอ่าน', 'นายสมชาย ใจดี'],
+    ['ตัวอย่าง: โครงการพัฒนาทักษะดิจิทัล', 'นางสาวสมหญิง รักเรียน']
+  ];
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [45, 30].map(w => ({ wch: w }));
+  XLSX.utils.book_append_sheet(wb, ws, 'เพิ่มโครงการ');
+  XLSX.writeFile(wb, 'เพิ่มโครงการ.xlsx');
+}
+
+// ─── สำรองข้อมูลทั้งหมดเป็น JSON (โครงการ, ข้อมูลที่ครูกรอก, ฟอร์ม QA, ลิงก์ AI, ผู้ลงนาม ฯลฯ) ───
+function backupDataJSON() {
+  try {
+    const backup = {
+      backupDate: new Date().toISOString(),
+      appVersion: 'ktw-school-app',
+      projects,
+      savedData,
+      qaForms,
+      aiLinks,
+      qaIndicators: localStorage.getItem('ktw_qa_indicators') || '',
+      announce: localStorage.getItem('ktw_announce') || '',
+      signatories: JSON.parse(localStorage.getItem('ktw_signatories') || 'null')
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'KTW_Backup_' + new Date().toISOString().slice(0,10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    Swal.fire({icon:'success',title:'สำรองข้อมูลสำเร็จ!',html:`บันทึกไฟล์ <b>${a.download}</b> แล้ว เก็บไว้ในที่ปลอดภัย`,confirmButtonColor:'#6c3fc5'});
+  } catch(err) {
+    Swal.fire({icon:'error',title:'สำรองข้อมูลไม่สำเร็จ',text:err.message});
+  }
 }
 
 // ─── EXPORT ───
