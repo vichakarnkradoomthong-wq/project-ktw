@@ -934,6 +934,7 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
             การลบโครงการจะลบข้อมูลที่กรอกไว้ทั้งหมดของโครงการนั้น (เป้าประสงค์ · ตัวชี้วัด · ค่าเป้าหมาย · บัญชีโครงการ) ถาวร แนะนำให้กด "💾 สำรองข้อมูล" ก่อนลบ
           </div>
           <div id="deleteProjectList" style="margin-top:10px"></div>
+          <button id="delTeacherBtn" class="project-btn" style="display:none;margin-top:10px;width:100%;justify-content:center;color:#fff;background:var(--danger);border-color:var(--danger);font-weight:700" onclick="confirmDeleteTeacher()">🗑️ ลบผู้รับผิดชอบคนนี้ทั้งหมด (พร้อมโครงการทุกรายการ)</button>
         </div>
       </div>
     </div>
@@ -2797,9 +2798,15 @@ function populateDeleteTeacherSelect() {
 
 function renderDeleteProjectList() {
   const wrap = document.getElementById('deleteProjectList');
+  const btn = document.getElementById('delTeacherBtn');
   const teacher = document.getElementById('delTeacherSelect')?.value || '';
   if (!wrap) return;
-  if (!teacher) { wrap.innerHTML = ''; return; }
+  if (!teacher) {
+    wrap.innerHTML = '';
+    if (btn) btn.style.display = 'none';
+    return;
+  }
+  if (btn) btn.style.display = 'block';
   const entry = projects.find(t => t.teacher === teacher);
   if (!entry || !entry.projects.length) {
     wrap.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text3);background:var(--surface2);border:1.5px dashed var(--border);border-radius:10px">ไม่มีโครงการของผู้รับผิดชอบนี้</div>`;
@@ -2811,6 +2818,61 @@ function renderDeleteProjectList() {
       <div style="font-size:0.85rem;color:var(--text);flex:1">${ea(p)}</div>
       <button class="project-btn" style="color:var(--danger);border-color:#fca5a5;flex-shrink:0" onclick="confirmDeleteProject('${tEnc}',${i})">🗑 ลบ</button>
     </div>`).join('');
+}
+
+function confirmDeleteTeacher() {
+  const teacher = document.getElementById('delTeacherSelect')?.value || '';
+  if (!teacher) return;
+  const entry = projects.find(t => t.teacher === teacher);
+  const projCount = entry ? entry.projects.length : 0;
+  Swal.fire({
+    icon: 'error',
+    title: 'ยืนยันการลบผู้รับผิดชอบทั้งหมด?',
+    html: `จะลบ <b>${ea(teacher)}</b> ออกจากระบบทั้งหมด พร้อมโครงการ <b>${projCount}</b> รายการ<br><span style="color:var(--danger)">ข้อมูลทุกโครงการของครูคนนี้จะถูกลบถาวรและกู้คืนไม่ได้</span><br><br>พิมพ์ชื่อ <b>${ea(teacher)}</b> ด้านล่างเพื่อยืนยัน`,
+    input: 'text',
+    inputPlaceholder: teacher,
+    showCancelButton: true,
+    confirmButtonText: 'ลบถาวร',
+    cancelButtonText: 'ยกเลิก',
+    confirmButtonColor: '#dc2626',
+    preConfirm: (val) => {
+      if (val !== teacher) {
+        Swal.showValidationMessage('พิมพ์ชื่อให้ตรงกันก่อนถึงจะลบได้');
+        return false;
+      }
+      return true;
+    }
+  }).then(res => {
+    if (!res.isConfirmed) return;
+    deleteTeacherNow(teacher);
+  });
+}
+
+async function deleteTeacherNow(teacher) {
+  const idx = projects.findIndex(t => t.teacher === teacher);
+  if (idx === -1) return;
+  const entry = projects[idx];
+  const projList = entry.projects.slice();
+
+  // ลบข้อมูลที่กรอกไว้ของทุกโครงการของครูคนนี้ (assignments docs ใน Firestore + savedData ในเครื่อง)
+  for (const project of projList) {
+    const key = projectKey(teacher, project);
+    delete savedData[key];
+    if (db && fsModules?.deleteDoc) {
+      try { await fsModules.deleteDoc(fsModules.doc(db, 'assignments', key)); } catch(e) { console.warn('deleteDoc:', e); }
+    }
+  }
+
+  // ลบผู้รับผิดชอบออกจากรายชื่อ
+  projects.splice(idx, 1);
+
+  localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+  persistProjectsCloud();
+  renderLandingStats();
+
+  populateDeleteTeacherSelect();
+
+  Swal.fire({icon:'success',title:'ลบผู้รับผิดชอบสำเร็จ',html:`ลบ <b>${ea(teacher)}</b> พร้อมโครงการทั้งหมด (${projList.length} รายการ) แล้ว`,confirmButtonColor:'#6c3fc5'});
 }
 
 function confirmDeleteProject(teacherEnc, idx) {
