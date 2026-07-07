@@ -2582,7 +2582,9 @@ function clearAnnounce() {
   document.getElementById('announceText').value='';
 }
 
-// ─── IMPORT (แก้ไขการ parse) ───
+// ─── IMPORT (แก้ไขให้เลือกได้ว่าจะ "แทนที่" หรือ "เพิ่มโครงการใหม่" ───
+// แทนที่ฟังก์ชัน importProjects() เดิมทั้งหมด (บรรทัด ~2586-2626 ใน index.html) ด้วยโค้ดนี้
+
 function importProjects() {
   const file = document.getElementById('importFile').files[0];
   if (!file) { Swal.fire({icon:'warning',title:'กรุณาเลือกไฟล์',confirmButtonColor:'#6c3fc5'}); return; }
@@ -2620,10 +2622,86 @@ function importProjects() {
         if (!map[teacher].includes(cleanProj)) map[teacher].push(cleanProj);
       });
 
-      const count = Object.keys(map).length;
-      if (count === 0) {
+      const importedCount = Object.keys(map).length;
+      const importedProjCount = Object.values(map).reduce((a,ps)=>a+ps.length,0);
+      if (importedCount === 0) {
         Swal.fire({icon:'error',title:'ไม่พบข้อมูล',text:'กรุณาตรวจสอบรูปแบบไฟล์: คอลัมน์ A = ชื่อโครงการ, คอลัมน์ B = ชื่อครู'}); return;
       }
+
+      const hasExisting = projects.length > 0;
+
+      Swal.fire({
+        icon:'question',
+        title:`พบ ${importedCount} ผู้รับผิดชอบ / ${importedProjCount} โครงการ`,
+        text: hasExisting ? 'ต้องการแทนที่ข้อมูลเดิมทั้งหมด หรือเพิ่มโครงการใหม่เข้าไปโดยไม่ลบของเดิม?' : 'นำเข้าข้อมูลทั้งหมด?',
+        showCancelButton: true,
+        showDenyButton: hasExisting,
+        confirmButtonText: hasExisting ? 'แทนที่ทั้งหมด' : 'นำเข้า',
+        denyButtonText: 'เพิ่มโครงการใหม่ (ไม่ลบของเดิม)',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#dc2626',
+        denyButtonColor: '#6c3fc5'
+      }).then(res => {
+        let addedCount = 0;
+        let skippedCount = 0;   // จำนวนโครงการที่ข้าม เพราะซ้ำกับของเดิม (ตอนเลือก "เพิ่มโครงการใหม่")
+        let newTeacherCount = 0; // จำนวนครูใหม่ที่ไม่เคยมีในระบบมาก่อน
+
+        if (res.isConfirmed) {
+          // แทนที่ทั้งหมด (พฤติกรรมเดิม)
+          projects = Object.entries(map).map(([teacher,ps])=>({teacher,projects:ps}));
+          addedCount = importedProjCount;
+        } else if (res.isDenied) {
+          // เพิ่มโครงการใหม่เข้าไปในโครงสร้างเดิม — ไม่ลบ ไม่แตะของเดิม
+          // ครูที่มีอยู่แล้ว -> เติมโครงการใหม่เข้า array เดิม (วนลูปเหมือนโครงการอื่น ๆ ปกติ)
+          // ครูใหม่ -> เพิ่มเป็น entry ใหม่ในอาเรย์ projects (โครงสร้างเดียวกันทุกประการ)
+          Object.entries(map).forEach(([teacher,ps]) => {
+            let entry = projects.find(t => t.teacher === teacher);
+            if (!entry) {
+              entry = { teacher, projects: [] };
+              projects.push(entry);
+              newTeacherCount++;
+            }
+            ps.forEach(p => {
+              if (!entry.projects.includes(p)) {
+                entry.projects.push(p);
+                addedCount++;
+              } else {
+                skippedCount++; // ชื่อโครงการนี้มีอยู่แล้วของครูคนนี้ -> ข้าม ไม่เพิ่มซ้ำ
+              }
+            });
+          });
+        } else {
+          return; // ยกเลิก — ไม่ทำอะไรเลย ข้อมูลเดิมปลอดภัย 100%
+        }
+
+        localStorage.setItem('ktw_projects2', JSON.stringify(projects));
+        persistProjectsCloud();
+        closeModal('settingsModal');
+        renderLandingStats();
+
+        let html;
+        if (res.isConfirmed) {
+          html = `แทนที่ข้อมูลเดิม พบ <b>${importedCount}</b> ผู้รับผิดชอบ <b>${importedProjCount}</b> โครงการ`;
+        } else {
+          html = `เพิ่มโครงการใหม่ <b>${addedCount}</b> รายการ`
+               + (newTeacherCount ? ` (มีครูใหม่ <b>${newTeacherCount}</b> คน)` : '')
+               + ` <br>ของเดิมไม่ถูกลบ`
+               + (skippedCount ? `<br><span style="color:#b45309">⚠️ ข้าม <b>${skippedCount}</b> รายการ เพราะชื่อโครงการซ้ำกับที่มีอยู่แล้วของครูคนเดิม</span>` : '');
+        }
+        Swal.fire({
+          icon:'success',
+          title:'นำเข้าสำเร็จ!',
+          html,
+          confirmButtonColor:'#6c3fc5'
+        });
+      });
+    } catch(err) {
+      Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:err.message});
+    }
+  };
+  if (file.name.toLowerCase().endsWith('.csv')) reader.readAsText(file,'UTF-8');
+  else reader.readAsBinaryString(file);
+}
       projects = Object.entries(map).map(([teacher,ps])=>({teacher,projects:ps}));
       localStorage.setItem('ktw_projects2', JSON.stringify(projects));
       persistProjectsCloud();
