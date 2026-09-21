@@ -874,6 +874,71 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
     </div>
   </div>
 </div>
+<!-- ═══ หน้าสาธารณะ #tools · ใบปะหน้าตัวชี้วัด & Prompt เครื่องมือเก็บข้อมูล (ลิงก์ส่งให้ครู) ═══ -->
+<div id="coverToolView" style="display:none;min-height:100vh;background:#f5f0ff">
+  <div class="hero" style="padding:34px 24px 40px">
+    <div class="hero-inner">
+      <div class="hero-school-logo">
+        <img src="https://nonthaphathr.github.io/uploadimg/logoschool.png" alt="Logo KTW"
+             onerror="this.style.display='none';this.parentElement.innerHTML='🏫'">
+      </div>
+      <div class="hero-subtitle">โรงเรียนกระดุมทองวิทยา · สังกัด อบจ.ศรีสะเกษ</div>
+      <h1 class="hero-title" style="font-size:1.5rem">ใบปะหน้าตัวชี้วัด<br>และเครื่องมือเก็บข้อมูล</h1>
+      <div class="hero-desc">เลือกชื่อของท่าน → ดาวน์โหลดใบปะหน้า และรับ Prompt สั่งสร้างเครื่องมือที่ใช้เป็นที่มาของค่าร้อยละ</div>
+    </div>
+  </div>
+
+  <div class="container" style="max-width:720px;padding-top:24px">
+    <div id="ctLoading" style="text-align:center;color:var(--text3);padding:30px">⏳ กำลังโหลดข้อมูล...</div>
+
+    <div id="ctBody" style="display:none">
+      <div class="detail-section" style="background:var(--surface);box-shadow:var(--shadow)">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">เลือกชื่อของท่าน (ครูผู้รับผิดชอบตัวชี้วัด)</label>
+          <select class="form-select" id="ctTeacher" onchange="ctOnTeacherChange()">
+            <option value="">— เลือกชื่อครู —</option>
+          </select>
+        </div>
+      </div>
+
+      <div id="ctProjects"></div>
+
+      <div id="ctAllBar" style="display:none">
+        <div class="detail-section" style="background:#faf5ff;border:1.5px solid #ddd6fe;margin-top:14px">
+          <div class="detail-label" style="color:#6d28d9">📦 รวมทุกโครงการที่รับผิดชอบ</div>
+          <div style="font-size:0.78rem;color:var(--text3);margin-bottom:10px;line-height:1.6" id="ctAllSummary"></div>
+          <div style="display:flex;gap:9px;flex-wrap:wrap">
+            <button class="project-btn primary-btn" style="flex:1;min-width:210px;justify-content:center;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="ctDownloadAll()">📋 ดาวน์โหลดใบปะหน้าที่รับผิดชอบทั้งหมด</button>
+            <button class="project-btn primary-btn" style="flex:1;min-width:210px;justify-content:center;background:linear-gradient(135deg,#0f766e,#14b8a6);border-color:#0f766e" onclick="ctOpenPromptAll()">🤖 Prompt สั่งรวมทั้งหมด</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="text-align:center;font-size:0.72rem;color:var(--text3);margin-top:26px;padding-bottom:30px">
+      ระบบจัดโครงการลงยุทธศาสตร์ · พัฒนาโดย ครูนนทพัทธ์ หิรัญเรือง
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="ctPromptModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('ctPromptModal')">✕</button>
+    <div class="modal-title">🤖 Prompt สั่งสร้างเครื่องมือและแบบสรุป</div>
+    <div class="detail-section" style="background:var(--surface)">
+      <div class="detail-label" id="ctPromptTitle"></div>
+      <div style="font-size:0.76rem;color:var(--text3);line-height:1.6;margin-bottom:4px">
+        กด <b>คัดลอก Prompt</b> แล้วนำไปวางในแชต AI ด้านล่าง ผลลัพธ์ที่ได้จะเป็น <b>เครื่องมือเก็บรวบรวมข้อมูล</b> และ <b>แบบสรุปผล</b> ในฟอร์มมาตรฐานเดียวกันทุกตัวชี้วัด
+      </div>
+      <pre class="prompt-box visible" id="ctPromptBox"></pre>
+      <div style="display:flex;gap:8px;margin-top:9px;flex-wrap:wrap">
+        <button class="project-btn primary-btn" onclick="ctCopyPrompt()">📋 คัดลอก Prompt</button>
+      </div>
+      <div class="ai-links" id="ctAiLinks"></div>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="settingsModal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
@@ -961,6 +1026,12 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
             ดึงข้อมูลจาก KPI ที่ส่งผลจาก AI แล้ว สร้างเอกสาร Word <b>1 หน้าต่อตัวชี้วัด</b> · กล่องรายละเอียด 8 หัวข้อ · ฟอนต์ TH SarabunPSK · กระดาษ A4 แนวตั้ง
           </div>
           <button class="project-btn primary-btn" style="background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="exportCoverDocx()">📋 สร้างใบปะหน้า &amp; ดาวน์โหลด .docx</button>
+          <div style="margin-top:9px">
+            <button class="project-btn" style="width:100%;justify-content:center;border-color:#7c3aed;color:#7c3aed;font-weight:700" onclick="openCoverToolHub()">🔗 สร้างลิงก์ส่งให้ครู (ใบปะหน้า + Prompt เครื่องมือ)</button>
+          </div>
+          <div style="font-size:0.72rem;color:var(--text3);margin-top:6px;line-height:1.55">
+            ครูเลือกชื่อตนเอง → เห็นรายชื่อโครงการที่รับผิดชอบ พร้อมปุ่มดาวน์โหลดใบปะหน้า และ Prompt สั่งสร้างเครื่องมือเก็บข้อมูล (ที่มาของค่าร้อยละ) ในฟอร์มมาตรฐานเดียวกัน
+          </div>
         </div>
         <div class="settings-subdivider"></div>
         <div class="form-group">
@@ -1410,6 +1481,7 @@ async function loadAllSavedData() {
   } catch(e) { console.warn('Firestore qaforms:', e); }
   if (window.__formMode) renderTeacherForm();
   if (window.__downloadMode) renderDownloadForm();
+  if (window.__toolsMode) renderCoverTool();
 }
 
 async function persistProjectsCloud() {
@@ -2249,9 +2321,11 @@ function enterTeacherFormMode() {
 
 function exitTeacherFormMode() {
   window.__formMode = false;
-  const nav = document.querySelector('.navbar'); if (nav) nav.style.display = '';
-  const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = '';
-  const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = '';
+  if (!window.__downloadMode && !window.__toolsMode) {
+    const nav = document.querySelector('.navbar'); if (nav) nav.style.display = '';
+    const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = '';
+    const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = '';
+  }
   document.getElementById('teacherFormView').style.display = 'none';
 }
 
@@ -2259,9 +2333,10 @@ function openTeacherFormPreview() { location.hash = '#form'; }
 
 function routeHash() {
   const h = (location.hash||'').toLowerCase();
-  if (h === '#form') { exitDownloadFormMode(); enterTeacherFormMode(); }
-  else if (h === '#download') { exitTeacherFormMode(); enterDownloadFormMode(); }
-  else { exitTeacherFormMode(); exitDownloadFormMode(); }
+  if (h === '#form') { exitDownloadFormMode(); exitCoverToolMode(); enterTeacherFormMode(); }
+  else if (h === '#download') { exitTeacherFormMode(); exitCoverToolMode(); enterDownloadFormMode(); }
+  else if (h === '#tools') { exitTeacherFormMode(); exitDownloadFormMode(); enterCoverToolMode(); }
+  else { exitTeacherFormMode(); exitDownloadFormMode(); exitCoverToolMode(); }
 }
 
 function renderTeacherForm() {
@@ -3447,7 +3522,7 @@ function enterDownloadFormMode(){
 function exitDownloadFormMode(){
   window.__downloadMode = false;
   const view = document.getElementById('downloadFormView'); if (view) view.style.display = 'none';
-  if (!window.__formMode) {
+  if (!window.__formMode && !window.__toolsMode) {
     const nav = document.querySelector('.navbar'); if (nav) nav.style.display = '';
     const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = '';
     const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = '';
@@ -5191,12 +5266,13 @@ function cvCollectAll(){
     }
     if(it.baselineOverride!==undefined) baselineRaw = it.baselineOverride ? ('ร้อยละ '+it.baselineOverride) : '';
     return { goalNo:it.goalNo, goalText:it.goalText, kpiNo:counter[g],
+      teacher: it.teacher, project: it.project,
       kpi: it.kpi, scope: it.scope, unit: it.unit, target: it.target,
       formula: it.formula, baselineRaw, source: it.source, freq: it.freq };
   });
 }
 
-function cvDownload(allKpis){
+function cvDownload(allKpis, fileLabel){
   if(typeof JSZip==='undefined'){
     Swal.fire({icon:'error',title:'ไลบรารียังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่',confirmButtonColor:'#6c3fc5'}); return;
   }
@@ -5227,7 +5303,7 @@ function cvDownload(allKpis){
   .then(blob=>{
     const url=URL.createObjectURL(blob);
     const a=document.createElement('a');
-    a.href=url; a.download='ใบปะหน้าตัวชี้วัด_'+new Date().toISOString().slice(0,10)+'.docx';
+    a.href=url; a.download='ใบปะหน้าตัวชี้วัด'+(fileLabel?('_'+fileLabel):'')+'_'+new Date().toISOString().slice(0,10)+'.docx';
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),1500);
     Swal.fire({icon:'success',title:'สร้างใบปะหน้าสำเร็จ!',
@@ -5245,6 +5321,257 @@ function exportCoverDocx(){
     return;
   }
   cvDownload(all);
+}
+
+
+// ═══════════════════════════════════════════════
+// หน้าสาธารณะ #tools — ใบปะหน้า + Prompt เครื่องมือเก็บข้อมูล (ลิงก์ส่งให้ครู)
+// ═══════════════════════════════════════════════
+function buildCoverToolLink(){ return location.origin + location.pathname + '#tools'; }
+
+function openCoverToolHub(){
+  const link = buildCoverToolLink();
+  Swal.fire({
+    title:'🔗 ลิงก์ใบปะหน้า &amp; เครื่องมือ (สำหรับครู)',
+    html:'<div style="font-size:0.85rem;line-height:1.8;text-align:left;color:#4b5563">'+
+      'ส่งลิงก์นี้ให้ครูผู้รับผิดชอบตัวชี้วัด เมื่อครูเลือกชื่อตนเองแล้วจะสามารถ<br>'+
+      '• ดาวน์โหลด <b>ใบปะหน้าอธิบายตัวชี้วัด</b> รายโครงการ หรือทั้งหมดที่รับผิดชอบ<br>'+
+      '• คัดลอก <b>Prompt สั่งสร้างเครื่องมือและแบบสรุป</b> (ฟอร์มมาตรฐานเดียวกันทุกคน)'+
+      '</div><input class="swal2-input" readonly value="'+cvEsc(link)+'" style="font-size:0.78rem" onfocus="this.select()">',
+    showCancelButton:true, showDenyButton:true,
+    confirmButtonText:'📋 คัดลอกลิงก์', denyButtonText:'👁 เปิดดูหน้าเว็บ', cancelButtonText:'ปิด',
+    confirmButtonColor:'#7c3aed', denyButtonColor:'#0f766e'
+  }).then(r=>{
+    if(r.isConfirmed){
+      navigator.clipboard.writeText(link).then(()=>{
+        Swal.fire({icon:'success',title:'คัดลอกลิงก์แล้ว!',html:'นำลิงก์ไปส่งในกลุ่มไลน์ให้ครูได้เลย',confirmButtonColor:'#7c3aed'});
+      }).catch(()=>{
+        Swal.fire({title:'ลิงก์สำหรับครู',input:'text',inputValue:link,confirmButtonText:'ปิด',confirmButtonColor:'#7c3aed'});
+      });
+    } else if(r.isDenied){
+      closeModal('settingsModal');
+      location.hash = '#tools';
+    }
+  });
+}
+
+function enterCoverToolMode(){
+  window.__toolsMode = true;
+  document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  const nav = document.querySelector('.navbar'); if (nav) nav.style.display = 'none';
+  const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = 'none';
+  const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = 'none';
+  const view = document.getElementById('coverToolView'); if (view) view.style.display = 'block';
+  window.scrollTo(0,0);
+  renderCoverTool();
+}
+
+function exitCoverToolMode(){
+  window.__toolsMode = false;
+  const view = document.getElementById('coverToolView'); if (view) view.style.display = 'none';
+  if (!window.__formMode && !window.__downloadMode) {
+    const nav = document.querySelector('.navbar'); if (nav) nav.style.display = '';
+    const heroMain = document.querySelector('body > .hero'); if (heroMain) heroMain.style.display = '';
+    const contMain = document.querySelector('body > .container'); if (contMain) contMain.style.display = '';
+  }
+}
+
+function renderCoverTool(){
+  const loading = document.getElementById('ctLoading');
+  const body = document.getElementById('ctBody');
+  if (!loading || !body) return;
+  const all = cvCollectAll();
+  window.__ctAll = all;
+  const teachers = [...new Set(all.map(k=>k.teacher).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
+  if (!teachers.length) {
+    loading.innerHTML = (db ? 'ยังไม่มีข้อมูลตัวชี้วัดในระบบ กรุณาติดต่อผู้ดูแลระบบ' : '⏳ กำลังโหลดข้อมูล...');
+    loading.style.display = 'block'; body.style.display = 'none';
+    return;
+  }
+  loading.style.display = 'none';
+  body.style.display = 'block';
+  const sel = document.getElementById('ctTeacher');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— เลือกชื่อครู —</option>' +
+    teachers.map(t=>`<option value="${cvEsc(t)}"${cur===t?' selected':''}>${cvEsc(t)}</option>`).join('');
+  if (cur && teachers.includes(cur)) ctOnTeacherChange();
+  else { document.getElementById('ctProjects').innerHTML=''; document.getElementById('ctAllBar').style.display='none'; }
+}
+
+function ctOnTeacherChange(){
+  const teacher = document.getElementById('ctTeacher').value;
+  const wrap = document.getElementById('ctProjects');
+  const bar  = document.getElementById('ctAllBar');
+  window.__ctTeacher = teacher;
+  if (!teacher) { wrap.innerHTML=''; bar.style.display='none'; window.__ctGroups=[]; return; }
+
+  const mine = (window.__ctAll || cvCollectAll()).filter(k=>k.teacher===teacher);
+  const groups = []; const idx = {};
+  mine.forEach(k=>{
+    const p = k.project || '(ไม่ระบุโครงการ)';
+    if (idx[p]==null) { idx[p]=groups.length; groups.push({ project:p, items:[] }); }
+    groups[idx[p]].items.push(k);
+  });
+  window.__ctGroups = groups;
+
+  if (!groups.length) {
+    wrap.innerHTML = '<div style="text-align:center;color:var(--danger);font-size:0.84rem;padding:14px;background:#fef2f2;border-radius:10px;margin-top:12px">ยังไม่พบตัวชี้วัดของท่านในระบบ กรุณาติดต่อผู้ดูแลระบบ</div>';
+    bar.style.display='none'; return;
+  }
+
+  wrap.innerHTML = groups.map((g,gi)=>`
+    <div class="detail-section" style="background:var(--surface);box-shadow:var(--shadow);margin-top:12px">
+      <div style="display:flex;align-items:flex-start;gap:8px;justify-content:space-between;flex-wrap:wrap">
+        <div class="detail-label" style="flex:1;min-width:170px;color:#6d28d9;margin-bottom:0">📁 ${cvEsc(g.project)}</div>
+        <span style="background:#ede9fe;color:#5b21b6;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap">${g.items.length} ตัวชี้วัด</span>
+      </div>
+      <ol style="margin:9px 0 12px 20px;padding:0;font-size:0.82rem;color:var(--text2);line-height:1.75">
+        ${g.items.map(k=>`<li>${cvEsc(k.kpi||'-')}</li>`).join('')}
+      </ol>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="project-btn primary-btn" style="flex:1;min-width:185px;justify-content:center;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-color:#7c3aed" onclick="ctDownloadProject(${gi})">📋 ดาวน์โหลดใบปะหน้า</button>
+        <button class="project-btn primary-btn" style="flex:1;min-width:185px;justify-content:center;background:linear-gradient(135deg,#0f766e,#14b8a6);border-color:#0f766e" onclick="ctOpenPrompt(${gi})">🤖 Prompt สั่งสร้างเครื่องมือและแบบสรุป</button>
+      </div>
+    </div>`).join('');
+
+  bar.style.display = 'block';
+  document.getElementById('ctAllSummary').innerHTML =
+    'ครู <b>'+cvEsc(teacher)+'</b> · รวม <b>'+groups.length+'</b> โครงการ · <b>'+mine.length+'</b> ตัวชี้วัด (ใบปะหน้า '+mine.length+' หน้า)';
+}
+
+function ctSafeName(s){ return String(s==null?'':s).replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,' ').trim().slice(0,40); }
+
+function ctDownloadProject(gi){
+  const g = (window.__ctGroups||[])[gi];
+  if (!g || !g.items.length) { Swal.fire({icon:'info',title:'ไม่พบตัวชี้วัดของโครงการนี้',confirmButtonColor:'#7c3aed'}); return; }
+  cvDownload(g.items, ctSafeName(g.project));
+}
+
+function ctDownloadAll(){
+  const items = [].concat(...(window.__ctGroups||[]).map(g=>g.items));
+  if (!items.length) { Swal.fire({icon:'info',title:'กรุณาเลือกชื่อครูก่อน',confirmButtonColor:'#7c3aed'}); return; }
+  cvDownload(items, ctSafeName(window.__ctTeacher));
+}
+
+function ctOpenPrompt(gi){
+  const g = (window.__ctGroups||[])[gi];
+  if (!g || !g.items.length) { Swal.fire({icon:'info',title:'ไม่พบตัวชี้วัดของโครงการนี้',confirmButtonColor:'#0f766e'}); return; }
+  ctShowPrompt(g.items, 'โครงการ ' + g.project);
+}
+
+function ctOpenPromptAll(){
+  const items = [].concat(...(window.__ctGroups||[]).map(g=>g.items));
+  if (!items.length) { Swal.fire({icon:'info',title:'กรุณาเลือกชื่อครูก่อน',confirmButtonColor:'#0f766e'}); return; }
+  ctShowPrompt(items, 'ทุกโครงการที่รับผิดชอบ');
+}
+
+function ctShowPrompt(items, label){
+  const p = ctBuildPrompt(items, window.__ctTeacher||'', label);
+  window.__ctPrompt = p;
+  document.getElementById('ctPromptTitle').textContent = '📌 ' + label + ' · ' + items.length + ' ตัวชี้วัด';
+  document.getElementById('ctPromptBox').textContent = p;
+  document.getElementById('ctAiLinks').innerHTML =
+    aiLinks.map(l=>`<a href="${l.url}" target="_blank" class="ai-link-btn ${l.color}">${l.icon} ${l.name}</a>`).join('');
+  document.getElementById('ctPromptModal').classList.add('open');
+}
+
+function ctCopyPrompt(){
+  const p = window.__ctPrompt;
+  if (!p) { Swal.fire({icon:'warning',title:'ยังไม่มี Prompt',timer:1500,showConfirmButton:false}); return; }
+  navigator.clipboard.writeText(p).then(()=>{
+    Swal.fire({icon:'success',title:'คัดลอก Prompt แล้ว!',timer:1500,showConfirmButton:false,toast:true,position:'top-end'});
+  }).catch(()=>{
+    Swal.fire({ title:'คัดลอก Prompt', input:'textarea', inputValue:p,
+      inputAttributes:{ style:'height:300px;font-size:0.76rem;font-family:monospace' },
+      confirmButtonText:'ปิด', confirmButtonColor:'#0f766e' });
+  });
+}
+
+// ── Prompt มาตรฐาน : สั่งสร้างเครื่องมือเก็บข้อมูล + แบบสรุปผล (ที่มาของค่าร้อยละ) ──
+function ctBuildPrompt(items, teacher, label){
+  const blocks = items.map((k,i)=>`── ตัวชี้วัดลำดับที่ ${i+1} ──
+โครงการ : ${k.project||'-'}
+เป้าประสงค์ที่ : ${k.goalNo ? (k.goalNo+'. '+(k.goalText||'')) : (k.goalText||'-')}
+1. ตัวชี้วัด : ${k.kpi||'-'}
+2. ขอบเขตความหมาย : ${k.scope||'-'}
+3. หน่วยวัด : ${k.unit||'-'}
+4. เป้าหมาย/เกณฑ์ (ปี 2571 – 2575) : ${k.target||'-'}
+5. วิธีการคำนวณ : ${k.formula||'-'}
+6. ข้อมูลปัจจุบัน (ข้อมูลพื้นฐาน) : ${k.baselineRaw||'-'}
+7. แหล่งข้อมูล/วิธีเก็บรวบรวมข้อมูล : ${k.source||'-'}
+8. ความถี่ในการเก็บรวบรวมข้อมูล/รายงาน : ${k.freq||'-'}`).join('\n\n');
+
+  return `คุณเป็นผู้เชี่ยวชาญด้านการวัดและประเมินผลการศึกษา และงานประกันคุณภาพภายในสถานศึกษา
+
+ภารกิจของคุณ:
+ออกแบบ "เครื่องมือเก็บรวบรวมข้อมูล" และ "แบบสรุปผล" ของตัวชี้วัดที่กำหนดให้ด้านล่าง
+เพื่อใช้เป็น "หลักฐานที่มาของค่าร้อยละ" ตามวิธีการคำนวณของตัวชี้วัดนั้นอย่างตรวจสอบได้
+โดยทุกตัวชี้วัดต้องใช้ "ฟอร์มมาตรฐานเดียวกัน" ตามโครงสร้าง ๖ ส่วนที่กำหนดไว้ ห้ามเพิ่ม ลด สลับ หรือเปลี่ยนชื่อหัวข้อ
+
+═══════════════════════════════════════════════
+ข้อมูลหน่วยงานและผู้รับผิดชอบ
+═══════════════════════════════════════════════
+สถานศึกษา : โรงเรียนกระดุมทองวิทยา สังกัดองค์การบริหารส่วนจังหวัดศรีสะเกษ
+ผู้รับผิดชอบตัวชี้วัด : ${teacher||'-'}
+ขอบเขตงานครั้งนี้ : ${label||'-'} (จำนวน ${items.length} ตัวชี้วัด)
+
+═══════════════════════════════════════════════
+รายละเอียดตัวชี้วัด (ข้อมูลตั้งต้น ห้ามแก้ไขถ้อยคำ)
+═══════════════════════════════════════════════
+${blocks}
+
+═══════════════════════════════════════════════
+โครงสร้างฟอร์มมาตรฐาน (ใช้เหมือนกันทุกตัวชี้วัด)
+═══════════════════════════════════════════════
+ส่วนที่ ๑ หัวเอกสาร
+  - ชื่อเครื่องมือ (ตั้งให้สอดคล้องกับตัวชี้วัด) · โรงเรียนกระดุมทองวิทยา สังกัด อบจ.ศรีสะเกษ
+  - ปีการศึกษา ........ · ชื่อโครงการ · ตัวชี้วัดที่ (คัดลอกข้อความตัวชี้วัดมาเต็ม) · ผู้รับผิดชอบ
+
+ส่วนที่ ๒ คำชี้แจง
+  - วัตถุประสงค์ของเครื่องมือ · ผู้ให้ข้อมูล/กลุ่มเป้าหมาย · ผู้เก็บข้อมูล
+  - ช่วงเวลาและความถี่ในการเก็บ (ให้ตรงกับข้อ ๘) · แหล่งข้อมูลอ้างอิง (ให้ตรงกับข้อ ๗)
+
+ส่วนที่ ๓ เครื่องมือเก็บรวบรวมข้อมูล
+  - เลือกชนิดเครื่องมือให้เหมาะกับหน่วยวัดและวิธีการคำนวณ (แบบตรวจสอบรายการ / แบบบันทึกผล /
+    แบบสังเกต / แบบสอบถามมาตรประมาณค่า ๕ ระดับ) พร้อมระบุเหตุผลสั้น ๆ ว่าเหตุใดจึงเลือกชนิดนี้
+  - ทำเป็นตารางบันทึกรายบุคคล/รายห้องเรียน อย่างน้อยมีคอลัมน์ :
+    ที่ | ชื่อ–สกุล / ห้อง | รายการประเมิน (ข้อย่อย) | ผลการประเมิน (คะแนน หรือ ผ่าน/ไม่ผ่าน) | หมายเหตุ
+  - ระบุ "เกณฑ์การตัดสินระดับบุคคล" ให้ชัดเจนว่าเข้าเกณฑ์ "ผ่าน" เมื่อใด (เช่น ได้คะแนนร้อยละ ๘๐ ขึ้นไป)
+    เกณฑ์นี้คือ "ตัวตั้ง" ของสูตรร้อยละ จึงต้องสอดคล้องกับข้อ ๒ และข้อ ๕
+
+ส่วนที่ ๔ ตารางสรุปผลเพื่อคำนวณค่าร้อยละ (สำคัญที่สุด)
+  - ต้องมีช่องครบทุกช่องต่อไปนี้ : ตัวตั้ง (จำนวนที่ผ่านเกณฑ์) | ตัวหาร (จำนวนทั้งหมด) |
+    ร้อยละที่คำนวณได้ | ค่าเป้าหมาย | ผลการประเมิน (บรรลุ/ไม่บรรลุ)
+  - เขียนสูตรกำกับไว้ใต้ตารางให้ตรงกับ "วิธีการคำนวณ" ของตัวชี้วัดนั้นทุกตัวอักษร
+    ในรูปแบบ  ร้อยละ = (ตัวตั้ง ÷ ตัวหาร) × ๑๐๐
+  - หากตัวชี้วัดมีหลายองค์ประกอบ ให้แยกแถวย่อยรายองค์ประกอบ แล้วสรุปรวมเป็นบรรทัดสุดท้าย
+
+ส่วนที่ ๕ สรุปผลและข้อเสนอแนะ
+  - สรุปผลเทียบกับค่าเป้าหมายและข้อมูลพื้นฐาน (ข้อ ๔ และข้อ ๖) · จุดเด่น · จุดที่ควรพัฒนา · ข้อเสนอแนะ
+
+ส่วนที่ ๖ การลงนาม
+  - ลงชื่อ ผู้เก็บรวบรวมข้อมูล / ผู้รับผิดชอบตัวชี้วัด / หัวหน้างานแผนงานและประกันคุณภาพ /
+    ผู้อำนวยการโรงเรียน (รับทราบ) พร้อมช่องวันที่
+
+═══════════════════════════════════════════════
+ข้อกำหนดการนำเสนอผลลัพธ์
+═══════════════════════════════════════════════
+1. ใช้ภาษาไทยราชการ รูปแบบเอกสารของสถานศึกษา เลขหัวข้อใหญ่ใช้เลขไทย
+2. นำเสนอเป็นตาราง Markdown ที่คัดลอกไปวางใน Microsoft Word ได้ทันที
+   ระบุท้ายเอกสารว่า จัดหน้ากระดาษ A4 แนวตั้ง ฟอนต์ TH SarabunPSK ขนาด ๑๖ พอยต์
+3. ให้สร้าง "๑ ชุดเครื่องมือ ต่อ ๑ ตัวชี้วัด" เรียงตามลำดับที่ให้มา ขึ้นหัวข้อใหม่ทุกชุด ห้ามรวบหลายตัวชี้วัดไว้ชุดเดียว
+   และทุกชุดต้องมีหัวข้อและลำดับเหมือนกันทั้งหมด (เป็นฟอร์มมาตรฐานชุดเดียวกัน)
+4. ห้ามกรอกตัวเลขผลการประเมินสมมุติ ให้เว้นช่องว่างไว้สำหรับกรอกจริง
+   ยกเว้นช่อง "ค่าเป้าหมาย" ให้เติมตามข้อ ๔ ของตัวชี้วัดนั้น
+5. เครื่องมือต้องใช้งานได้จริงในบริบทของโรงเรียน เก็บข้อมูลได้ง่าย ไม่ซับซ้อนเกินจำเป็น
+   และต้องอธิบายที่มาของค่าร้อยละได้อย่างชัดเจนเมื่อผู้ตรวจสอบขอดูหลักฐาน
+
+📌 สำคัญ : ก่อนเริ่มตอบ ให้พิมพ์บรรทัดต่อไปนี้ออกมาก่อน แล้วจึงตามด้วยเนื้อหาทั้งหมดทันที
+ห้ามเพิ่มคำอธิบายใด ๆ ก่อนหรือหลัง marker นี้
+
+⬇️ ─────────────────────────────────────────── ⬇️
+เริ่มคัดลอก (copy) จากตรงนี้
+⬇️ ─────────────────────────────────────────── ⬇️`;
 }
 
 async function clearAllData() {
