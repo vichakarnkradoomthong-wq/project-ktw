@@ -842,30 +842,31 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
       </div>
       <div class="hero-subtitle">โรงเรียนกระดุมทองวิทยา · สังกัด อบจ.ศรีสะเกษ</div>
       <h1 class="hero-title" style="font-size:1.5rem">ดาวน์โหลด<br>แบบฟอร์มโครงการ</h1>
-      <div class="hero-desc">เลือกชื่อของท่าน และโครงการ แล้วกดดาวน์โหลดไฟล์</div>
+      <div class="hero-desc">เลือกชื่อของท่าน → กดดาวน์โหลดฟอร์มโครงการ .docx รายโครงการ หรือทั้งหมดในไฟล์เดียว</div>
     </div>
   </div>
 
-  <div class="container" style="max-width:620px;padding-top:24px">
+  <div class="container" style="max-width:720px;padding-top:24px">
     <div id="dlLoading" style="text-align:center;color:var(--text3);padding:30px">⏳ กำลังโหลดข้อมูล...</div>
 
     <div id="dlBody" style="display:none">
       <div class="detail-section" style="background:var(--surface);box-shadow:var(--shadow)">
-        <div class="form-group">
+        <div class="form-group" style="margin-bottom:0">
           <label class="form-label">เลือกชื่อของท่าน (ผู้จัดทำ / ผู้เขียนโครงการ)</label>
           <select class="form-select" id="dlTeacher" onchange="dlOnTeacherChange()">
             <option value="">— เลือกชื่อครู —</option>
           </select>
         </div>
+      </div>
 
-        <div class="form-group">
-          <label class="form-label">เลือกโครงการ</label>
-          <select class="form-select" id="dlProject">
-            <option value="">— เลือกโครงการ —</option>
-          </select>
+      <div id="dlProjects"></div>
+
+      <div id="dlAllBar" style="display:none">
+        <div class="detail-section" style="background:#fff1f2;border:1.5px solid #fecdd3;margin-top:14px">
+          <div class="detail-label" style="color:#be123c">📦 รวมทุกโครงการที่รับผิดชอบ</div>
+          <div style="font-size:0.78rem;color:var(--text3);margin-bottom:10px;line-height:1.6" id="dlAllSummary"></div>
+          <button class="project-btn primary-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#dc2626,#f87171);border-color:#dc2626" onclick="dlDownloadAll()">⬇️ ดาวน์โหลดฟอร์มโครงการทั้งหมด (ไฟล์เดียว)</button>
         </div>
-
-        <button class="save-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#dc2626,#f87171);box-shadow:0 4px 14px rgba(220,38,38,0.3)" onclick="downloadFormFile()">⬇️ ดาวน์โหลดไฟล์</button>
       </div>
     </div>
 
@@ -1213,8 +1214,8 @@ body{font-family:'Sarabun',sans-serif;background:#f0ecff;color:var(--text);min-h
 
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:18px">
       <div style="font-size:0.82rem;color:var(--text3);line-height:1.65">
-        เปิดหน้าฟอร์มสำหรับให้ครูเลือก <b>ชื่อของตน</b> และ <b>โครงการ</b> แล้วดาวน์โหลดแบบฟอร์มโครงการได้เอง
-        หรือคัดลอกลิงก์ไปส่งให้ครูในกลุ่มไลน์
+        ลิงก์แยกสำหรับครู : เลือก <b>ชื่อของตน</b> แล้วจะเห็น <b>รายชื่อโครงการที่รับผิดชอบทั้งหมด</b>
+        พร้อมปุ่มดาวน์โหลด <b>ฟอร์มโครงการ .docx</b> รายโครงการ หรือรวมทุกโครงการในไฟล์เดียว
       </div>
     </div>
 
@@ -3460,9 +3461,8 @@ function thFixDocXml(xml){
     });
 }
 
-function pfDownload(d){
-  if(typeof JSZip==='undefined'){ Swal.fire({icon:'error',title:'ไลบรารีสร้างไฟล์ยังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่',confirmButtonColor:'#dc2626'}); return; }
-  const doc=pfBuildDocument(d);
+// แพ็กเอกสาร .docx (ใช้ร่วมกันทั้งฟอร์มเดี่ยวและฟอร์มรวมหลายโครงการ)
+function pfPackDocx(doc, filename){
   const CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
   const RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
   const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
@@ -3473,17 +3473,44 @@ function pfDownload(d){
   const word=zip.folder('word');
   word.file('document.xml',thFixDocXml(doc)); word.file('styles.xml',STYLES);
   word.folder('_rels').file('document.xml.rels',DRELS);
-  zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
+  return zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
     const url=URL.createObjectURL(blob), a=document.createElement('a');
-    const safe=(d.projectName||'โครงการ').replace(/[\\/:*?"<>|]/g,'').slice(0,40);
-    a.href=url; a.download='ฟอร์มโครงการ_'+safe+'.docx';
+    a.href=url; a.download=filename;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     setTimeout(()=>URL.revokeObjectURL(url),1500);
+  });
+}
+
+function pfSafeName(s){ return String(s==null?'':s).replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,' ').trim().slice(0,40); }
+
+function pfDownload(d){
+  if(typeof JSZip==='undefined'){ Swal.fire({icon:'error',title:'ไลบรารีสร้างไฟล์ยังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่',confirmButtonColor:'#dc2626'}); return; }
+  pfPackDocx(pfBuildDocument(d), 'ฟอร์มโครงการ_'+(pfSafeName(d.projectName)||'โครงการ')+'.docx').then(()=>{
     if(d._afterMsg){
       Swal.fire({icon:'success',title:'ดาวน์โหลดไฟล์สำเร็จ!',html:'<span style="font-size:0.92rem;color:#991b1b;font-weight:600">'+d._afterMsg+'</span>',confirmButtonColor:'#dc2626'});
     } else {
       Swal.fire({icon:'success',title:'สร้างฟอร์มสำเร็จ!',html:'ดาวน์โหลดฟอร์มโครงการแล้ว<br><span style="font-size:0.84rem;color:#6b7280">เติมชื่อโครงการ · ผู้จัดทำ · ผู้ลงนามให้แล้ว · ช่องอื่นเว้นว่างไว้กรอกเอง</span>',confirmButtonColor:'#dc2626'});
     }
+  }).catch(e=>{ Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message}); });
+}
+
+// รวมฟอร์มหลายโครงการไว้ในไฟล์เดียว (ขึ้นหน้าใหม่ทุกโครงการ)
+function pfDownloadMulti(list, teacher){
+  if(typeof JSZip==='undefined'){ Swal.fire({icon:'error',title:'ไลบรารีสร้างไฟล์ยังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่',confirmButtonColor:'#dc2626'}); return; }
+  if(!list || !list.length) return;
+  const first = pfBuildDocument(list[0]);
+  const head  = first.slice(0, first.indexOf('<w:body>') + 8);
+  const sect  = first.slice(first.indexOf('<w:sectPr>'), first.indexOf('</w:body>'));
+  const brk   = '<w:p><w:pPr><w:pageBreakBefore/><w:spacing w:after="0"/></w:pPr></w:p>';
+  const bodies = list.map(d=>{
+    const x = pfBuildDocument(d);
+    return x.slice(x.indexOf('<w:body>') + 8, x.indexOf('<w:sectPr>'));
+  });
+  const doc = head + bodies.join(brk) + sect + '</w:body></w:document>';
+  pfPackDocx(doc, 'ฟอร์มโครงการรวม_'+(pfSafeName(teacher)||'ทุกโครงการ')+'.docx').then(()=>{
+    Swal.fire({icon:'success',title:'สร้างฟอร์มรวมสำเร็จ!',
+      html:'ดาวน์โหลดแล้ว <b>'+list.length+'</b> โครงการในไฟล์เดียว<br><span style="font-size:0.84rem;color:#6b7280">ขึ้นหน้าใหม่ทุกโครงการ · โปรดแก้ไขให้สมบูรณ์แล้วนำส่งงานแผนงานฯ</span>',
+      confirmButtonColor:'#dc2626'});
   }).catch(e=>{ Swal.fire({icon:'error',title:'เกิดข้อผิดพลาด',text:e.message}); });
 }
 
@@ -3588,24 +3615,14 @@ function renderDownloadForm(){
   sel.innerHTML = '<option value="">— เลือกชื่อครู —</option>' +
     teachers.map(t=>`<option value="${dxEsc(t)}"${cur===t?' selected':''}>${dxEsc(t)}</option>`).join('');
   if (cur && teachers.includes(cur)) dlOnTeacherChange();
-  else document.getElementById('dlProject').innerHTML = '<option value="">— เลือกโครงการ —</option>';
+  else { document.getElementById('dlProjects').innerHTML=''; document.getElementById('dlAllBar').style.display='none'; }
 }
-function dlOnTeacherChange(){
-  const t = document.getElementById('dlTeacher').value;
-  const sel = document.getElementById('dlProject');
-  const rec = projects.find(x=>x.teacher===t);
-  const list = (rec && rec.projects) ? rec.projects : [];
-  sel.innerHTML = '<option value="">— เลือกโครงการ —</option>' +
-    list.map(p=>`<option value="${dxEsc(p)}">${dxEsc(p)}</option>`).join('');
-}
-function downloadFormFile(){
-  const teacher = document.getElementById('dlTeacher').value;
-  if (!teacher){ Swal.fire({icon:'question',title:'กรุณาเลือกชื่อครู',confirmButtonColor:'#dc2626'}); return; }
-  const project = document.getElementById('dlProject').value;
-  if (!project){ Swal.fire({icon:'question',title:'กรุณาเลือกโครงการ',confirmButtonColor:'#dc2626'}); return; }
+
+// รวบรวมข้อมูลของ 1 โครงการ สำหรับใส่ในฟอร์มโครงการ .docx
+function dlBuildData(teacher, project, afterMsg){
   const s = loadSignatories();
   const d = savedData[projectKey(teacher,project)] || null;
-  const data = {
+  return {
     projectName:project, teacherName:teacher, teacherPos:s.teacherPos||'ครู',
     proposer:s.proposer, approver:s.approver, authorizer:s.authorizer,
     strategyId: d && d.strategyId ? d.strategyId : '',
@@ -3613,10 +3630,63 @@ function downloadFormFile(){
     tacticText: d ? (d.tacticText||'') : '',
     problem: d ? (d.problem||'') : '',
     indicators: pfGetIndicators(d),
-    _afterMsg: 'โปรดแก้ไขไฟล์ให้สมบูรณ์และนำส่งงานแผนงานฯ'
+    _afterMsg: afterMsg || ''
   };
-  pfDownload(data);
 }
+
+function dlOnTeacherChange(){
+  const teacher = document.getElementById('dlTeacher').value;
+  const wrap = document.getElementById('dlProjects');
+  const bar  = document.getElementById('dlAllBar');
+  window.__dlTeacher = teacher;
+  if (!teacher){ wrap.innerHTML=''; bar.style.display='none'; window.__dlList=[]; return; }
+
+  const rec = projects.find(x=>x.teacher===teacher);
+  const list = (rec && rec.projects) ? rec.projects.slice() : [];
+  window.__dlList = list;
+
+  if (!list.length){
+    wrap.innerHTML = '<div style="text-align:center;color:var(--danger);font-size:0.84rem;padding:14px;background:#fef2f2;border-radius:10px;margin-top:12px">ไม่พบโครงการที่ผูกกับชื่อนี้ในฐานข้อมูล กรุณาติดต่อผู้ดูแลระบบ</div>';
+    bar.style.display='none'; return;
+  }
+
+  wrap.innerHTML = list.map((p,i)=>{
+    const d = savedData[projectKey(teacher,p)] || null;
+    const inds = pfGetIndicators(d) || [];
+    const strat = d && d.strategyId ? ('ยุทธศาสตร์ที่ '+d.strategyId) : 'ยังไม่ระบุยุทธศาสตร์';
+    return `
+    <div class="detail-section" style="background:var(--surface);box-shadow:var(--shadow);margin-top:12px">
+      <div style="display:flex;align-items:flex-start;gap:8px;justify-content:space-between;flex-wrap:wrap">
+        <div class="detail-label" style="flex:1;min-width:170px;color:#be123c;margin-bottom:0">📁 ${dxEsc(p)}</div>
+        <span style="background:#ffe4e6;color:#9f1239;font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap">${dxEsc(strat)}</span>
+      </div>
+      <div style="font-size:0.78rem;color:var(--text3);margin:8px 0 11px;line-height:1.6">
+        ระบบจะเติม <b>ชื่อโครงการ · ผู้จัดทำ · ผู้ลงนาม · ยุทธศาสตร์/กลยุทธ์ · หลักการและเหตุผล</b>
+        และ <b>ตัวชี้วัด ${inds.length} รายการ</b> ให้อัตโนมัติ · ช่องอื่นเว้นว่างไว้ให้กรอกเอง
+      </div>
+      <button class="project-btn primary-btn" style="width:100%;justify-content:center;background:linear-gradient(135deg,#dc2626,#f87171);border-color:#dc2626" onclick="dlDownloadOne(${i})">⬇️ ดาวน์โหลดฟอร์มโครงการ .docx</button>
+    </div>`;
+  }).join('');
+
+  bar.style.display = 'block';
+  document.getElementById('dlAllSummary').innerHTML =
+    'ครู <b>'+dxEsc(teacher)+'</b> · รวม <b>'+list.length+'</b> โครงการ (รวมเป็นไฟล์ Word ไฟล์เดียว ขึ้นหน้าใหม่ทุกโครงการ)';
+}
+
+function dlDownloadOne(i){
+  const teacher = window.__dlTeacher, project = (window.__dlList||[])[i];
+  if (!teacher || !project){ Swal.fire({icon:'question',title:'กรุณาเลือกชื่อครูก่อน',confirmButtonColor:'#dc2626'}); return; }
+  pfDownload(dlBuildData(teacher, project, 'โปรดแก้ไขไฟล์ให้สมบูรณ์และนำส่งงานแผนงานฯ'));
+}
+
+function dlDownloadAll(){
+  const teacher = window.__dlTeacher, list = window.__dlList||[];
+  if (!teacher || !list.length){ Swal.fire({icon:'question',title:'กรุณาเลือกชื่อครูก่อน',confirmButtonColor:'#dc2626'}); return; }
+  pfDownloadMulti(list.map(p=>dlBuildData(teacher,p,'')), teacher);
+}
+
+// เผื่อกรณีเรียกจากโค้ดเดิม
+function downloadFormFile(){ dlDownloadOne(0); }
 
 // ดึงตัวชี้วัด + ข้อมูลปัจจุบัน จากข้อมูลที่บันทึก (kpiResult จาก AI → qaIndicators)
 // คืนค่าเป็น array ของ { kpi, baseline }
