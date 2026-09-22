@@ -3418,18 +3418,60 @@ function pfBuildDocument(d){
   const sect='<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1418" w:right="1134" w:bottom="1418" w:left="1418" w:header="709" w:footer="709" w:gutter="0"/><w:cols w:space="708"/><w:docGrid w:linePitch="360"/></w:sectPr>';
   return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+b+sect+'</w:body></w:document>';
 }
+// ═══════════════════════════════════════════════
+// THAI .DOCX HELPERS — ใช้ร่วมกันทุกเมนูที่ส่งออก Word
+// แก้ปัญหา "ภาษาไทยขึ้นเส้นแดง / ตัดคำผิด" : Word จะจัดอักษรไทยเป็น complex script
+// ก็ต่อเมื่อ run นั้นมี <w:cs/> ซึ่งต้องใส่เองเพราะเราประกอบ OOXML ตรง ๆ
+// ═══════════════════════════════════════════════
+const TH_THAI_RE = /[\u0E00-\u0E7F]/;
+
+// styles.xml มาตรฐาน : docDefaults ครบทั้งฝั่งละตินและฝั่งไทย (cs font · szCs · lang th-TH)
+function thStylesXml(font, sz){
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'+
+    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'+
+    '<w:docDefaults><w:rPrDefault><w:rPr>'+
+      '<w:rFonts w:ascii="'+font+'" w:hAnsi="'+font+'" w:eastAsia="'+font+'" w:cs="'+font+'"/>'+
+      '<w:sz w:val="'+sz+'"/><w:szCs w:val="'+sz+'"/>'+
+      '<w:lang w:val="th-TH" w:eastAsia="th-TH" w:bidi="th-TH"/>'+
+    '</w:rPr></w:rPrDefault></w:docDefaults>'+
+    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+}
+
+// เติม <w:cs/> ให้ทุก run ที่มีอักษรไทย + เติม bCs/iCs/szCs ที่ขาด (เรียงตาม schema ของ Word)
+function thFixDocXml(xml){
+  return String(xml).replace(/\u00a0/g,' ').replace(/\u200c/g,'')
+    .replace(/<w:r(?:\s[^>]*)?>[\s\S]*?<\/w:r>/g, function(r){
+      const isThai = TH_THAI_RE.test(r.replace(/<[^>]+>/g,''));
+      const m = r.match(/<w:rPr>([\s\S]*?)<\/w:rPr>/);
+      let x = m ? m[1] : '';
+      const sz = x.match(/<w:sz w:val="(\d+)"\/>/);
+      if(sz && !/<w:szCs/.test(x)) x = x.replace(sz[0], sz[0]+'<w:szCs w:val="'+sz[1]+'"/>');
+      if(/<w:b\/>/.test(x) && !/<w:bCs\/>/.test(x)) x = x.replace('<w:b/>','<w:b/><w:bCs/>');
+      if(/<w:i\/>/.test(x) && !/<w:iCs\/>/.test(x)) x = x.replace('<w:i/>','<w:i/><w:iCs/>');
+      if(isThai && !/<w:cs\s*\/>/.test(x)){
+        const mm = x.match(/<w:(em|lang|eastAsianLayout|specVanish|oMath|rPrChange)\b/);
+        const at = mm ? mm.index : x.length;
+        x = x.slice(0,at) + '<w:cs/>' + x.slice(at);
+      }
+      if(x === (m ? m[1] : '')) return r;
+      if(m) return r.replace(m[0], '<w:rPr>'+x+'</w:rPr>');
+      if(/<w:rPr\/>/.test(r)) return r.replace('<w:rPr/>', '<w:rPr>'+x+'</w:rPr>');
+      return r.replace(/^(<w:r(?:\s[^>]*)?>)/, '$1<w:rPr>'+x+'</w:rPr>');
+    });
+}
+
 function pfDownload(d){
   if(typeof JSZip==='undefined'){ Swal.fire({icon:'error',title:'ไลบรารีสร้างไฟล์ยังไม่พร้อม',text:'กรุณาเชื่อมต่ออินเทอร์เน็ตแล้วลองใหม่',confirmButtonColor:'#dc2626'}); return; }
   const doc=pfBuildDocument(d);
   const CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
   const RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
   const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
-  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+  const STYLES=thStylesXml(DOCX_FONT, 32);
   const zip=new JSZip();
   zip.file('[Content_Types].xml',CT);
   zip.folder('_rels').file('.rels',RELS);
   const word=zip.folder('word');
-  word.file('document.xml',doc); word.file('styles.xml',STYLES);
+  word.file('document.xml',thFixDocXml(doc)); word.file('styles.xml',STYLES);
   word.folder('_rels').file('document.xml.rels',DRELS);
   zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
     const url=URL.createObjectURL(blob), a=document.createElement('a');
@@ -4773,16 +4815,13 @@ function exportProjectDetailDocx(){
   const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
-  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
-    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>'+
-    '<w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:rPrDefault></w:docDefaults>'+
-    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+  const STYLES=thStylesXml(DOCX_FONT, 32);
 
   const zip=new JSZip();
   zip.file('[Content_Types].xml',CT);
   zip.folder('_rels').file('.rels',RELS);
   const word=zip.folder('word');
-  word.file('document.xml',doc);
+  word.file('document.xml',thFixDocXml(doc));
   word.file('styles.xml',STYLES);
   word.folder('_rels').file('document.xml.rels',DRELS);
   zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
@@ -5039,16 +5078,13 @@ function dxDownload(groups){
   const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
     '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+
     '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
-  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n'+
-    '<w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr>'+
-    '<w:rFonts w:ascii="'+DOCX_FONT+'" w:hAnsi="'+DOCX_FONT+'" w:cs="'+DOCX_FONT+'"/><w:sz w:val="32"/><w:szCs w:val="32"/></w:rPr></w:rPrDefault></w:docDefaults>'+
-    '<w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+  const STYLES=thStylesXml(DOCX_FONT, 32);
 
   const zip=new JSZip();
   zip.file('[Content_Types].xml',CT);
   zip.folder('_rels').file('.rels',RELS);
   const word=zip.folder('word');
-  word.file('document.xml',doc);
+  word.file('document.xml',thFixDocXml(doc));
   word.file('styles.xml',STYLES);
   word.folder('_rels').file('document.xml.rels',DRELS);
   zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}).then(blob=>{
@@ -5292,12 +5328,12 @@ function cvDownload(allKpis, fileLabel){
   const CT='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/></Types>';
   const RELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>';
   const DRELS='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>';
-  const STYLES='<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:docDefaults><w:rPrDefault><w:rPr><w:rFonts w:ascii="'+CV_FONT+'" w:hAnsi="'+CV_FONT+'" w:cs="'+CV_FONT+'"/><w:sz w:val="'+CV_SZ+'"/><w:szCs w:val="'+CV_SZ+'"/></w:rPr></w:rPrDefault></w:docDefaults><w:style w:type="paragraph" w:default="1" w:styleId="Normal"><w:name w:val="Normal"/></w:style></w:styles>';
+  const STYLES=thStylesXml(CV_FONT, CV_SZ);
   const zip=new JSZip();
   zip.file('[Content_Types].xml',CT);
   zip.folder('_rels').file('.rels',RELS);
   const w=zip.folder('word');
-  w.file('document.xml',doc); w.file('styles.xml',STYLES);
+  w.file('document.xml',thFixDocXml(doc)); w.file('styles.xml',STYLES);
   w.folder('_rels').file('document.xml.rels',DRELS);
   zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'})
   .then(blob=>{
@@ -5639,14 +5675,30 @@ ${blocks}
    - หัวข้อใหญ่ใช้เลขไทย หัวข้อย่อยใช้ ๔.๑ ๔.๒ ตามลำดับ
    - ช่องที่ต้องกรอกด้วยลายมือ ให้ใช้เส้นจุดไข่ปลา (.........) ตามแบบเอกสารราชการ
 
-3. ให้สร้าง "๑ ชุด (๔ ส่วน) ต่อ ๑ ตัวชี้วัด" เรียงตามลำดับที่ให้มา ขึ้นหน้าใหม่ระหว่างชุดเสมอ
+3. การตั้งค่าตัวอักษรไทยในไฟล์ .docx (บังคับ เพื่อไม่ให้ขึ้นเส้นแดงและไม่ตัดคำผิด)
+   - ทุกช่วงข้อความ (run) ที่มีอักษรไทย ต้องมีแฟล็ก complex script คือ <w:cs/> ใน rPr
+     (ถ้าไม่มี Word จะจัดอักษรไทยแบบภาษาอังกฤษ ทำให้ขึ้นเส้นแดงทุกคำและหักคำกลางคำ)
+   - docDefaults ใน styles.xml ต้องตั้งให้ครบ : rFonts ทั้ง ascii / hAnsi / eastAsia / cs = TH SarabunPSK
+     · w:sz และ w:szCs เท่ากัน · w:lang ทั้ง val / eastAsia / bidi = th-TH (ห้ามปล่อยเป็น ar-SA)
+   - run ใดกำหนดขนาดเอง ต้องกำหนด w:szCs คู่กับ w:sz เสมอ · ตัวหนาต้องมี w:bCs คู่กับ w:b
+     · ตัวเอียงต้องมี w:iCs คู่กับ w:i (รวมถึงข้อความในตารางและหัวตาราง)
+   - หนึ่งย่อหน้า = หนึ่ง paragraph ห้ามใส่อักขระขึ้นบรรทัดใหม่ (newline) ไว้ในย่อหน้าเดียวกัน
+     และห้ามใช้ <w:br/> ตัดบรรทัดเอง ให้ Word ตัดคำไทยเอง
+     พร้อมล้างอักขระ NBSP (U+00A0) และ ZWNJ (U+200C) ออกก่อนเขียนลงไฟล์
+   - จัดย่อหน้าแบบ Thai Distributed (thaiDistribute) ระยะบรรทัดเดี่ยว before/after = 0
+   - ถ้าสร้างด้วย python-docx ให้ตั้ง run.font.complex_script = True และ cs_bold/cs_italic ทุก run ภาษาไทย
+     ถ้าสร้างด้วย docx-js ต้องแก้ XML หลัง pack เพื่อเติม <w:cs/> เพราะไลบรารีไม่ใส่ให้
+   - ก่อนส่งไฟล์ ให้ตรวจว่าจำนวน <w:cs/> ใน word/document.xml ใกล้เคียงจำนวน run ที่มีอักษรไทย
+     และต้องไม่พบคำว่า ar-SA ในไฟล์
+
+4. ให้สร้าง "๑ ชุด (๔ ส่วน) ต่อ ๑ ตัวชี้วัด" เรียงตามลำดับที่ให้มา ขึ้นหน้าใหม่ระหว่างชุดเสมอ
    ห้ามรวบหลายตัวชี้วัดไว้ในชุดเดียวกัน และทุกชุดต้องมีหัวข้อ ลำดับ และรูปแบบเหมือนกันทั้งหมด
    หากมีหลายตัวชี้วัด ให้รวมทุกชุดไว้ใน "ไฟล์ .docx ไฟล์เดียว"
 
-4. ส่วนที่ ๒ และส่วนที่ ๓ ต้องเป็นฟอร์มเปล่าพร้อมพิมพ์ใช้งานจริง ห้ามกรอกชื่อหรือตัวเลขผลการประเมินสมมุติ
+5. ส่วนที่ ๒ และส่วนที่ ๓ ต้องเป็นฟอร์มเปล่าพร้อมพิมพ์ใช้งานจริง ห้ามกรอกชื่อหรือตัวเลขผลการประเมินสมมุติ
    (ยกเว้นช่อง "ค่าเป้าหมาย") ส่วนตัวเลขตัวอย่างให้อยู่ในส่วนที่ ๔ เท่านั้น และต้องกำกับว่าเป็นตัวอย่างสมมุติ
 
-5. เครื่องมือต้องใช้งานได้จริงในบริบทของโรงเรียน เก็บข้อมูลได้ง่าย ไม่ซับซ้อนเกินจำเป็น
+6. เครื่องมือต้องใช้งานได้จริงในบริบทของโรงเรียน เก็บข้อมูลได้ง่าย ไม่ซับซ้อนเกินจำเป็น
    และต้องอธิบายที่มาของค่าร้อยละได้อย่างชัดเจนเมื่อผู้ตรวจสอบขอดูหลักฐาน
 
 ✅ ตรวจสอบตนเองก่อนสร้างไฟล์ (ต้องผ่านครบทุกข้อ หากข้อใดไม่ผ่านให้ออกแบบตารางใหม่ก่อน)
@@ -5656,6 +5708,7 @@ ${blocks}
  ๔. จากตารางส่วนที่ ๒ ตัดสินได้หรือไม่ว่าแต่ละหน่วยผ่านเกณฑ์หรือไม่ (มีคอลัมน์รวม/ค่าเฉลี่ย/ผลการตัดสินตามเกณฑ์)
  ๕. "จำนวนแถวที่บันทึกครบถ้วน" = ตัวหาร และ "จำนวนแถวที่ผ่านเกณฑ์" = ตัวตั้ง ของสูตรส่วนที่ ๓ ใช่หรือไม่
  ๖. ส่วนที่ ๒ และส่วนที่ ๓ เป็นฟอร์มเปล่า ไม่มีชื่อหรือตัวเลขตัวอย่างหลงเหลือ ใช่หรือไม่
+ ๗. ตั้งค่าตัวอักษรไทยในไฟล์ .docx ครบตามข้อ ๓ (มี <w:cs/> ทุก run ภาษาไทย · szCs/bCs ครบ · lang bidi = th-TH) ใช่หรือไม่
 
 📌 สำคัญ : ให้ลงมือสร้างไฟล์ .docx ทันที ไม่ต้องถามยืนยัน ไม่ต้องอธิบายแผนการทำงานก่อนลงมือ
 เมื่อส่งไฟล์เรียบร้อยแล้ว ให้สรุปสั้น ๆ ท้ายคำตอบว่าไฟล์มีทั้งหมดกี่ชุด เป็นตัวชี้วัดใดบ้าง
